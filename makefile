@@ -7,13 +7,13 @@ TARGETS = tester
 tester: $(OBJS) testing.cpp
 	$(CC) $(CFLAGS) $(OBJS) testing.cpp -o tester
 
-position.o:  position.cpp
+position.o:  position.cpp position.h
 	$(CC) $(CFLAGS) -c position.cpp -o position.o
 
-bitboards.o: bitboards.cpp
+bitboards.o: bitboards.cpp bitboards.h
 	$(CC) $(CFLAGS) -c bitboards.cpp -o bitboards.o 
 
-move.o : move.cpp
+move.o : move.cpp move.h
 	$(CC) $(CFLAGS) -c move.cpp -o move.o
 
 clean :
