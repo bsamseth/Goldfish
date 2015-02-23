@@ -32,6 +32,9 @@ class Position {
     void putPiece(Square sq, Piece p);
     void putPiece(Square sq, PieceType pt, Color c);
     void clear();
+    
+    // pieces
+    bool occupied(Square s);
     // public fields
     Bitboard pieces[NUMBER_OF_COLORS][NUMBER_OF_PIECE_TYPES];
     Piece board[NUMBER_OF_SQUARES];

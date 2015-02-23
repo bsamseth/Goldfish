@@ -1,12 +1,14 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
 #include "types.h"
 #include "position.h"
 #include "bitboards.h"
 #include "pieces.h"
 
+using Bitboards::prettyString;
 using std::cout;
 using std::endl;
 
@@ -106,9 +108,12 @@ void Position::clear() {
 void Position::putPiece(Square sq, PieceType pt, Color c) {
     board[sq] = makePiece(c, pt);
     pieces[c][pt] |= (1ULL << sq); // set the piece in its right Bitboard
+    if (pt != NO_PIECE_TYPE)
+	pieces[c][NO_PIECE_TYPE] &= ~(1ULL << sq);
+    
     // make sure there is no other pieces on sq
     for (int c2 = WHITE; c2 <= BLACK; ++c2) {
-    	for (int pt2 = NO_PIECE_TYPE; pt2 < NUMBER_OF_PIECE_TYPES; ++pt2 ) {
+    	for (int pt2 = PAWN; pt2 < NUMBER_OF_PIECE_TYPES; ++pt2 ) {
     	    if (!(c == c2 && pt == pt2)) {
     		pieces[c2][pt2] &= (BITBOARD_UNIVERSE ^ (1ULL << sq));
     	    }
@@ -134,7 +139,8 @@ void Position::doMove(Move m) {
 
     // place the piece
     putPiece(to, makePieceType(p), makeColor(p));
-    putPiece(from, NO_PIECE_TYPE, NO_COLOR);
+    putPiece(from, NO_PIECE_TYPE, makeColor(p));
+    // putPiece(from, NO_PIECE_TYPE, colorSwap(makeColor(p)));
 
     // update fields
     sideToMove = colorSwap(sideToMove);
@@ -155,4 +161,19 @@ void Position::undoMove() {
     putPiece(lastMove.getFrom(), stateInfo->lastMove_originPiece);
     putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
     stateInfo = stateInfo->previous;
+}
+
+
+bool Position::occupied(Square s) {
+    // assert ( ~getBoardForColor(WHITE) == pieces[WHITE][NO_PIECE_TYPE] );
+    // assert ( ~getBoardForColor(BLACK) == pieces[BLACK][NO_PIECE_TYPE] );
+
+    bool occupied1 = board[s] != NO_PIECE;
+    bool occupied2 = (pieces[WHITE][NO_PIECE_TYPE] & (1ULL << s)) == 0 || (pieces[BLACK][NO_PIECE_TYPE] & (1ULL << s)) == 0;
+    // cout << "occupied1 = " << occupied1 << ", occupied2 = " << occupied2 << endl;
+    
+    // cout << "White no-piece board:\n" << prettyString(pieces[WHITE][NO_PIECE_TYPE]);// | getBoardForColor(BLACK)) << endl;;
+    // cout << "Black no-piece board:\n" << prettyString(pieces[BLACK][NO_PIECE_TYPE]);// | getBoardForColor(BLACK)) << endl;;
+    assert(occupied1 == occupied2);
+    return occupied1;
 }

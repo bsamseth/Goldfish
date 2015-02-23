@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
-
+#include <numeric> // for std::iota
 using Bitboard = uint64_t;
 
 namespace Bitboards {
@@ -59,6 +59,8 @@ enum Square {
 
     NO_SQUARE = 123
 };
+
+
 
 enum File {
     FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
