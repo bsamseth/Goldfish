@@ -18,6 +18,7 @@ int main() {
     pos.doMove(move2);
     pos.doMove(move3);
     pos.doMove(move4);
+    pos.undoMove();
     cout << Bitboards::prettyString(pos.getBoardForColor(WHITE) | pos.getBoardForColor(BLACK)) << endl;
     for (int r = RANK_8; r >= RANK_1; --r) {
     	for (int f = FILE_A; f <= FILE_H; ++f) {
@@ -25,6 +26,7 @@ int main() {
     	}
 	cout << "\n";
     }
+    
     // cout << makePieceType(pos.board[SQ_B1]) << endl;
     // cout << pos.halfmoveClock << endl;
     cout << "Move from: " << move.getFrom() << endl;

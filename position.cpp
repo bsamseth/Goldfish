@@ -116,12 +116,27 @@ void Position::putPiece(Square sq, PieceType pt, Color c) {
     }
 }
 
+void Position::putPiece(Square sq, Piece p) {
+    putPiece(sq, makePieceType(p), makeColor(p));
+}
+
 
 void Position::doMove(Move m) {
     Square from = m.getFrom(), to = m.getTo();
     Piece p = board[from];
+
+    // update to a new stateInfo
+    StateInfo newStateInfo, *newInfo = &newStateInfo;
+    newInfo->lastMove_originPiece = p;
+    newInfo->lastMove_destinationPiece = board[to];
+    newInfo->previous = stateInfo;
+    stateInfo = newInfo;
+
+    // place the piece
     putPiece(to, makePieceType(p), makeColor(p));
     putPiece(from, NO_PIECE_TYPE, NO_COLOR);
+
+    // update fields
     sideToMove = colorSwap(sideToMove);
     fullmoveNumber += sideToMove == WHITE ? 1 : 0;
     if (!m.capture()) {
@@ -132,4 +147,12 @@ void Position::doMove(Move m) {
     } else 
 	halfmoveClock = 0;
     moveList.push_back(m);
+}
+
+void Position::undoMove() {
+    Move lastMove = moveList.back();
+    moveList.pop_back();
+    putPiece(lastMove.getFrom(), stateInfo->lastMove_originPiece);
+    putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
+    stateInfo = stateInfo->previous;
 }
