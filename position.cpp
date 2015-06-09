@@ -154,7 +154,7 @@ void Position::doMove(Move m) {
 	halfmoveClock = 0;
     
     // set en passant square
-    if (m.doublePawnPushMove())
+    if (m.doublePawnPush())
 		enpassantTarget = Square((to + from)/2); // taget is on square between from and to, take the average
     else 
 		enpassantTarget = NO_SQUARE;
