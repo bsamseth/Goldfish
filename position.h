@@ -28,6 +28,7 @@ class Position {
     void doNullMove();
     // getters
     Bitboard getBoardForColor(Color c);
+    Color getSideToMove();
     // helper functions
     void putPiece(Square sq, Piece p);
     void putPiece(Square sq, PieceType pt, Color c);
@@ -35,6 +36,10 @@ class Position {
     
     // pieces
     bool occupied(Square s);
+    bool occupied(Square s, Color c);
+
+    // rulebook
+    bool psudoLegal(Move m);
     // public fields
     Bitboard pieces[NUMBER_OF_COLORS][NUMBER_OF_PIECE_TYPES];
     Piece board[NUMBER_OF_SQUARES];
@@ -49,5 +54,10 @@ class Position {
     unsigned fullmoveNumber;
 
 };
+
+
+inline Color Position::getSideToMove() {
+    return sideToMove;
+}
 
 #endif

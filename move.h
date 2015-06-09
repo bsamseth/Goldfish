@@ -42,10 +42,14 @@ class Move {
     bool queenCastle();
     bool ep_capture();
     bool promotion();
-
+    bool doublePawnPush();
     protected:
     unsigned int m_Move;
 };
+
+inline bool Move::doublePawnPush() {
+    return getFlag() == DOUBLE_PAWN_PUSH_MOVE;
+}
 
 inline bool Move::capture() {
     return (getFlag() & 0x04);
