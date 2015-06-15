@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -std=c++11 -g
+CFLAGS = -std=c++11 -g # -Wall
 
 OBJS = move.o bitboards.o position.o
 TARGETS = tester

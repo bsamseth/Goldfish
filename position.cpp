@@ -192,30 +192,32 @@ bool Position::occupied(Square s, Color c) {
     return occupied1;
 }
 
+// psudoLegal should not assume any move encoding has been done
 bool Position::psudoLegal(Move m) {
     Square s1 = m.getFrom(), s2 = m.getTo();
     assert ( occupied(s1) ); // m is assumed to have a piece on its origin square
-
+    assert ( s2 != NO_SQUARE ); // cannot move to a non-square!
     Piece p = board[s1]; // the piece on s1
     Color us = makeColor(p);
+    assert (us == sideToMove); // if not, function is called unnecessary by movegen
     PieceType pt = makePieceType(p);
 
     // if piece is wrong color or friendly piece on s2, then no good
     if (us != sideToMove || us == makeColor(board[s2]))
 	return false;
 
-    switch (makePieceType(p)) {
+    switch (pt) {
     case PAWN:   return psudoLegalPawn(m,s1,s2,p,us,pt);
-    case KNIGHT: return psudoLegalKnight(m,s1,s2,p,us,pt);
-    case BISHOP: return psudoLegalBishop(m,s1,s2,p,us,pt);
-    case ROOK:   return psudoLegalRook(m,s1,s2,p,us,pt);
-    case QUEEN:  return psudoLegalQueen(m,s1,s2,p,us,pt);
-    case KING:   return psudoLegalKing(m,s1,s2,p,us,pt);
+    // case KNIGHT: return psudoLegalKnight(m,s1,s2,p,us,pt);
+    // case BISHOP: return psudoLegalBishop(m,s1,s2,p,us,pt);
+    // case ROOK:   return psudoLegalRook(m,s1,s2,p,us,pt);
+    // case QUEEN:  return psudoLegalQueen(m,s1,s2,p,us,pt);
+    // case KING:   return psudoLegalKing(m,s1,s2,p,us,pt);
     default:     assert (("In psudoLegal, no match for piece type.", false));
     }
 }
 
-bool Postion::psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+bool Position::psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
     // pawns are set in one direction, code is from whites perspective
     Square up    = us == WHITE ? D_NORTH : D_SOUTH;
     Square tl    = us == WHITE ? D_NORTH_WEST : D_SOUTH_EAST; // take_left
@@ -226,37 +228,27 @@ bool Postion::psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, Pi
 
 
     // handle en passant first
-    if (m.ep_capture()) {
-	// this should be predefined as a valid psudo legal move, but just in case
-	assert (("Move is en passant, is also capture.", m.capture()))
-	if (diff != tl && diff != tr) // diff is neither tl nor tr, false
-	    assert (("move encoded as en passant, but not a valid capture move..", false));
-	    return false;
-	else 
-	    return true;
-    }
-
-    // promotions
-    if (m.promotion()) {
-	assert (("If the pawn move is a promotion, should be on 7'th rank.", (bool) (r7 & (1 << s1))));
-	if (m.capture()) {
-	    assert (("Promo-capture, diff must be tl or tr", diff == tl || diff == tr));
-	}
-	// if all assertions are passed, than this is legal
+    // needs to be capture, and land on enpassantTarget
+    // this relies on enpassantTarget to be set corretly
+    if ( (s2 == s1 + tl || s2 == s1 + tr) && s2 == enpassantTarget) 
 	return true;
-    }
+    
+    // promotions should not be considered here, need only know if the pawn is allowed
+    // move is a normal capture
 
-    if (m.capture()) { // move is a normal capture
-	assert (("Pawn move to a enemy occupied square. Should be a capture.", occupied(s2, colorSwap(us))));
-	assert (("Pawn move encoded as capture, so it should be psudoLegal.", diff == tl || diff == tr));
-	return (diff == tl || diff == tr);
-    }
+    // is capture 
+    if  ((s2 == s1 + tl || s2 == s1 + tr) && occupied(s2, colorSwap(us)))
+	return true;
 
-    // remainig legal moves are pushes
-    if (m.doublePawnPushMove()) {
-	assert (("Pawn move encoded as double push, diff should match", diff == (up+up)));
-	return diff == (up+up);
-    }
-    // at this point the only legal move is a simple push, and there is no piece on s2
-    return diff == up;
+    // is double push
+    if ( ( !occupied((s1+up)+up) && s2 == (s1+up) + up ) && ((1 << s1) & r2) ) 
+	return true;
+
+    // is single push
+    if ( !occupied(s2) && s2 == s1+up)
+	return true;
+
+    // if we get here the move is not psudolegal
+    std::cout << "FALSE!!!" <<std::endl;
+    return false;
 }

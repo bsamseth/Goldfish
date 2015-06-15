@@ -40,16 +40,23 @@ class Position {
 
     // rulebook
     bool psudoLegal(Move m);
+    bool psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
+    bool psudoLegalKnight(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
+    bool psudoLegalBishop(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
+    bool psudoLegalRook(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
+    bool psudoLegalQueen(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
+    bool psudoLegalKing(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
     // public fields
     Bitboard pieces[NUMBER_OF_COLORS][NUMBER_OF_PIECE_TYPES];
     Piece board[NUMBER_OF_SQUARES];
     StateInfo* stateInfo;
 
+    Square enpassantTarget;
     protected:
     vector<Move> moveList;
     Color sideToMove;
     CastlingRights castlingRights;
-    Square enpassantTarget;
+
     unsigned halfmoveClock;
     unsigned fullmoveNumber;
 

@@ -82,3 +82,5 @@ inline bool Move::promotion() {
 
 
 #endif
+
+

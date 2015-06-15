@@ -37,7 +37,7 @@ void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
     Square up = makeColor(p1) == WHITE ? D_NORTH : D_SOUTH;
     
     // en passant?
-    if (pos->enpassantTarget != NO_SQUARE && p1 == PAWN && s2 == enpassantTarget) {
+    if (pos->enpassantTarget != NO_SQUARE && p1 == PAWN && s2 == enpassantTarget) { // && is capture / is not on same file, TODO
 	flag = ENPASSANT_CAPTURE_MOVE;
 	return void;
     }
@@ -66,7 +66,6 @@ void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
     }
 
     
-
     // double pawn push?
     if (p1 == PAWN && (int(to) - int(from) == 2*int(up))) {
 	generatedMoves.push_back(Move(from, to, DOUBLE_PAWN_PUSH_MOVE));
@@ -74,3 +73,6 @@ void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
     }
     
 }
+
+
+
