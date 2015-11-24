@@ -86,7 +86,7 @@ enum Piece {
 };
 
 inline Color colorSwap(Color c) {
-    return c == WHITE ? BLACK : WHITE;
+  return c == NO_COLOR ? NO_COLOR : (c == WHITE ? BLACK : WHITE);
 }
 
 inline Piece makePiece(Color c, PieceType pt) {

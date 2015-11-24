@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
+#include <algorithm>
 
 #include "types.h"
 #include "position.h"
@@ -11,6 +12,7 @@
 using Bitboards::prettyString;
 using std::cout;
 using std::endl;
+using std::max;
 
 Position::Position() {
     clear();
@@ -155,9 +157,9 @@ void Position::doMove(Move m) {
     
     // set en passant square
     if (m.doublePawnPush())
-		enpassantTarget = Square((to + from)/2); // taget is on square between from and to, take the average
+      enpassantTarget = Square((to + from)/2); // taget is on square between from and to, take the average
     else 
-		enpassantTarget = NO_SQUARE;
+      enpassantTarget = NO_SQUARE;
     
     moveList.push_back(m);
 }
@@ -192,9 +194,28 @@ bool Position::occupied(Square s, Color c) {
     return occupied1;
 }
 
-// psudoLegal should not assume any move encoding has been done
+/*
+ * Returns true if the move proposed is psudo legal.
+ * This means that it follows the move rules for the piece
+ * in question. In perticular, this returns false if the destination
+ * square is occupied by a friendly.
+ *
+ * A legal move is a psudo legal move that does not leave
+ * own king in check after the move has been made.
+ *
+ * Assumptions (asserted):
+ * - target square is different from origin
+ * - origin square is occupied
+ * - color of pice on origin is same as sidetomove
+ * - target is not a non-square
+ *
+ * The function does not assume any move encoding has been done.
+ * This might be an option to change.
+ */
+// 
 bool Position::psudoLegal(Move m) {
     Square s1 = m.getFrom(), s2 = m.getTo();
+    assert ( s1 != s2); // this should be a move, not a null move
     assert ( occupied(s1) ); // m is assumed to have a piece on its origin square
     assert ( s2 != NO_SQUARE ); // cannot move to a non-square!
     Piece p = board[s1]; // the piece on s1
@@ -208,11 +229,11 @@ bool Position::psudoLegal(Move m) {
 
     switch (pt) {
     case PAWN:   return psudoLegalPawn(m,s1,s2,p,us,pt);
-    // case KNIGHT: return psudoLegalKnight(m,s1,s2,p,us,pt);
-    // case BISHOP: return psudoLegalBishop(m,s1,s2,p,us,pt);
-    // case ROOK:   return psudoLegalRook(m,s1,s2,p,us,pt);
-    // case QUEEN:  return psudoLegalQueen(m,s1,s2,p,us,pt);
-    // case KING:   return psudoLegalKing(m,s1,s2,p,us,pt);
+    case KNIGHT: return psudoLegalKnight(m,s1,s2,p,us,pt);
+    case BISHOP: return psudoLegalBishop(m,s1,s2,p,us,pt);
+    case ROOK:   return psudoLegalRook(m,s1,s2,p,us,pt);
+    case QUEEN:  return psudoLegalQueen(m,s1,s2,p,us,pt);
+    case KING:   return psudoLegalKing(m,s1,s2,p,us,pt);
     default:     assert (("In psudoLegal, no match for piece type.", false));
     }
 }
@@ -249,6 +270,96 @@ bool Position::psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, P
 	return true;
 
     // if we get here the move is not psudolegal
-    std::cout << "FALSE!!!" <<std::endl;
     return false;
+}
+
+/*
+ * Returns true if s1-s2 is a psudo legal knight move.
+ * This is the case if the move changes either one file and
+ * two ranks, or two files and one rank.
+ * Done by seting total rank/file-diff to 3, and requiring
+ * that none of the diffs are greater than 2.
+ */
+bool Position::psudoLegalKnight(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+  int d_rank = abs(rank_diff(s1, s2));
+  int d_file = abs(file_diff(s1, s2));
+  
+  return (d_rank + d_file == 3 && d_rank < 3 && d_file < 3);
+}
+
+/*
+ * Returns true if s1-s2 is a psudo legal bishop move.
+ * This is the case if the move changes rank and file
+ * the same amount, and no piece is blocking the way.
+ */
+bool Position::psudoLegalBishop(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+  int d_rank = rank_diff(s1, s2);
+  int d_file = file_diff(s1, s2);
+  if (abs(d_rank) != abs(d_file)) return false;
+
+  int rank_sign = d_rank < 0 ? -1 : 1;
+  int file_sign = d_file < 0 ? -1 : 1;
+  for (int i = 1; i < d_file; i++) {
+    if (occupied(Square(s1 + i*D_EAST*file_sign + i*D_NORTH*rank_sign))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/*
+ * Returns true if s1-s2 is a psudo legal rook move.
+ * This is the case if the move either does not change
+ * rank, or does not change file, and no piece is in
+ * the way.
+ */
+bool Position::psudoLegalRook(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+  int d_rank = rank_diff(s1, s2);
+  int d_file = file_diff(s1, s2);
+  if (d_rank != 0 && d_file != 0) return false;
+
+  // test for blocking pieces
+  Square direction;
+  int dist = max(abs(d_file), abs(d_rank));
+  if ( d_rank == 0 )
+    direction = d_file < 0 ? D_WEST : D_EAST;
+  else
+    direction = d_rank < 0 ? D_SOUTH : D_NORTH;
+
+  for (int i = 1; i < dist; i++) {
+    if (occupied(Square(s1 + i*direction)))
+      return false;
+  }
+  
+  return true;
+}
+
+
+/*
+ * Returns true if s1-s2 is a psudo legal rook move.
+ * This is the case if the move is either a legal bishop
+ * move, or a legal rook move.
+ */
+bool Position::psudoLegalQueen(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+  if ( psudoLegalBishop(m,s1,s2,p,us,pt) )
+    return true;
+  else if ( psudoLegalRook(m,s1,s2,p,us,pt) )
+    return true;
+  else
+    return false;
+}
+
+
+/*
+ * Returns true if s1-s2 is a psudo legal king move.
+ * This is the case if the move changes either one rank,
+ * or one file or both.
+ * This is tested by requiring the total rank/file diff to be
+ * less than 3, while none of them can be bigger than 1. 
+ */
+bool Position::psudoLegalKing(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+  int d_rank = abs(rank_diff(s1, s2));
+  int d_file = abs(file_diff(s1, s2));
+
+  return d_rank + d_rank < 3 && d_rank < 2 && d_file < 2;
 }
