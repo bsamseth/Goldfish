@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -std=c++11 -g # -Wall
 
-OBJS = move.o bitboards.o position.o
+OBJS = move.o bitboards.o position.o movegen.o
 TARGETS = tester
 
 tester: $(OBJS) testing.cpp
@@ -12,6 +12,9 @@ position.o:  position.cpp position.h
 
 bitboards.o: bitboards.cpp bitboards.h
 	$(CC) $(CFLAGS) -c bitboards.cpp -o bitboards.o 
+
+movegen.o: movegen.cpp movegen.h
+	$(CC) $(CFLAGS) -c movegen.cpp -o movegen.o
 
 move.o : move.cpp move.h
 	$(CC) $(CFLAGS) -c move.cpp -o move.o
