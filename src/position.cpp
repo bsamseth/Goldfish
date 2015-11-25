@@ -39,7 +39,7 @@ void Position::setFromFEN(std::string fen) {
     } else if (c == '/') {
       sq -= Square(16); // if c == '/', then sq is on file h. Go back 2*8, back to file A with rank one less
     } else {
-      putPiece(sq, Pieces::makePieceType(c), Pieces::makeColor(c));
+      putPiece(sq, makePieceTypeFromChar(c), makeColorFromChar(c));
       ++sq;
     }
   }
@@ -256,7 +256,7 @@ bool Position::psudoLegal(Move m) {
   Color us = makeColor(p);
   PieceType pt = makePieceType(p);
 
-  assert ( s1 != s2); // this should be a move, not a null move
+  assert ( (cout << "psudolegal: Move = " << m.str() << endl ,s1 != s2)); // this should be a move, not a null move
   assert ( occupied(s1) ); // m is assumed to have a piece on its origin square
   assert ( s2 != NO_SQUARE ); // cannot move to a non-square!
   assert (us == sideToMove); // if not, function is called unnecessary by movegen
@@ -272,7 +272,7 @@ bool Position::psudoLegal(Move m) {
   case ROOK:   return psudoLegalRook(m,s1,s2,p,us,pt);
   case QUEEN:  return psudoLegalQueen(m,s1,s2,p,us,pt);
   case KING:   return psudoLegalKing(m,s1,s2,p,us,pt);
-  default:     assert (("In psudoLegal, no match for piece type.", false));
+  default:     assert ((cout << "In psudoLegal, no match for piece type: " << pt << endl, false));
   }
 }
 
