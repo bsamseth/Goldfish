@@ -1,6 +1,8 @@
 
 #ifndef MOVE_H
 #define MOVE_H
+
+#include <string>
 #include "types.h"
 
 /*
@@ -43,9 +45,14 @@ class Move {
   bool ep_capture();
   bool promotion();
   bool doublePawnPush();
+  std::string str();
   protected:
   unsigned int m_Move;
 };
+
+inline std::string Move::str() { 
+  return SquareName[getFrom()] + SquareName[getTo()];
+}
 
 inline bool Move::doublePawnPush() {
   return getFlag() == DOUBLE_PAWN_PUSH_MOVE;
