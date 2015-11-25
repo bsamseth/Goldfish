@@ -93,7 +93,7 @@ inline Piece makePiece(Color c, PieceType pt) {
   return (pt == NO_PIECE_TYPE || c == NO_COLOR) ? NO_PIECE : Piece(c*6 + pt);
 }
 inline PieceType makePieceType(Piece p) {
-  return PieceType(int(p) % 6);
+  return PieceType(int(p) + 6 * (int(p) >= 7) );
 }
 inline Color makeColor(Piece p) {
   return p == NO_PIECE ? NO_COLOR : (int(p) < int(B_PAWN) ? WHITE : BLACK);
