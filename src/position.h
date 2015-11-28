@@ -33,6 +33,7 @@ class Position {
   void putPiece(Square sq, Piece p);
   void putPiece(Square sq, PieceType pt, Color c);
   void clear();
+  string str();
     
   // pieces
   bool occupied(Square s);
@@ -51,7 +52,7 @@ class Position {
   // public fields
   Bitboard pieces[NUMBER_OF_COLORS][NUMBER_OF_PIECE_TYPES];
   Piece board[NUMBER_OF_SQUARES];
-  StateInfo* stateInfo;
+  StateInfo stateInfo;
 
   Square enpassantTarget;
   protected:

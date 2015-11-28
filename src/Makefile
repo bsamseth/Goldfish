@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -std=c++11 -g # -Wall
+CFLAGS = -std=c++11 -g -rdynamic -Wall
 
 OBJS = move.o bitboards.o position.o movegen.o
 TARGETS = tester

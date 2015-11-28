@@ -8,9 +8,9 @@
 #include "types.h"
 #include "position.h"
 #include "bitboards.h"
-#include "pieces.h"
 
 using Bitboards::prettyString;
+using std::string;
 using std::cout;
 using std::endl;
 using std::max;
@@ -110,16 +110,21 @@ void Position::clear() {
 }
 
 void Position::putPiece(Square sq, PieceType pt, Color c) {
+  assert ( int(pt) < NUMBER_OF_PIECE_TYPES ); // unknown piece type
+  assert ( int(c) < NUMBER_OF_COLORS ); // unknown piece type
+  
   board[sq] = makePiece(c, pt);
-  pieces[c][pt] |= (1ULL << sq); // set the piece in its right Bitboard
-  if (pt != NO_PIECE_TYPE)
-    pieces[c][NO_PIECE_TYPE] &= ~(1ULL << sq);
-    
-  // make sure there is no other pieces on sq
-  for (int c2 = WHITE; c2 <= BLACK; ++c2) {
-    for (int pt2 = PAWN; pt2 < NUMBER_OF_PIECE_TYPES; ++pt2 ) {
-      if (!(c == c2 && pt == pt2)) {
-	pieces[c2][pt2] &= (BITBOARD_UNIVERSE ^ (1ULL << sq));
+  if (pt != NO_PIECE_TYPE) {
+    pieces[c][pt] |= (1ULL << sq); // set the piece in its right Bitboard
+    pieces[WHITE][NO_PIECE_TYPE] &= ~(1ULL << sq);
+    pieces[BLACK][NO_PIECE_TYPE] &= ~(1ULL << sq);
+  } else {
+    pieces[WHITE][NO_PIECE_TYPE] |= (1ULL << sq);
+    pieces[BLACK][NO_PIECE_TYPE] |= (1ULL << sq);
+    // make sure there is no other pieces on sq
+    for (int c2 = WHITE; c2 <= BLACK; ++c2) {
+      for (int pt2 = PAWN; pt2 < NUMBER_OF_PIECE_TYPES; ++pt2 ) {
+	pieces[c2][pt2] &= ~(1ULL << sq);
       }
     }
   }
@@ -135,15 +140,15 @@ void Position::doMove(Move m) {
   Piece p = board[from];
 
   // update to a new stateInfo
-  StateInfo newStateInfo, *newInfo = &newStateInfo;
-  newInfo->lastMove_originPiece = p;
-  newInfo->lastMove_destinationPiece = board[to];
-  newInfo->previous = stateInfo;
-  stateInfo = newInfo;
+  StateInfo newStateInfo;
+  newStateInfo.lastMove_originPiece = p;
+  newStateInfo.lastMove_destinationPiece = board[to];
+  newStateInfo.previous = &(this->stateInfo);
+  this->stateInfo = newStateInfo;
 
   // place the piece
   putPiece(to, makePieceType(p), makeColor(p));
-  putPiece(from, NO_PIECE_TYPE, makeColor(p));
+  putPiece(from, NO_PIECE_TYPE, NO_COLOR);
   // putPiece(from, NO_PIECE_TYPE, colorSwap(makeColor(p)));
 
   // update fields
@@ -169,24 +174,14 @@ void Position::doMove(Move m) {
 void Position::undoMove() {
   Move lastMove = moveList.back();
   moveList.pop_back();
-  putPiece(lastMove.getFrom(), stateInfo->lastMove_originPiece);
-  putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
-  stateInfo = stateInfo->previous;
+  putPiece(lastMove.getFrom(), stateInfo.lastMove_originPiece);
+  putPiece(lastMove.getTo(), stateInfo.lastMove_destinationPiece);
+  stateInfo = *(stateInfo.previous);
 }
 
 
 bool Position::occupied(Square s) {
-  // assert ( ~getBoardForColor(WHITE) == pieces[WHITE][NO_PIECE_TYPE] );
-  // assert ( ~getBoardForColor(BLACK) == pieces[BLACK][NO_PIECE_TYPE] );
-
-  bool occupied1 = board[s] != NO_PIECE;
-  bool occupied2 = (pieces[WHITE][NO_PIECE_TYPE] & (1ULL << s)) == 0 || (pieces[BLACK][NO_PIECE_TYPE] & (1ULL << s)) == 0;
-  // cout << "occupied1 = " << occupied1 << ", occupied2 = " << occupied2 << endl;
-    
-  // cout << "White no-piece board:\n" << prettyString(pieces[WHITE][NO_PIECE_TYPE]);// | getBoardForColor(BLACK)) << endl;;
-  // cout << "Black no-piece board:\n" << prettyString(pieces[BLACK][NO_PIECE_TYPE]);// | getBoardForColor(BLACK)) << endl;;
-  assert(occupied1 == occupied2);
-  return occupied1;
+  return occupied(s, WHITE) || occupied(s,BLACK);
 }
 
 bool Position::occupied(Square s, Color c) {
@@ -219,7 +214,7 @@ bool Position::ownKingInCheckAfterMove(Move m) {
     for (int file = FILE_A; file <= FILE_H; file+=1) {
       cSquare = Square(8*rank + file);
       if (occupied(cSquare, sideToMove)) {
-	if (psudoLegal(Move(cSquare, kingSquare))) {
+	if (cSquare != kingSquare && psudoLegal(Move(cSquare, kingSquare))) {
 	  inCheck = true;
 	  goto outside;
 	}
@@ -256,7 +251,7 @@ bool Position::psudoLegal(Move m) {
   Color us = makeColor(p);
   PieceType pt = makePieceType(p);
 
-  assert ( (cout << "psudolegal: Move = " << m.str() << endl ,s1 != s2)); // this should be a move, not a null move
+  assert ( s1 != s2); // this should be a move, not a null move
   assert ( occupied(s1) ); // m is assumed to have a piece on its origin square
   assert ( s2 != NO_SQUARE ); // cannot move to a non-square!
   assert (us == sideToMove); // if not, function is called unnecessary by movegen
@@ -288,8 +283,8 @@ bool Position::psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, P
   Square tl    = us == WHITE ? D_NORTH_WEST : D_SOUTH_EAST; // take_left
   Square tr    = us == WHITE ? D_NORTH_EAST : D_SOUTH_WEST; // take_right
   Bitboard r2  = us == WHITE ? RANK_2_BB : RANK_7_BB;
-  Bitboard r7  = us == WHITE ? RANK_7_BB : RANK_2_BB;
-  Square diff  = s2 - s1; // positve for white, negative for black (if legal)
+  // Bitboard r7  = us == WHITE ? RANK_7_BB : RANK_2_BB;
+  // Square diff  = s2 - s1; // positve for white, negative for black (if legal)
 
 
   // handle en passant first
@@ -406,4 +401,18 @@ bool Position::psudoLegalKing(Move m, Square s1, Square s2, Piece p, Color us, P
   int d_file = abs(file_diff(s1, s2));
 
   return (d_rank + d_rank < 3 && d_rank < 2 && d_file < 2);
+}
+
+
+string Position::str() {
+  std::stringstream sstm;
+  // sstm << "|_";
+
+  for (int i = 7; i >= 0; i--) {
+    for (int j = 0; j < 8; j++) {
+      sstm << "|_" << (board[8*i + j] == NO_PIECE ? "_" : PieceName[board[8*i + j]]) << "_";
+    }
+    sstm << "|\n";
+  } 
+  return sstm.str().substr(0,sstm.str().size() -1);
 }

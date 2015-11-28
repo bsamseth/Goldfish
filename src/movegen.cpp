@@ -35,10 +35,11 @@ void MoveGenerator::generateMoves() {
       if (!pos->occupied(cSquare, pos->getSideToMove()))
 	continue;
 
-      for (int rank2 = RANK_1; rank <= RANK_8; rank2++) {
-	for (int file2 = FILE_A; file <= FILE_H; file2++) {
+      for (int rank2 = RANK_1; rank2 <= RANK_8; rank2++) {
+	for (int file2 = FILE_A; file2 <= FILE_H; file2++) {
 	  target = Square(rank2*8 + file2);
-	  if (pos->psudoLegal(Move(cSquare, target)))
+	  if (cSquare != target && pos->legal(Move(cSquare, target)))
+	    // cout << "found a move : " << Move(cSquare, target).str() << endl;
 	    encodeAndAddMove(cSquare, target);
 	}
       }
