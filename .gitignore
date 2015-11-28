@@ -1,5 +1,5 @@
 *~
 *.o
 *#*
-tester
-testing.cpp
+build/*
+app/testing.cpp
