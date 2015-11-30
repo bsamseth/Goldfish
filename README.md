@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/bsamseth/Goldfish.svg?branch=unittest)](https://travis-ci.org/bsamseth/Goldfish)
 # Goldfish
 ###### Stockfish's very distant and not so bright cousin
 
