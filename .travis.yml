@@ -2,11 +2,11 @@ language: cpp
 
 compiler: g++
 
-before_install: sudo apt-get install python-pip
+before_install: sudo apt-get install gem
 
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
-- sudo pip install cpp-coveralls
+- sudo gem install coveralls-lcov
 
 addons:
   apt:
@@ -16,10 +16,16 @@ addons:
     - gcc-4.8
     - g++-4.8
     - clang
+    - lcov
 
 script:
   - mkdir build && cd build
   - cmake ..
   - make
   - ./unittests
-  - coveralls --root .. -E ".*external.*" -E ".*CMakeFiles.*" -E "*tests/*" -E "app/*" -E "/usr/*"
+
+after_success:
+  - lcov --directory . --capture --output-file coverage.info # capture coverage info
+  - lcov --remove coverage.info 'tests/*' 'app/* '/usr/*' --output-file coverage.info # filter out system and test code
+  - lcov --list coverage.info # debug before upload
+  - coveralls-lcov --repo-token DgxCA08W90xv6lNs8QhXZnzK5meIpcGgJ coverage.info # uploads to coveralls
