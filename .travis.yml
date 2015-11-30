@@ -1,10 +1,13 @@
-sudo: false
 language: cpp
 
 compiler: g++
 
+before_install: sudo apt-get install pip
+
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+- sudo pip install cpp-coveralls
+
 addons:
   apt:
     sources:
@@ -18,3 +21,5 @@ script:
   - mkdir build && cd build
   - cmake ..
   - make
+  - ./unittests
+  - coveralls --root .. -E ".*external.*" -E ".*CMakeFiles.*" -E "*tests/*" -E "app/*" -E "/usr/*"

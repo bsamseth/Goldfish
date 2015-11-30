@@ -24,6 +24,7 @@ using Bitboards::prettyString;
 
 int main(int argc, char *argv[])
 {
-  cout << "yey" << endl;
+  Square mySquare = SQ_G3;
+  cout << "mySquare = " << SquareName[mySquare] << endl;
   return 0;
 }
