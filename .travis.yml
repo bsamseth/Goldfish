@@ -38,7 +38,7 @@ script:
   - cd $PARENTDIR/build
   - cmake $PARENTDIR
   - make
-  - ./unittests
+  - ./unit_tests
 
 after_success:
   - lcov --directory $PARENTDIR/build --capture --output-file coverage.info # capture coverage info

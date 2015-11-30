@@ -12,11 +12,57 @@ if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 endif()
 
 
-#Bring the headers, such as Student.h into the project
-include_directories(include)
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/external/googletest
+    ${PROJECT_SOURCE_DIR}/external/googletest/include
+    )
 
-#However, the file(GLOB...) allows for wildcard additions:
 file(GLOB SOURCES "src/*.cpp")
+file(GLOB TESTFILES "tests/*.cpp")
+
+add_library(
+    engine
+    ${SOURCES}
+    )
+
+add_custom_target(
+    git_update
+    COMMAND git submodule init
+    COMMAND git submodule update
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    )
+
+add_library(
+    gtest
+    ${PROJECT_SOURCE_DIR}/external/googletest/src/gtest-all.cc
+    ${PROJECT_SOURCE_DIR}/external/googletest/src/gtest_main.cc
+    )
+
+add_dependencies(gtest git_update)
+
+set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/src/gtest-all.cc  PROPERTIES GENERATED 1)
+set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/src/gtest_main.cc PROPERTIES GENERATED 1)
+
+add_executable(
+    unit_tests
+    ${TESTFILES}
+    )
+
+add_dependencies(unit_tests gtest)
+
+target_link_libraries(
+    unit_tests
+    gtest
+    engine
+    pthread
+    )
+
  
 add_executable(tester app/testing.cpp ${SOURCES})
-add_executable(unittests app/unittests.cpp ${SOURCES})
+
+include(CTest)
+enable_testing()
+
+add_test(unit ${PROJECT_BINARY_DIR}/unit_tests)
