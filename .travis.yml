@@ -16,14 +16,20 @@ addons:
     - clang
     - lcov
 
+before_script:
+  - lcov --version
+  - PARENTDIR=$(pwd)
+  - mkdir $PARENTDIR/build && cd $PARENTDIR/build
+  - lcov --directory $PARENTDIR/build --zerocounters
+
 script:
-  - mkdir build && cd build
-  - cmake ..
+  - cd $PARENTDIR/build
+  - cmake $PARENTDIR
   - make
   - ./unittests
 
 after_success:
-  - lcov --directory . --capture --output-file coverage.info # capture coverage info
-  - lcov --remove coverage.info 'tests/*' 'app/* '/usr/*' --output-file coverage.info # filter out system and test code
+  - lcov --directory $PARENTDIR/build --capture --output-file coverage.info # capture coverage info
+  - lcov --remove coverage.info 'tests/*' 'app/*' '/usr/*' --output-file coverage.info # filter out system and test code
   - lcov --list coverage.info # debug before upload
   - coveralls-lcov coverage.info #--repo-token DgxCA08W90xv6lNs8QhXZnzK5meIpcGgJ coverage.info # uploads to coveralls
