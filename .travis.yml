@@ -2,7 +2,7 @@ language: cpp
 
 compiler: g++
 
-before_install: sudo apt-get install pip
+before_install: sudo apt-get install python-pip
 
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
