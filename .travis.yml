@@ -1,0 +1,48 @@
+language: cpp
+
+compiler: g++
+
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - gem install coveralls-lcov	
+  # install latest LCOV (1.9 was failing)
+  - wget http://ftp.de.debian.org/debian/pool/main/l/lcov/lcov_1.11.orig.tar.gz
+  - tar xf lcov_1.11.orig.tar.gz
+  - sudo make -C lcov-1.11/ install
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
+  - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-4.8 90
+#  - sudo apt-get update
+#  - sudo apt-get install libgtest-dev
+#  - "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8
+    - clang
+    - lcov
+
+before_script:
+  - lcov --version
+  - gcov --version
+  - g++ --version
+  - PARENTDIR=$(pwd)
+  - mkdir $PARENTDIR/build && cd $PARENTDIR/build
+  - lcov --directory $PARENTDIR/build --zerocounters
+
+script:
+  - cd $PARENTDIR/build
+  - cmake $PARENTDIR
+  - make
+  - ./unit_tests
+
+after_success:
+  - lcov --directory $PARENTDIR/build --capture --output-file coverage.info # capture coverage info
+  - lcov --remove coverage.info 'tests/*' 'app/*' 'external/*' 'cmake/*' '/usr/*' --output-file coverage.info # filter out system and test code
+  - lcov --list coverage.info # debug before upload
+  - coveralls-lcov coverage.info #--repo-token DgxCA08W90xv6lNs8QhXZnzK5meIpcGgJ coverage.info # uploads to coveralls
+

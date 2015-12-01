@@ -2,9 +2,9 @@
 #include <sstream>
 #include <cstdint>
 #include <bitset>
-
 #include "bitboards.h"
 #include "types.h"
+
 
 
 std::string Bitboards::prettyString(Bitboard b) {
@@ -26,4 +26,4 @@ std::string Bitboards::prettyString(Bitboard b) {
 	sstm << "\n| ";
     }
     return sstm.str().substr(0,sstm.str().size() -2);
-    }
+}
