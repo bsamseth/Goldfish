@@ -106,6 +106,7 @@ void Position::clear() {
     }
     pieces[c][NO_PIECE_TYPE] = BITBOARD_UNIVERSE;
   }
+  
     
 }
 
@@ -118,6 +119,7 @@ void Position::putPiece(Square sq, PieceType pt, Color c) {
     pieces[c][pt] |= (1ULL << sq); // set the piece in its right Bitboard
     pieces[WHITE][NO_PIECE_TYPE] &= ~(1ULL << sq);
     pieces[BLACK][NO_PIECE_TYPE] &= ~(1ULL << sq);
+    
   } else {
     pieces[WHITE][NO_PIECE_TYPE] |= (1ULL << sq);
     pieces[BLACK][NO_PIECE_TYPE] |= (1ULL << sq);

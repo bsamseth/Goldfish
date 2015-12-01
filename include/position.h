@@ -50,7 +50,7 @@ class Position {
   bool psudoLegalQueen(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
   bool psudoLegalKing(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
   // public fields
-  Bitboard pieces[NUMBER_OF_COLORS][NUMBER_OF_PIECE_TYPES];
+  Bitboard pieces[NUMBER_OF_COLORS-1][NUMBER_OF_PIECE_TYPES];
   Piece board[NUMBER_OF_SQUARES];
   StateInfo stateInfo;
 

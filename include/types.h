@@ -181,7 +181,7 @@ inline File makeFile(char f) {
 }
 
 inline Rank makeRank(char r) {
-  return Rank(r - '1');
+  return Rank(int(r) - int('1'));
 }
 
 

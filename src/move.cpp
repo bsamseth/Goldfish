@@ -23,11 +23,11 @@ Square Move::getTo() const {
 MoveFlag Move::getFlag() const {
     return (MoveFlag)((m_Move >> 12) & 0x0f);
 }
-void Move::setTo(Square to) {
+void Move::setFrom(Square to) {
   m_Move = m_Move & ~0x3f;
   m_Move = m_Move | (to & 0x3f);
 }
-void Move::setFrom(Square from) {
+void Move::setTo(Square from) {
   m_Move = m_Move & ~(0x3f << 6);
   m_Move = m_Move | ((from & 0x3f) << 6);
 }

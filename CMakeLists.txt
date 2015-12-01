@@ -62,6 +62,22 @@ target_link_libraries(
  
 add_executable(tester app/testing.cpp ${SOURCES})
 
+add_dependencies(tester engine)
+
+add_custom_target(
+    coverage
+    COMMAND cd ${PROJECT_SOURCE_DIR}/build
+    COMMAND lcov --directory ${PROJECT_SOURCE_DIR}/build --capture --output-file coverage.info # capture coverage info
+    COMMAND lcov --remove coverage.info 'tests/*' 'app/*' 'external/*' 'cmake/*' '/usr/*' --output-file coverage.info 
+    COMMAND lcov --list coverage.info
+    COMMAND genhtml coverage.info
+    COMMAND google-chrome-stable index.html&
+    COMMAND cd -
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    )
+
+add_dependencies(coverage unit_tests)
+
 include(CTest)
 enable_testing()
 
