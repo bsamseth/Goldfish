@@ -6,16 +6,12 @@
 
 #include "types.h"
 #include "move.h"
+#include "stateinfo.h"
 
 using std::string;
 using std::vector;
 
-
-struct StateInfo {
-  Piece lastMove_originPiece;
-  Piece lastMove_destinationPiece;
-  StateInfo* previous;
-};
+const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 
 class Position {
@@ -52,13 +48,14 @@ class Position {
   // public fields
   Bitboard pieces[NUMBER_OF_COLORS-1][NUMBER_OF_PIECE_TYPES];
   Piece board[NUMBER_OF_SQUARES];
-  StateInfo stateInfo;
+  StateInfo* stateInfo;
 
   Square enpassantTarget;
-  protected:
+  CastlingRights castlingRights;
+  /* protected: */
   vector<Move> moveList;
   Color sideToMove;
-  CastlingRights castlingRights;
+
 
   unsigned halfmoveClock;
   unsigned fullmoveNumber;

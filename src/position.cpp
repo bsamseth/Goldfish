@@ -8,6 +8,7 @@
 #include "types.h"
 #include "position.h"
 #include "bitboards.h"
+#include "stateinfo.h"
 
 using Bitboards::prettyString;
 using std::string;
@@ -18,7 +19,9 @@ using std::log2;
 
 Position::Position() {
   clear();
+  stateInfo = new StateInfo(); // root state, zero init
 }
+
 
 void Position::setFromFEN(std::string fen) {
   clear();
@@ -106,8 +109,6 @@ void Position::clear() {
     }
     pieces[c][NO_PIECE_TYPE] = BITBOARD_UNIVERSE;
   }
-  
-    
 }
 
 void Position::putPiece(Square sq, PieceType pt, Color c) {
@@ -137,16 +138,20 @@ void Position::putPiece(Square sq, Piece p) {
 }
 
 
+
 void Position::doMove(Move m) {
   Square from = m.getFrom(), to = m.getTo();
   Piece p = board[from];
 
-  // update to a new stateInfo
-  StateInfo newStateInfo;
-  newStateInfo.lastMove_originPiece = p;
-  newStateInfo.lastMove_destinationPiece = board[to];
-  newStateInfo.previous = &(this->stateInfo);
-  this->stateInfo = newStateInfo;
+  // update stateinfo
+  StateInfo* st = new StateInfo();
+  st->lastMove_originPiece = p;
+  st->lastMove_destinationPiece = board[to];
+  st->previous_halfmoveClock = halfmoveClock;
+  st->previous_fullmoveNumber = fullmoveNumber;
+  st->lastMove_enpassantTarget = enpassantTarget;
+  st->previous = stateInfo;
+  stateInfo = st;
 
   // place the piece
   putPiece(to, makePieceType(p), makeColor(p));
@@ -157,7 +162,7 @@ void Position::doMove(Move m) {
   sideToMove = colorSwap(sideToMove);
   fullmoveNumber += sideToMove == WHITE ? 1 : 0;
   if (!m.capture()) {
-    if (makePieceType(board[m.getFrom()]) != PAWN)
+    if (makePieceType(p) != PAWN)
       halfmoveClock += 1;
     else
       halfmoveClock = 0;
@@ -176,9 +181,29 @@ void Position::doMove(Move m) {
 void Position::undoMove() {
   Move lastMove = moveList.back();
   moveList.pop_back();
-  putPiece(lastMove.getFrom(), stateInfo.lastMove_originPiece);
-  putPiece(lastMove.getTo(), stateInfo.lastMove_destinationPiece);
-  stateInfo = *(stateInfo.previous);
+  putPiece(lastMove.getFrom(), stateInfo->lastMove_originPiece);
+  putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
+  StateInfo* &ptr = stateInfo->previous;
+  delete stateInfo;
+  stateInfo = ptr->previous;
+
+  // update fields
+  sideToMove = colorSwap(sideToMove);
+  fullmoveNumber -= sideToMove == BLACK ? 1 : 0;
+  if (!lastMove.capture()) {
+    if (makePieceType(board[lastMove.getFrom()]) != PAWN)
+      halfmoveClock -= 1;
+    else
+      halfmoveClock = 0;
+  } else 
+    halfmoveClock = 0;
+    
+  // set en passant square
+  Move previous_move = moveList.back();
+  if (previous_move.doublePawnPush())
+    enpassantTarget = Square((previous_move.getTo() + previous_move.getFrom())/2); // taget is on square between from and to, take the average
+  else 
+    enpassantTarget = NO_SQUARE;
 }
 
 
