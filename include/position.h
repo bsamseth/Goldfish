@@ -13,11 +13,13 @@ using std::vector;
 
 const std::string STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+StateInfo* const rootState = new StateInfo(true);
 
 class Position {
   public:
   // constructors
   Position();
+  Position(std::string);
   void setFromFEN(std::string fen);
   void doMove(Move m);
   void undoMove();
@@ -39,12 +41,12 @@ class Position {
   bool legal(Move m);
   bool ownKingInCheckAfterMove(Move m);
   bool psudoLegal(Move m);
-  bool psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
-  bool psudoLegalKnight(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
-  bool psudoLegalBishop(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
-  bool psudoLegalRook(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
-  bool psudoLegalQueen(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
-  bool psudoLegalKing(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt);
+  bool psudoLegalPawn(Move m);
+  bool psudoLegalKnight(Move m);
+  bool psudoLegalBishop(Move m);
+  bool psudoLegalRook(Move m);
+  bool psudoLegalQueen(Move m);
+  bool psudoLegalKing(Move m);
   // public fields
   Bitboard pieces[NUMBER_OF_COLORS-1][NUMBER_OF_PIECE_TYPES];
   Piece board[NUMBER_OF_SQUARES];

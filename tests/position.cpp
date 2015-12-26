@@ -9,6 +9,10 @@
 
 using namespace std;
 
+const std::string RANDOM_FEN = "3r1rk1/p3qppp/2bb4/2p5/3p4/1P2P3/PBQN1PPP/2R2RK1 w - - 0 1";
+
+const std::string ENPASSANT_D6 = "rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1";
+
 TEST(Position, clear) {
   Position p = Position();
   p.clear();
@@ -64,6 +68,10 @@ TEST(Position, setFromFEN) {
 
   EXPECT_EQ(0, p.halfmoveClock);
   EXPECT_EQ(1, p.fullmoveNumber);
+
+  p.clear();
+  p = Position(ENPASSANT_D6);
+  EXPECT_EQ(SQ_D6, p.enpassantTarget);
   
 }
 
@@ -142,4 +150,57 @@ TEST(Position, undoMove) {
 
   EXPECT_EQ(SQ_E6, p.enpassantTarget);
   EXPECT_EQ(2, p.moveList.size());
+}
+
+
+TEST (Position, occupied) {
+  Position p = Position(RANDOM_FEN);
+  EXPECT_TRUE(p.occupied(SQ_D4));
+  EXPECT_TRUE(p.occupied(SQ_E3));
+  EXPECT_FALSE(p.occupied(SQ_D4, WHITE));
+  ASSERT_TRUE(p.pieces[BLACK][NO_PIECE_TYPE] == p.pieces[WHITE][NO_PIECE_TYPE]);
+}
+
+
+
+TEST (Position, psudoLegalPawn) {
+  Position p = Position(STARTING_FEN);
+  Move legal1 = Move(SQ_E2, SQ_E4, DOUBLE_PAWN_PUSH_MOVE);
+  Move legal2 = Move(SQ_A2, SQ_A3);
+  Move illegal1 = Move(SQ_D2, SQ_E5);
+  Move illegal2 = Move(SQ_A2, SQ_B3);
+  EXPECT_TRUE(p.psudoLegalPawn(legal1));
+  EXPECT_TRUE(p.psudoLegalPawn(legal2));
+  EXPECT_FALSE(p.psudoLegalPawn(illegal1));
+  EXPECT_FALSE(p.psudoLegalPawn(illegal2));
+
+  p.clear();
+  p = Position(ENPASSANT_D6);
+  Move legal_ep = Move(SQ_E5, SQ_D6, ENPASSANT_CAPTURE_MOVE);
+  EXPECT_TRUE(p.psudoLegalPawn(legal_ep)) << "p.enpassantTarget = "
+					  << p.enpassantTarget;
+}
+
+
+TEST (Position, ownKingInCheckAfterMove) {
+  /* in this position, it's black to move. Pawn on g7 is
+   * pinned to the king by a rook on g3. So gxf6 is not allowed
+   */
+  Position p = Position("3r1rk1/p3qppp/2bb1P2/2p5/3p4/1P2P1R1/PBQN2PP/2R3K1 b KQkq - 0 1");
+  Move illegal = Move(SQ_G7, SQ_F6, CAPTURE_MOVE);
+  ASSERT_TRUE(p.ownKingInCheckAfterMove(illegal));
+  p = Position(ENPASSANT_D6);
+  Move legal = Move(SQ_G1, SQ_F3);
+  ASSERT_FALSE(p.ownKingInCheckAfterMove(legal));
+}
+
+
+TEST (Position, legal) {
+  Position p = Position(RANDOM_FEN);
+  EXPECT_TRUE(p.legal(Move(SQ_E3, SQ_D4)));
+  EXPECT_FALSE(p.legal(Move(SQ_E3, SQ_E5)));
+  EXPECT_TRUE(p.legal(Move(SQ_C2, SQ_C4)));
+  EXPECT_TRUE(p.legal(Move(SQ_C2, SQ_H7)));
+  EXPECT_FALSE(p.legal(Move(SQ_B2, SQ_H4)));
+  EXPECT_FALSE(p.legal(Move(SQ_B2, SQ_E5)));
 }

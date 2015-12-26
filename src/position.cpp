@@ -19,9 +19,14 @@ using std::log2;
 
 Position::Position() {
   clear();
-  stateInfo = new StateInfo(); // root state, zero init
+  stateInfo = rootState; // root state, zero init
 }
 
+Position::Position(std::string fen) {
+  clear();
+  stateInfo = rootState;
+  setFromFEN(fen);
+}
 
 void Position::setFromFEN(std::string fen) {
   clear();
@@ -213,8 +218,9 @@ bool Position::occupied(Square s) {
 
 bool Position::occupied(Square s, Color c) {
   bool occupied1 = board[s] != NO_PIECE && makeColor(board[s]) == c;
-  bool occupied2 = (pieces[c][NO_PIECE_TYPE] & (1ULL << s)) == 0;
-  assert(occupied1 == occupied2);
+  // bool occupied2 = (pieces[c][NO_PIECE_TYPE] & (1ULL << s)) == 0;
+  // assert(occupied1 == occupied2);
+  // not the case, pieces[BLACK][NO_PIECE_TYPE] = pieces[WHITE][NO_PIECE_TYPE]
   return occupied1;
 }
 
@@ -224,7 +230,7 @@ bool Position::occupied(Square s, Color c) {
  * the move has been made.
  */
 bool Position::legal(Move m) {
-  return psudoLegal(m) && ownKingInCheckAfterMove(m);
+  return psudoLegal(m) && !ownKingInCheckAfterMove(m);
 }
 
 /*
@@ -232,10 +238,10 @@ bool Position::legal(Move m) {
  * move has been made. 
  */
 bool Position::ownKingInCheckAfterMove(Move m) {
-  doMove(m);
   bool inCheck = false;
   Square kingSquare = Square(log2(pieces[sideToMove][KING]));
   Square cSquare;
+  doMove(m);
   
   for (int rank = RANK_1; rank <= RANK_8; rank+=1) {
     for (int file = FILE_A; file <= FILE_H; file+=1) {
@@ -243,13 +249,13 @@ bool Position::ownKingInCheckAfterMove(Move m) {
       if (occupied(cSquare, sideToMove)) {
 	if (cSquare != kingSquare && psudoLegal(Move(cSquare, kingSquare))) {
 	  inCheck = true;
-	  goto outside;
+	  break;
 	}
       }
     }
+    if (inCheck)
+      break;
   }
-
-  outside:
   undoMove();
   return inCheck;
 }
@@ -266,7 +272,7 @@ bool Position::ownKingInCheckAfterMove(Move m) {
  * Assumptions (asserted):
  * - target square is different from origin
  * - origin square is occupied
- * - color of pice on origin is same as sidetomove
+ * - color of piece on origin is same as sidetomove
  * - target is not a non-square
  *
  * The function does not assume any move encoding has been done.
@@ -288,12 +294,12 @@ bool Position::psudoLegal(Move m) {
     return false;
 
   switch (pt) {
-  case PAWN:   return psudoLegalPawn(m,s1,s2,p,us,pt);
-  case KNIGHT: return psudoLegalKnight(m,s1,s2,p,us,pt);
-  case BISHOP: return psudoLegalBishop(m,s1,s2,p,us,pt);
-  case ROOK:   return psudoLegalRook(m,s1,s2,p,us,pt);
-  case QUEEN:  return psudoLegalQueen(m,s1,s2,p,us,pt);
-  case KING:   return psudoLegalKing(m,s1,s2,p,us,pt);
+  case PAWN:   return psudoLegalPawn(m);
+  case KNIGHT: return psudoLegalKnight(m);
+  case BISHOP: return psudoLegalBishop(m);
+  case ROOK:   return psudoLegalRook(m);
+  case QUEEN:  return psudoLegalQueen(m);
+  case KING:   return psudoLegalKing(m);
   default:     assert ((cout << "In psudoLegal, no match for piece type: " << pt << endl, false));
   }
 }
@@ -304,7 +310,10 @@ bool Position::psudoLegal(Move m) {
  * En passant handled first, then captures followd by
  * pushes. Promotions not given any extra attention.
  */
-bool Position::psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+bool Position::psudoLegalPawn(Move m) {
+  Square s1 = m.getFrom(), s2 = m.getTo();
+  Piece p = board[s1]; // the piece on s1
+  Color us = makeColor(p);
   // pawns are set in one direction, code is from whites perspective
   Square up    = us == WHITE ? D_NORTH : D_SOUTH;
   Square tl    = us == WHITE ? D_NORTH_WEST : D_SOUTH_EAST; // take_left
@@ -346,7 +355,8 @@ bool Position::psudoLegalPawn(Move m, Square s1, Square s2, Piece p, Color us, P
  * Done by seting total rank/file-diff to 3, and requiring
  * that none of the diffs are greater than 2.
  */
-bool Position::psudoLegalKnight(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+bool Position::psudoLegalKnight(Move m) {
+  Square s1 = m.getFrom(), s2 = m.getTo();
   int d_rank = abs(rank_diff(s1, s2));
   int d_file = abs(file_diff(s1, s2));
   
@@ -358,7 +368,8 @@ bool Position::psudoLegalKnight(Move m, Square s1, Square s2, Piece p, Color us,
  * This is the case if the move changes rank and file
  * the same amount, and no piece is blocking the way.
  */
-bool Position::psudoLegalBishop(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+bool Position::psudoLegalBishop(Move m) {
+  Square s1 = m.getFrom(), s2 = m.getTo();
   int d_rank = rank_diff(s1, s2);
   int d_file = file_diff(s1, s2);
   if (abs(d_rank) != abs(d_file)) return false;
@@ -379,7 +390,8 @@ bool Position::psudoLegalBishop(Move m, Square s1, Square s2, Piece p, Color us,
  * rank, or does not change file, and no piece is in
  * the way.
  */
-bool Position::psudoLegalRook(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+bool Position::psudoLegalRook(Move m) {
+  Square s1 = m.getFrom(), s2 = m.getTo();
   int d_rank = rank_diff(s1, s2);
   int d_file = file_diff(s1, s2);
   if (d_rank != 0 && d_file != 0) return false;
@@ -406,13 +418,8 @@ bool Position::psudoLegalRook(Move m, Square s1, Square s2, Piece p, Color us, P
  * This is the case if the move is either a legal bishop
  * move, or a legal rook move.
  */
-bool Position::psudoLegalQueen(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
-  if ( psudoLegalBishop(m,s1,s2,p,us,pt) )
-    return true;
-  else if ( psudoLegalRook(m,s1,s2,p,us,pt) )
-    return true;
-  else
-    return false;
+bool Position::psudoLegalQueen(Move m) {
+  return psudoLegalBishop(m) || psudoLegalRook(m);
 }
 
 
@@ -423,7 +430,8 @@ bool Position::psudoLegalQueen(Move m, Square s1, Square s2, Piece p, Color us, 
  * This is tested by requiring the total rank/file diff to be
  * less than 3, while none of them can be bigger than 1. 
  */
-bool Position::psudoLegalKing(Move m, Square s1, Square s2, Piece p, Color us, PieceType pt) {
+bool Position::psudoLegalKing(Move m) {
+  Square s1 = m.getFrom(), s2 = m.getTo();
   int d_rank = abs(rank_diff(s1, s2));
   int d_file = abs(file_diff(s1, s2));
 
