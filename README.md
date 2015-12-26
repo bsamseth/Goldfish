@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/bsamseth/Goldfish.svg?branch=unittest)](https://travis-ci.org/bsamseth/Goldfish)[![Coverage Status](https://coveralls.io/repos/bsamseth/Goldfish/badge.svg?branch=master&service=github)](https://coveralls.io/repos/bsamseth/Goldfish/badge.svg?branch=master&service=github)
+[![Build Status](https://travis-ci.org/bsamseth/Goldfish.svg?branch=unittest)](https://travis-ci.org/bsamseth/Goldfish)[![Coverage Status](https://coveralls.io/repos/bsamseth/Goldfish/badge.svg?branch=master&service=github)](https://coveralls.io/github/bsamseth/Goldfish?branch=master)
 # Goldfish
 ###### Stockfish's very distant and not so bright cousin
 
