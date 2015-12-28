@@ -62,6 +62,10 @@ add_executable(tester app/testing.cpp ${SOURCES})
 
 add_dependencies(tester engine)
 
+add_executable(goldfish app/goldfish.cpp ${SOURCES})
+
+add_dependencies(goldfish engine)
+
 add_custom_target(
     coverage
     COMMAND cd ${PROJECT_SOURCE_DIR}/build
