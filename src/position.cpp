@@ -337,7 +337,7 @@ bool Position::psudoLegalPawn(Move m) {
     return true;
 
   // is double push
-  if ( ( !occupied((s1+up)+up) && s2 == (s1+up) + up ) && ((1 << s1) & r2) ) 
+  if ( ( s2 == (s1+up+up) ) && ( (1ULL << s1) & r2) && ( !occupied(s1+up+up) ) ) 
     return true;
 
   // is single push
