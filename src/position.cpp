@@ -376,7 +376,7 @@ bool Position::psudoLegalBishop(Move m) {
 
   int rank_sign = d_rank < 0 ? -1 : 1;
   int file_sign = d_file < 0 ? -1 : 1;
-  for (int i = 1; i < d_file; i++) {
+  for (int i = 1; i < abs(d_file); i++) {
     if (occupied(Square(s1 + i*D_EAST*file_sign + i*D_NORTH*rank_sign))) {
       return false;
     }
