@@ -52,13 +52,31 @@ void UCI::startCommunication() {
       while (iss >> word) {
 	if (word == "position")
 	  continue;
-
+	
 	else if (word == "startpos")
 	  pos.setFromFEN(STARTING_FEN);
 
+	else if (word == "moves") {
+	  while (iss >> word) {
+	    if (word.length() >= 4) {
+	      Square from, to;
+	      from = Square((int)(makeFile(word[0])) + 8*(int)(makeRank(word[1])));
+	      to = Square((int)(makeFile(word[2])) + 8*(int)(makeRank(word[3])));
+	      pos.doMove(Move(from, to));
+	    }
+	  }
+	}
+	
       }
     }
 
+    else if (input.substr(0,2) == "go") {
+      generator = MoveGenerator(pos);
+      generator.generateMoves();
+      Move bestMove = generator.getRandomMove();
+      cout << "bestmove " << bestMove.str() << endl;
+    }
+    
     else if (input == "print")
       cout << pos.str() << endl;
 

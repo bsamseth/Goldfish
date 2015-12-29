@@ -13,6 +13,7 @@ class UCI {
   std::string AUTHOR = "Bendik Samseth";
 
   Position pos;
+  MoveGenerator generator;
 
   UCI();
   void startCommunication();
