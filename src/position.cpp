@@ -190,7 +190,7 @@ void Position::undoMove() {
   putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
   StateInfo* &ptr = stateInfo->previous;
   delete stateInfo;
-  stateInfo = ptr->previous;
+  stateInfo = ptr;
 
   // update fields
   sideToMove = colorSwap(sideToMove);
