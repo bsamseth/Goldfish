@@ -52,6 +52,17 @@ void UCI::startCommunication() {
       while (iss >> word) {
 	if (word == "position")
 	  continue;
+
+	else if (word == "fen") {
+	  string fen = "";
+	  while (iss >> word)
+	    fen += word + " ";
+	  fen = fen.substr(0,fen.length()-1);
+	  // cout << "trying to set fen: " << fen << endl;
+	  pos.setFromFEN(fen);
+	  break;
+	}
+
 	
 	else if (word == "startpos")
 	  pos.setFromFEN(STARTING_FEN);
@@ -74,6 +85,7 @@ void UCI::startCommunication() {
       generator = MoveGenerator(pos);
       generator.generateMoves();
       Move bestMove = generator.getRandomMove();
+      cout << "info depth 1 score cp -1 time 10 nodes 26 nps 633 pv " << bestMove.str() << endl;
       cout << "bestmove " << bestMove.str() << endl;
     }
     
