@@ -140,7 +140,7 @@ TEST(Position, undoMove) {
   EXPECT_EQ(W_KNIGHT, p.board[SQ_G1]);
   EXPECT_EQ(NO_PIECE, p.board[SQ_F3]);
   
-  EXPECT_EQ(W_PAWN, p.stateInfo->lastMove_originPiece);
+  EXPECT_EQ(B_PAWN, p.stateInfo->lastMove_originPiece);
   EXPECT_EQ(NO_PIECE, p.stateInfo->lastMove_destinationPiece);
   EXPECT_EQ(1, p.stateInfo->previous_fullmoveNumber);
 

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 #include <string>
 
 #include "types.h"
@@ -11,6 +12,9 @@
 using std::string;
 using std::cout;
 using std::endl;
+
+
+MoveGenerator::MoveGenerator() {}
 
 /*
  * Initialize the generator with a position.
@@ -96,5 +100,8 @@ void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
   generatedMoves.push_back(Move(from, to, QUIET_MOVE));
 }
 
-
+Move MoveGenerator::getRandomMove() {
+  int randIndex = rand() % generatedMoves.size();
+  return generatedMoves[randIndex];
+}
 

@@ -14,10 +14,12 @@ class MoveGenerator {
   Position* pos;
 
   public:
+  MoveGenerator();
   MoveGenerator(Position& position);
   std::vector<Move> getGeneratedMoves();
   void generateMoves();
   void encodeAndAddMove(Square s1, Square s2);
+  Move getRandomMove();
 };
 
 inline std::vector<Move> MoveGenerator::getGeneratedMoves() {
