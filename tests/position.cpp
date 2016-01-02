@@ -13,6 +13,8 @@ const std::string RANDOM_FEN = "3r1rk1/p3qppp/2bb4/2p5/3p4/1P2P3/PBQN1PPP/2R2RK1
 
 const std::string ENPASSANT_D6 = "rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1";
 
+const std::string POSSIBLE_CASTLE = "r2qkbnr/ppp1pppp/2n5/3p4/6b1/5NP1/PPPPPPBP/RNBQK2R w KQkq - 4 4";
+
 TEST(Position, clear) {
   Position p = Position();
   p.clear();
@@ -203,4 +205,36 @@ TEST (Position, legal) {
   EXPECT_TRUE(p.legal(Move(SQ_C2, SQ_H7)));
   EXPECT_FALSE(p.legal(Move(SQ_B2, SQ_H4)));
   EXPECT_FALSE(p.legal(Move(SQ_B2, SQ_E5)));
+}
+
+TEST (Position_castle, legal) {
+  Position p = Position(POSSIBLE_CASTLE);
+  EXPECT_TRUE(p.legal(Move(SQ_E1, SQ_G1)));
+  // queen side castle only, kingside moves trough check
+  p = Position("4k3/8/8/2B5/2b5/8/8/R3K2R w KQ - 0 1");
+  EXPECT_TRUE(p.legal(Move(SQ_E1, SQ_C1)));
+  EXPECT_FALSE(p.legal(Move(SQ_E1, SQ_G1)));
+}
+
+TEST (Position_castle, doMove) {
+  Position p = Position("r3k3/8/8/2B5/2b5/8/8/R3K2R w KQq - 0 1");
+  p.doMove(Move(SQ_E1, SQ_C1, QUEEN_CASTLE_MOVE));
+
+  EXPECT_EQ(W_KING, p.board[SQ_C1]);
+  EXPECT_EQ(W_ROOK, p.board[SQ_D1]);
+  EXPECT_EQ(BLACK_OOO, p.castlingRights);
+}
+
+TEST (Position_castle, undoMove) {
+  Position p = Position("4k3/8/8/2B5/2b5/8/8/R3K2R w KQ - 0 1");
+  p.doMove(Move(SQ_E1, SQ_C1, QUEEN_CASTLE_MOVE));
+  p.undoMove();
+  
+  EXPECT_EQ(W_KING, p.board[SQ_E1]);
+  EXPECT_EQ(W_ROOK, p.board[SQ_A1]);
+  EXPECT_EQ(NO_PIECE, p.board[SQ_D1]);
+  EXPECT_EQ(NO_PIECE, p.board[SQ_C1]);
+  EXPECT_EQ(NO_PIECE, p.board[SQ_B1]);
+
+  EXPECT_EQ(WHITE_OO | WHITE_OOO, p.castlingRights);
 }
