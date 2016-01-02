@@ -155,15 +155,14 @@ void Position::doMove(Move m) {
   st->previous_halfmoveClock = halfmoveClock;
   st->previous_fullmoveNumber = fullmoveNumber;
   st->lastMove_enpassantTarget = enpassantTarget;
+  st->previous_castlingRights = castlingRights;
   st->previous = stateInfo;
   stateInfo = st;
 
   // place the piece
-  putPiece(to, makePieceType(p), makeColor(p));
-  putPiece(from, NO_PIECE_TYPE, NO_COLOR);
-  // putPiece(from, NO_PIECE_TYPE, colorSwap(makeColor(p)));
-
-  // update fields
+  silentDoMove(m);
+  
+    // update fields
   sideToMove = colorSwap(sideToMove);
   fullmoveNumber += sideToMove == WHITE ? 1 : 0;
   if (!m.capture()) {
@@ -176,16 +175,69 @@ void Position::doMove(Move m) {
     
   // set en passant square
   if (m.doublePawnPush())
-    enpassantTarget = Square((to + from)/2); // taget is on square between from and to, take the average
+    enpassantTarget = Square((to + from)/2); // target is on square between from and to, take the average
   else 
     enpassantTarget = NO_SQUARE;
+
+  // castlingrights changed?
+  if ((castlingRights & WHITE_OO) || (castlingRights & WHITE_OOO)) {
+    if (p == W_KING)
+      castlingRights = CastlingRights( castlingRights ^ (WHITE_OO | WHITE_OOO) );
+    else if (from == SQ_H1)
+      castlingRights = CastlingRights( castlingRights & ~(WHITE_OO) );
+    else if (from == SQ_A1)
+      castlingRights = CastlingRights( castlingRights & ~(WHITE_OOO) );
+  }
+  else  if ((castlingRights & BLACK_OO) || (castlingRights & BLACK_OOO)) {
+    if (p == B_KING)
+      castlingRights = CastlingRights( castlingRights & ~(BLACK_OO | BLACK_OOO) );
+    else if (from == SQ_H8)
+      castlingRights = CastlingRights( castlingRights & ~(BLACK_OO) );
+    else if (from == SQ_A8)
+      castlingRights = CastlingRights( castlingRights & ~(BLACK_OOO) );
+  }
+  
+  // castle move?
+  if (m.castle()) {
+    moveCastleRook(from, to);
+  }
     
   moveList.push_back(m);
+}
+
+/*
+ * Helper function for doMove. Assumes that Move(from, to) is
+ * a valid castling move, and move the corresponding rook. 
+ */
+void Position::moveCastleRook(Square from, Square to) {
+  if (from == SQ_E1) {
+    if (to == SQ_G1) 
+      silentDoMove(Move(SQ_H1, SQ_F1));
+    else if (to == SQ_C1)
+      silentDoMove(Move(SQ_A1, SQ_D1));
+  } else if (from == SQ_E8) {
+    if (to == SQ_G8) 
+      silentDoMove(Move(SQ_H8, SQ_F8));
+    else if (to == SQ_C1)
+      silentDoMove(Move(SQ_A8, SQ_D8));
+  }
+}
+
+/*
+ * Helper. Only does the move and places a NO_PIECE on
+ * the origin square. Nothing else is done to fields.
+ * A call to this is not reversible as destination piece is lost.
+ */
+void Position::silentDoMove(Move m) {
+  Piece p = board[m.getFrom()];
+  putPiece(m.getTo(), makePieceType(p), makeColor(p));
+  putPiece(m.getFrom(), NO_PIECE_TYPE, NO_COLOR);
 }
 
 void Position::undoMove() {
   Move lastMove = moveList.back();
   moveList.pop_back();
+  castlingRights = stateInfo->previous_castlingRights;
   putPiece(lastMove.getFrom(), stateInfo->lastMove_originPiece);
   putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
   StateInfo* &ptr = stateInfo->previous;
@@ -209,15 +261,27 @@ void Position::undoMove() {
     enpassantTarget = Square((previous_move.getTo() + previous_move.getFrom())/2); // taget is on square between from and to, take the average
   else 
     enpassantTarget = NO_SQUARE;
+
+  //castle move? replace rook
+  if (lastMove.castle()) {
+    Square to = lastMove.getTo();
+    if (to == SQ_G1)
+      silentDoMove(Move(SQ_F1, SQ_H1));
+    else if (to == SQ_C1)
+      silentDoMove(Move(SQ_D1, SQ_A1));
+    else if (to == SQ_G8)
+      silentDoMove(Move(SQ_F8, SQ_H8));
+    else if (to == SQ_C8)
+      silentDoMove(Move(SQ_D8, SQ_A8));
+  }
 }
 
 
 bool Position::occupied(Square s) {
-  return occupied(s, WHITE) || occupied(s,BLACK);
+  return occupied(s, WHITE) || occupied(s, BLACK);
 }
-
 bool Position::occupied(Square s, Color c) {
-  bool occupied1 = board[s] != NO_PIECE && makeColor(board[s]) == c;
+  bool occupied1 = (board[s] != NO_PIECE) && (makeColor(board[s]) == c);
   // bool occupied2 = (pieces[c][NO_PIECE_TYPE] & (1ULL << s)) == 0;
   // assert(occupied1 == occupied2);
   // not the case, pieces[BLACK][NO_PIECE_TYPE] = pieces[WHITE][NO_PIECE_TYPE]
@@ -227,9 +291,18 @@ bool Position::occupied(Square s, Color c) {
 /*
  * Returns true if the move is a psudo legal move,
  * and the moving sides king is not in check after
- * the move has been made.
+ * the move has been made. Must also be in agreement with sideToMove.
  */
 bool Position::legal(Move m) {
+  Square s1 = m.getFrom();
+  Piece p = board[s1]; // the piece on s1
+  Color us = makeColor(p);
+  
+  //assert (us == sideToMove); // if not, function is called unnecessary by movegen
+  if (us != sideToMove) {
+    // assertion sometimes fails, might be a bug , TODO
+    return false;
+  }
   return psudoLegal(m) && !ownKingInCheckAfterMove(m);
 }
 
@@ -272,7 +345,6 @@ bool Position::ownKingInCheckAfterMove(Move m) {
  * Assumptions (asserted):
  * - target square is different from origin
  * - origin square is occupied
- * - color of piece on origin is same as sidetomove
  * - target is not a non-square
  *
  * The function does not assume any move encoding has been done.
@@ -287,7 +359,6 @@ bool Position::psudoLegal(Move m) {
   assert ( s1 != s2); // this should be a move, not a null move
   assert ( occupied(s1) ); // m is assumed to have a piece on its origin square
   assert ( s2 != NO_SQUARE ); // cannot move to a non-square!
-  assert (us == sideToMove); // if not, function is called unnecessary by movegen
 
   // if friendly piece on s2, then no good
   if ( us == makeColor(board[s2]))
@@ -428,14 +499,58 @@ bool Position::psudoLegalQueen(Move m) {
  * This is the case if the move changes either one rank,
  * or one file or both.
  * This is tested by requiring the total rank/file diff to be
- * less than 3, while none of them can be bigger than 1. 
+ * less than 3, while none of them can be bigger than 1.
+ *
+ * Castling is handled explicitly and before the above tests. 
  */
 bool Position::psudoLegalKing(Move m) {
   Square s1 = m.getFrom(), s2 = m.getTo();
   int d_rank = abs(rank_diff(s1, s2));
   int d_file = abs(file_diff(s1, s2));
 
-  return (d_rank + d_rank < 3 && d_rank < 2 && d_file < 2);
+  bool castlingMove = false;
+  
+  if (castlingRights) {
+    if (s1 == SQ_E1) {
+      if (s2 == SQ_G1 && (castlingRights & WHITE_OO)) {
+	if (!attacked(SQ_F1, BLACK) && !occupied(SQ_F1) && !occupied(SQ_G1))
+	  castlingMove = true;
+	
+      } else if (s2 == SQ_C1 && (castlingRights & WHITE_OOO)) {
+	if (!attacked(SQ_D1, BLACK) && !occupied(SQ_D1) && !occupied(SQ_C1))
+	  castlingMove = true;
+      }
+    }
+    else if (s1 == SQ_E8) {
+      if (s2 == SQ_G8 && (castlingRights & BLACK_OO)) {
+	if (!attacked(SQ_F8, WHITE) && !occupied(SQ_F8) && !occupied(SQ_G8))
+	  castlingMove = true;
+	
+      } else if (s2 == SQ_C8 && (castlingRights & BLACK_OOO)) {
+	if (!attacked(SQ_D8, WHITE) && !occupied(SQ_D8) && !occupied(SQ_C8))
+	  castlingMove = true;
+      }
+    }
+  }
+
+  if (castlingMove)
+    return true;
+  else
+    return (d_rank + d_rank < 3 && d_rank < 2 && d_file < 2);
+}
+
+bool Position::attacked(Square targetSquare, Color attackColor) {
+  Square cSquare;
+  for (int rank = RANK_1; rank <= RANK_8; rank+=1) {
+    for (int file = FILE_A; file <= FILE_H; file+=1) {
+      cSquare = Square(8*rank + file);
+      if (occupied(cSquare, attackColor)) {
+	if (cSquare != targetSquare && psudoLegal(Move(cSquare, targetSquare))) 
+	  return true;
+      }
+    }
+  }
+  return false;
 }
 
 

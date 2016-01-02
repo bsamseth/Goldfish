@@ -30,6 +30,8 @@ class Position {
   // helper functions
   void putPiece(Square sq, Piece p);
   void putPiece(Square sq, PieceType pt, Color c);
+  void silentDoMove(Move m);
+  void moveCastleRook(Square from, Square to);
   void clear();
   string str();
     
@@ -37,6 +39,9 @@ class Position {
   bool occupied(Square s);
   bool occupied(Square s, Color c);
 
+  // attacks 
+  bool attacked(Square s, Color c);
+  
   // rulebook
   bool legal(Move m);
   bool ownKingInCheckAfterMove(Move m);

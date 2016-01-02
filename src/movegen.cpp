@@ -36,9 +36,10 @@ void MoveGenerator::generateMoves() {
     for (int file = FILE_A; file <= FILE_H; file++) {
 
       cSquare = Square(rank*8 + file);
-      if (!pos->occupied(cSquare, pos->getSideToMove()))
+      if (!pos->occupied(cSquare, pos->sideToMove)) {
 	continue;
-
+      }
+      
       for (int rank2 = RANK_1; rank2 <= RANK_8; rank2++) {
 	for (int file2 = FILE_A; file2 <= FILE_H; file2++) {
 	  target = Square(rank2*8 + file2);
@@ -53,14 +54,24 @@ void MoveGenerator::generateMoves() {
 
 /*
  * Encode the suggested move, and then add it to the generatedMoves vector.
- * It assumes that pos->psudoLegal(s1, s2) has returned true.
+ * It assumes that pos->legal(s1, s2) has returned true.
  */
 void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
   Piece p1 = pos->board[s1], p2 = pos->board[s2];
   Square up = makeColor(p1) == WHITE ? D_NORTH : D_SOUTH;
   Square from = s1;
   Square to   = s2;
-    
+
+  // castling
+  if (makePieceType(p1) == KING) {
+    if (s1 == SQ_E1 || s1 == SQ_E8) {
+      if (s2 == SQ_G1 || s2 == SQ_G8)
+	generatedMoves.push_back(Move(from, to, KING_CASTLE_MOVE));
+      else if (s2 == SQ_C1 || s2 == SQ_C8)
+	generatedMoves.push_back(Move(from, to, QUEEN_CASTLE_MOVE));
+    }
+  }
+  
   // en passant?
   if (pos->enpassantTarget != NO_SQUARE && makePieceType(p1) == PAWN && s2 == pos->enpassantTarget) { 
     generatedMoves.push_back(Move(from, to, ENPASSANT_CAPTURE_MOVE));

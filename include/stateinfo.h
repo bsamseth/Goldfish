@@ -14,6 +14,7 @@ struct StateInfo {
   Piece lastMove_destinationPiece;
   int previous_halfmoveClock;
   int previous_fullmoveNumber;
+  CastlingRights previous_castlingRights;
   Square lastMove_enpassantTarget;
   StateInfo* previous;
 };

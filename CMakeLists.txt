@@ -58,13 +58,17 @@ target_link_libraries(
     )
 
  
-add_executable(tester app/testing.cpp ${SOURCES})
+add_executable(tester app/testing.cpp)
 
 add_dependencies(tester engine)
 
-add_executable(goldfish app/goldfish.cpp ${SOURCES})
+target_link_libraries(tester engine)
+
+add_executable(goldfish app/goldfish.cpp)
 
 add_dependencies(goldfish engine)
+
+target_link_libraries(goldfish engine)
 
 add_custom_target(
     coverage
