@@ -1,4 +1,5 @@
 #include <string>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <cassert>
@@ -371,7 +372,7 @@ bool Position::psudoLegal(Move m) {
   case ROOK:   return psudoLegalRook(m);
   case QUEEN:  return psudoLegalQueen(m);
   case KING:   return psudoLegalKing(m);
-  default:     assert ((cout << "In psudoLegal, no match for piece type: " << pt << endl, false));
+  default:     assert ((cout << "In psudoLegal, no match for piece type: " << pt << endl, false));return false;
   }
 }
 
