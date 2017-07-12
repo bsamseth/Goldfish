@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/bsamseth/Goldfish.svg?branch=unittest)](https://travis-ci.org/bsamseth/Goldfish)
 [![Coverage Status](https://coveralls.io/repos/bsamseth/Goldfish/badge.svg?branch=master&service=github)](https://coveralls.io/github/bsamseth/Goldfish?branch=master)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/bsamseth/Goldfish/blob/master/LICENCE)
-[![Project Status: Suspended - Initial development has started, but there has not yet been a stable, usable release; work has been stopped for the time being but the author(s) intend on resuming work.](http://www.repostatus.org/badges/latest/suspended.svg)](http://www.repostatus.org/#suspended)
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
 
 # Goldfish
 ###### Stockfish's very distant and not so bright cousin
