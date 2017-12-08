@@ -63,6 +63,7 @@ void MoveGenerator::generateMoves() {
             if (!pos->occupied(cSquare, pos->sideToMove)) {
                 continue;
             }
+
             Piece p = pos->board[cSquare];
             PieceType pt = makePieceType(p);
             for (auto d : directions.find(p)->second) {
@@ -95,6 +96,7 @@ void MoveGenerator::generateMoves() {
                     int d_rank = abs(rank_diff(cSquare, target));
                     int d_file = abs(file_diff(cSquare, target));
 
+                    if (pt == PAWN and d_file > 1) break;
                     if (pt == KNIGHT and (d_rank + d_file != 3)) break;
                     if (pt == BISHOP and d_file != d_rank) break;
                     if (pt == ROOK and not ((d_file == 0) != (d_rank == 0))) break;

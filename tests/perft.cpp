@@ -9,7 +9,6 @@
 
 using namespace std;
 
-
 int Perft(Position& pos, int depth) {
   int nodes = 0;
 
@@ -17,11 +16,8 @@ int Perft(Position& pos, int depth) {
 
   MoveGenerator generator = MoveGenerator(pos);
   generator.generateMoves();
-  auto all_moves = generator.getGeneratedMoves();
-  unsigned n_moves = (unsigned) all_moves.size();
-
-  for (unsigned i = 0; i < n_moves; i++) {
-    pos.doMove(all_moves[i]);
+  for (auto move : generator.getGeneratedMoves()) {
+    pos.doMove(move);
     nodes += Perft(pos, depth - 1);
     pos.undoMove();
   }
