@@ -37,8 +37,7 @@ script:
   - cd $PARENTDIR/build
   - cmake $PARENTDIR
   - make
-  - ls
-  - ls ../
+  - chmod +x unit_tests
   - ./unit_tests
 
 after_success:
