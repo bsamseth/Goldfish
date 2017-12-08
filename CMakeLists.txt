@@ -18,7 +18,7 @@ option(coverage "Use coverage flag" OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 # Things to always include as flags.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")  
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -stdlib=libc++")  
 
 # Set debug/coverage flags, or optimize, depending on options.
 if (debug)
