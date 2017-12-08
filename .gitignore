@@ -2,4 +2,5 @@
 *.o
 *#*
 build/*
+xcode.build/*
 app/testing.cpp
