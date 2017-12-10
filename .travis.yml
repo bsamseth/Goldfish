@@ -35,7 +35,7 @@ before_script:
 
 script:
   - cd $PARENTDIR/build
-  - cmake $PARENTDIR
+  - cmake $PARENTDIR -Dcoverage=ON
   - make
   - ./unit_tests.x
 

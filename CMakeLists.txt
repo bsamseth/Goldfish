@@ -15,10 +15,10 @@ option(debug "Use debugging flag" ON)
 option(coverage "Use coverage flag" OFF)
 
 # Set the C++ standard.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Things to always include as flags.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")  
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")  
 
 # Set debug/coverage flags, or optimize, depending on options.
 if (debug)
