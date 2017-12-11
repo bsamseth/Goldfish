@@ -10,6 +10,7 @@ StateInfo::StateInfo() {
   previous_fullmoveNumber = 0;
   previous_castlingRights = NO_CASTLING;
   lastMove_enpassantTarget = NO_SQUARE;
+  lastMove_kingpassantTarget = NO_SQUARE;
   previous = nullptr;
 }
 
@@ -22,6 +23,7 @@ StateInfo::StateInfo(bool root) {
   previous_fullmoveNumber = 0;
   previous_castlingRights = ANY_CASTLING;
   lastMove_enpassantTarget = NO_SQUARE;
+  lastMove_kingpassantTarget = NO_SQUARE;
   previous = this;
 }
 
@@ -32,5 +34,6 @@ void StateInfo::reset() {
   previous_fullmoveNumber = 0;
   previous_castlingRights = ANY_CASTLING;
   lastMove_enpassantTarget = NO_SQUARE;
+  lastMove_kingpassantTarget = NO_SQUARE;
   previous = nullptr;
 }

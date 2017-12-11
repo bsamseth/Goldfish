@@ -223,6 +223,7 @@ TEST (Position_castle, doMove) {
   EXPECT_EQ(W_KING, p.board[SQ_C1]);
   EXPECT_EQ(W_ROOK, p.board[SQ_D1]);
   EXPECT_EQ(BLACK_OOO, p.castlingRights);
+  EXPECT_EQ(SQ_D1, p.kingpassantTarget);
 }
 
 TEST (Position_castle, undoMove) {
@@ -235,6 +236,6 @@ TEST (Position_castle, undoMove) {
   EXPECT_EQ(NO_PIECE, p.board[SQ_D1]);
   EXPECT_EQ(NO_PIECE, p.board[SQ_C1]);
   EXPECT_EQ(NO_PIECE, p.board[SQ_B1]);
-
+  EXPECT_EQ(NO_SQUARE, p.kingpassantTarget);
   EXPECT_EQ(WHITE_OO | WHITE_OOO, p.castlingRights);
 }

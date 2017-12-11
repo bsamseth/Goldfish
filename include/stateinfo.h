@@ -16,6 +16,7 @@ struct StateInfo {
   int previous_fullmoveNumber;
   CastlingRights previous_castlingRights;
   Square lastMove_enpassantTarget;
+  Square lastMove_kingpassantTarget;
   StateInfo* previous;
 };
 

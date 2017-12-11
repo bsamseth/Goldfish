@@ -104,6 +104,7 @@ Bitboard Position::getBoardForColor(Color c) {
 
 
 void Position::clear() {
+    kingpassantTarget = enpassantTarget = NO_SQUARE;
     for (int r = RANK_1; r <= RANK_8; ++r) {
         for (int f = FILE_A; f <= FILE_H; ++f) {
             board[8*r+f] = NO_PIECE;
@@ -156,6 +157,7 @@ void Position::doMove(Move m) {
     st->previous_halfmoveClock = halfmoveClock;
     st->previous_fullmoveNumber = fullmoveNumber;
     st->lastMove_enpassantTarget = enpassantTarget;
+    st->lastMove_kingpassantTarget = kingpassantTarget;
     st->previous_castlingRights = castlingRights;
     st->previous = stateInfo;
     stateInfo = st;
@@ -166,20 +168,15 @@ void Position::doMove(Move m) {
     // update fields
     sideToMove = colorSwap(sideToMove);
     fullmoveNumber += sideToMove == WHITE ? 1 : 0;
-    if (!m.capture()) {
-        if (makePieceType(p) != PAWN)
-            halfmoveClock += 1;
-        else
-            halfmoveClock = 0;
-    } else
-        halfmoveClock = 0;
+    halfmoveClock += (!m.capture() and makePieceType(p) != PAWN) ? 1 : 0;
 
     // set en passant square
     if (m.doublePawnPush())
         enpassantTarget = Square((to + from)/2); // target is on square between from and to, take the average
     else
         enpassantTarget = NO_SQUARE;
-
+    
+    
     // castlingrights changed?
     if ((castlingRights & WHITE_OO) || (castlingRights & WHITE_OOO)) {
         if (p == W_KING)
@@ -189,7 +186,7 @@ void Position::doMove(Move m) {
         else if (from == SQ_A1)
             castlingRights = CastlingRights( castlingRights & ~(WHITE_OOO) );
     }
-    else  if ((castlingRights & BLACK_OO) || (castlingRights & BLACK_OOO)) {
+    else if ((castlingRights & BLACK_OO) || (castlingRights & BLACK_OOO)) {
         if (p == B_KING)
             castlingRights = CastlingRights( castlingRights & ~(BLACK_OO | BLACK_OOO) );
         else if (from == SQ_H8)
@@ -202,25 +199,37 @@ void Position::doMove(Move m) {
     if (m.castle()) {
         moveCastleRook(from, to);
     }
+    else {
+        kingpassantTarget = NO_SQUARE;
+    }
 
     moveList.push_back(m);
 }
 
 /*
  * Helper function for doMove. Assumes that Move(from, to) is
- * a valid castling move, and move the corresponding rook.
+ * a valid castling move, and move the corresponding rook. Also
+ * sets the kingpassant square accordingly.
  */
 void Position::moveCastleRook(Square from, Square to) {
     if (from == SQ_E1) {
-        if (to == SQ_G1)
+        if (to == SQ_G1) {
+            kingpassantTarget = SQ_F1;
             silentDoMove(Move(SQ_H1, SQ_F1));
-        else if (to == SQ_C1)
+        }
+        else if (to == SQ_C1) {
+            kingpassantTarget = SQ_D1;
             silentDoMove(Move(SQ_A1, SQ_D1));
+        }
     } else if (from == SQ_E8) {
-        if (to == SQ_G8)
+        if (to == SQ_G8) {
+            kingpassantTarget = SQ_F8;
             silentDoMove(Move(SQ_H8, SQ_F8));
-        else if (to == SQ_C1)
+        }
+        else if (to == SQ_C1) {
+            kingpassantTarget = SQ_D8;
             silentDoMove(Move(SQ_A8, SQ_D8));
+        }
     }
 }
 
@@ -238,31 +247,18 @@ void Position::silentDoMove(Move m) {
 void Position::undoMove() {
     Move lastMove = moveList.back();
     moveList.pop_back();
+    sideToMove = colorSwap(sideToMove);
+    fullmoveNumber = stateInfo->previous_fullmoveNumber;
+    halfmoveClock = stateInfo->previous_halfmoveClock;
     castlingRights = stateInfo->previous_castlingRights;
+    enpassantTarget = stateInfo->lastMove_enpassantTarget;
+    kingpassantTarget = stateInfo->lastMove_kingpassantTarget;
     putPiece(lastMove.getFrom(), stateInfo->lastMove_originPiece);
     putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
     StateInfo* &ptr = stateInfo->previous;
     delete stateInfo;
-    stateInfo = ptr;
-
-    // update fields
-    sideToMove = colorSwap(sideToMove);
-    fullmoveNumber -= sideToMove == BLACK ? 1 : 0;
-    if (!lastMove.capture()) {
-        if (makePieceType(board[lastMove.getFrom()]) != PAWN)
-            halfmoveClock -= 1;
-        else
-            halfmoveClock = 0;
-    } else
-        halfmoveClock = 0;
-
-    // set en passant square
-    Move previous_move = moveList.back();
-    if (previous_move.doublePawnPush())
-        enpassantTarget = Square((previous_move.getTo() + previous_move.getFrom())/2); // taget is on square between from and to, take the average
-    else
-        enpassantTarget = NO_SQUARE;
-
+    stateInfo = ptr;    
+    
     //castle move? replace rook
     if (lastMove.castle()) {
         Square to = lastMove.getTo();

@@ -58,6 +58,7 @@ class Position {
         StateInfo* stateInfo;
 
         Square enpassantTarget;
+        Square kingpassantTarget;
         CastlingRights castlingRights;
         /* protected: */
         vector<Move> moveList;
