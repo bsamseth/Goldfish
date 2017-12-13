@@ -7,9 +7,22 @@
 #include <map>
 #include <vector>
 
+
+const int MATE_LOWER = 60000 - 8*2700;
+const int MATE_UPPER = 60000 + 8*2700;
+
 /* Piece value tables, taken from github.com/thomasahle/sunfish.
  * Values are assumed to be symetric along the file-axis. */
-const std::map<PieceType, std::vector<int>> piece_values = {
+const std::map<PieceType, std::vector<int>> piece_values_table = {
+    { NO_PIECE_TYPE,  { 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0 } },
     { PAWN,   { 198, 198, 198, 198, 198, 198, 198, 198,
                 178, 198, 198, 198, 198, 198, 198, 178,
                 178, 198, 198, 198, 198, 198, 198, 178,
@@ -60,7 +73,13 @@ const std::map<PieceType, std::vector<int>> piece_values = {
               60298, 60332, 60273, 60225, 60225, 60273, 60332, 60298 } }
 };
 
-int evaluate(const Position & pos);
-
+inline int piece_value(Piece p, Square s) {
+    if (makeColor(p) == WHITE) {
+        return piece_values_table.find(makePieceType(p))->second[s];
+    }
+    else {
+        return -piece_values_table.find(makePieceType(p))->second[SQ_H8 - s];
+    }
+}
 
 #endif /* ifndef EVAULATE_H */
