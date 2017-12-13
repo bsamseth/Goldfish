@@ -203,6 +203,11 @@ void Position::doMove(Move m) {
     else {
         kingpassantTarget = NO_SQUARE;
     }
+    
+    // Promotion?
+    if (m.promotion()) {
+        board[to] = makePiece(makeColor(p), move_to_promotion_piece[m.getFlag()]);
+    }
 
     moveList.push_back(m);
 }
