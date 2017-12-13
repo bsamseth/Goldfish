@@ -24,6 +24,7 @@ class Position {
         void doMove(Move m);
         void undoMove();
         void doNullMove();
+        int score();
         // getters
         Bitboard getBoardForColor(Color c);
         Color getSideToMove();
@@ -60,14 +61,10 @@ class Position {
         Square enpassantTarget;
         Square kingpassantTarget;
         CastlingRights castlingRights;
-        /* protected: */
-        vector<Move> moveList;
-        Color sideToMove;
-
-
         unsigned halfmoveClock;
         unsigned fullmoveNumber;
-
+        Color sideToMove;
+        vector<Move> moveList;
 };
 
 

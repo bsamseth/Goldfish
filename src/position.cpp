@@ -10,6 +10,7 @@
 #include "position.h"
 #include "bitboards.h"
 #include "stateinfo.h"
+#include "evaluate.h"
 
 using Bitboards::prettyString;
 using std::string;
@@ -273,6 +274,15 @@ void Position::undoMove() {
     }
 }
 
+int Position::score() {
+    int s = 0;
+    for (int r = RANK_1; r <= RANK_8; ++r) {
+        for (int f = FILE_A; f <= FILE_H; ++f) {
+            s += piece_value(board[8*r + f], Square(8*r + f));
+        }
+    }
+    return 0;
+}
 
 bool Position::occupied(Square s) {
     return occupied(s, WHITE) || occupied(s, BLACK);
