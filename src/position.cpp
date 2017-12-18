@@ -283,10 +283,12 @@ int Position::score() {
     int s = 0;
     for (int r = RANK_1; r <= RANK_8; ++r) {
         for (int f = FILE_A; f <= FILE_H; ++f) {
-            s += piece_value(board[8*r + f], Square(8*r + f));
+            Square curr = Square(8*r+f);
+            int value = piece_value(board[curr], curr);
+            s += value;
         }
     }
-    return 0;
+    return s;
 }
 
 bool Position::occupied(Square s) {

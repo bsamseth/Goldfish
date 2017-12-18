@@ -239,3 +239,16 @@ TEST (Position_castle, undoMove) {
   EXPECT_EQ(NO_SQUARE, p.kingpassantTarget);
   EXPECT_EQ(WHITE_OO | WHITE_OOO, p.castlingRights);
 }
+
+TEST (Position_score, startpos) {
+  Position p = Position(STARTING_FEN);
+  int eval = p.score();
+  EXPECT_EQ(0, eval);
+}
+
+TEST (Position_score, after_e2e4) {
+  Position p = Position(STARTING_FEN);
+  p.doMove(Move(SQ_E2, SQ_E4, DOUBLE_PAWN_PUSH_MOVE));
+  int eval = p.score();
+  EXPECT_EQ(40, eval);
+}
