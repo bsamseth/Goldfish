@@ -2,6 +2,10 @@
 #include "types.h"
 #include "move.h"
 
+Move::Move() {
+    m_Move = NO_MOVE;
+}
+
 Move::Move(Square from, Square to, MoveFlag moveflag) {
     m_Move = ((moveflag & 0x0f) << 12) | ((to & 0x3f) << 6) | (from & 0x3f);
 }

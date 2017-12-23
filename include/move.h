@@ -31,10 +31,11 @@ const PieceType move_to_promotion_piece [QUEEN_PROMO_CAPTURE_MOVE + 1] = {
     KNIGHT, BISHOP, ROOK, QUEEN, KNIGHT, BISHOP, ROOK, QUEEN
 };
 
-
+const unsigned NO_MOVE = 0;
 
 class Move {
   public:
+  Move();
   Move(Square from, Square to);
   Move(Square from, Square to, MoveFlag moveflag);
   unsigned int getInteger();
