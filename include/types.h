@@ -97,6 +97,34 @@ const std::string PieceName[] = {"no-piece",
 				 "P", "N","B","R","Q","K",
 				 "p", "n","b","r","q","k"};
 
+// this is copied from Stockfish, just define operations the logical way
+#define ENABLE_BASE_OPERATORS_ON(T)                    \
+inline T operator+(T d1, T d2) { return T(int(d1) + int(d2)); }    \
+inline T operator-(T d1, T d2) { return T(int(d1) - int(d2)); }    \
+inline T operator*(int i, T d) { return T(i * int(d)); }        \
+inline T operator*(T d, int i) { return T(int(d) * i); }        \
+inline T operator-(T d) { return T(-int(d)); }            \
+inline T& operator+=(T& d1, T d2) { return d1 = d1 + d2; }        \
+inline T& operator-=(T& d1, T d2) { return d1 = d1 - d2; }        \
+inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }
+
+#define ENABLE_FULL_OPERATORS_ON(T)                    \
+ENABLE_BASE_OPERATORS_ON(T)                        \
+inline T& operator++(T& d) { return d = T(int(d) + 1); }        \
+inline T& operator--(T& d) { return d = T(int(d) - 1); }        \
+inline T operator/(T d, int i) { return T(int(d) / i); }        \
+inline int operator/(T d1, T d2) { return int(d1) / int(d2); }    \
+inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
+
+ENABLE_FULL_OPERATORS_ON(Square);
+ENABLE_FULL_OPERATORS_ON(File);
+ENABLE_FULL_OPERATORS_ON(Rank);
+ENABLE_FULL_OPERATORS_ON(Color);
+ENABLE_FULL_OPERATORS_ON(PieceType);
+
+#undef ENABLE_FULL_OPERATORS_ON
+#undef ENABLE_BASE_OPERATORS_ON
+
 inline Color colorSwap(Color c) {
   return c == NO_COLOR ? NO_COLOR : (c == WHITE ? BLACK : WHITE);
 }
@@ -110,7 +138,6 @@ inline PieceType makePieceType(Piece p) {
 inline Color makeColor(Piece p) {
   return p == NO_PIECE ? NO_COLOR : (int(p) < int(B_PAWN) ? WHITE : BLACK);
 }
-
 inline PieceType makePieceTypeFromChar(char c) {
   return tolower(c) == 'p' ? PAWN :
     tolower(c) == 'n' ? KNIGHT :
@@ -120,45 +147,21 @@ inline PieceType makePieceTypeFromChar(char c) {
     tolower(c) == 'k' ? KING   :
     NO_PIECE_TYPE;
 }
-
 inline Color makeColorFromChar(char c) {
   return c == tolower(c) ? BLACK : WHITE;
 }
-
-
-
-// this is copied from Stockfish, just define operations the logical way
-#define ENABLE_BASE_OPERATORS_ON(T)					\
-  inline T operator+(T d1, T d2) { return T(int(d1) + int(d2)); }	\
-  inline T operator-(T d1, T d2) { return T(int(d1) - int(d2)); }	\
-  inline T operator*(int i, T d) { return T(i * int(d)); }		\
-  inline T operator*(T d, int i) { return T(int(d) * i); }		\
-  inline T operator-(T d) { return T(-int(d)); }			\
-  inline T& operator+=(T& d1, T d2) { return d1 = d1 + d2; }		\
-  inline T& operator-=(T& d1, T d2) { return d1 = d1 - d2; }		\
-  inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }
-
-#define ENABLE_FULL_OPERATORS_ON(T)					\
-  ENABLE_BASE_OPERATORS_ON(T)						\
-    inline T& operator++(T& d) { return d = T(int(d) + 1); }		\
-  inline T& operator--(T& d) { return d = T(int(d) - 1); }		\
-  inline T operator/(T d, int i) { return T(int(d) / i); }		\
-  inline int operator/(T d1, T d2) { return int(d1) / int(d2); }	\
-  inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
-
-  ENABLE_FULL_OPERATORS_ON(Square);
-ENABLE_FULL_OPERATORS_ON(File);
-ENABLE_FULL_OPERATORS_ON(Rank);
-ENABLE_FULL_OPERATORS_ON(Color);
-ENABLE_FULL_OPERATORS_ON(PieceType);
-
-#undef ENABLE_FULL_OPERATORS_ON
-#undef ENABLE_BASE_OPERATORS_ON
-
-
-
-
-
+inline Rank makeRank(char r) {
+    return Rank(int(r) - int('1'));
+}
+inline File makeFile(Square s) {
+    return FILE_A + File(s % 8);
+}
+inline Rank makeRank(Square s) {
+    return RANK_1 + Rank(s / 8);
+}
+inline Square flipPerspective(Square s) {
+    return Square( makeFile(s) + 8 * (RANK_8 - makeRank(s)));
+}
 inline File makeFile(char f) {
   try {
     f = tolower(f);
@@ -179,10 +182,5 @@ inline File makeFile(char f) {
   }
   return FILE_A;
 }
-
-inline Rank makeRank(char r) {
-  return Rank(int(r) - int('1'));
-}
-
 
 #endif

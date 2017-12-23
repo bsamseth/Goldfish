@@ -69,3 +69,24 @@ TEST(Types, makeRank) {
 TEST(Types, squareName) {
   EXPECT_EQ("h8", SquareName[SQ_H8]);
 }
+
+TEST(Types, makeFileFromSquare) {
+    EXPECT_EQ(FILE_C, makeFile(SQ_C6));
+    EXPECT_EQ(FILE_H, makeFile(SQ_H1));
+    EXPECT_EQ(FILE_A, makeFile(SQ_A8));
+}
+
+TEST(Types, makeRankFromSquare) {
+    EXPECT_EQ(RANK_6, makeRank(SQ_C6));
+    EXPECT_EQ(RANK_1, makeRank(SQ_H1));
+    EXPECT_EQ(RANK_8, makeRank(SQ_A8));
+}
+
+TEST(Types, flipPerspective) {
+    EXPECT_EQ(SQ_C3, flipPerspective(SQ_C6));
+    EXPECT_EQ(SQ_C6, flipPerspective(SQ_C3));
+    EXPECT_EQ(SQ_H1, flipPerspective(SQ_H8));
+    EXPECT_EQ(SQ_A1, flipPerspective(SQ_A8));
+    EXPECT_EQ(SQ_H8, flipPerspective(SQ_H1));
+    EXPECT_EQ(SQ_A8, flipPerspective(SQ_A1));
+}
