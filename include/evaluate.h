@@ -78,7 +78,7 @@ inline int piece_value(Piece p, Square s) {
         return piece_values_table.find(makePieceType(p))->second[SQ_H8 - s];
     }
     else {
-        return -piece_values_table.find(makePieceType(p))->second[s];
+        return -piece_values_table.find(makePieceType(p))->second[flipPerspective(SQ_H8 - s)];
     }
 }
 
