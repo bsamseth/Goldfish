@@ -24,35 +24,24 @@ class Position {
         void doMove(Move m);
         void undoMove();
         void doNullMove();
-        int score();
+        int score() const;
+
         // getters
-        Bitboard getBoardForColor(Color c);
-        Color getSideToMove();
+        Bitboard getBoardForColor(Color c) const;
+        Color getSideToMove() const;
+
         // helper functions
         void putPiece(Square sq, Piece p);
         void putPiece(Square sq, PieceType pt, Color c);
         void silentDoMove(Move m);
         void moveCastleRook(Square from, Square to);
         void clear();
-        string str();
+        string str() const;
 
         // pieces
-        bool occupied(Square s);
-        bool occupied(Square s, Color c);
+        bool occupied(Square s) const;
+        bool occupied(Square s, Color c) const;
 
-        // attacks
-        bool attacked(Square s, Color c);
-
-        // rulebook
-        bool legal(Move m);
-        bool ownKingInCheckAfterMove(Move m);
-        bool psudoLegal(Move m);
-        bool psudoLegalPawn(Move m);
-        bool psudoLegalKnight(Move m);
-        bool psudoLegalBishop(Move m);
-        bool psudoLegalRook(Move m);
-        bool psudoLegalQueen(Move m);
-        bool psudoLegalKing(Move m);
         // public fields
         Bitboard pieces[NUMBER_OF_COLORS-1][NUMBER_OF_PIECE_TYPES];
         Piece board[NUMBER_OF_SQUARES];
@@ -68,7 +57,7 @@ class Position {
 };
 
 
-inline Color Position::getSideToMove() {
+inline Color Position::getSideToMove() const {
     return sideToMove;
 }
 
