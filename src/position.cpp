@@ -19,8 +19,6 @@ using std::endl;
 using std::max;
 using std::log2;
 
-class MoveGenerator;
-
 Position::Position() {
     clear();
     stateInfo = rootState; // root state, zero init
@@ -172,13 +170,7 @@ void Position::doMove(Move m) {
     sideToMove = colorSwap(sideToMove);
     fullmoveNumber += sideToMove == WHITE ? 1 : 0;
     halfmoveClock += (!m.capture() and makePieceType(p) != PAWN) ? 1 : 0;
-
-    // set en passant square
-    if (m.doublePawnPush())
-        enpassantTarget = Square((to + from)/2); // target is on square between from and to, take the average
-    else
-        enpassantTarget = NO_SQUARE;
-
+    enpassantTarget = m.doublePawnPush() ? Square((to + from)/2) : NO_SQUARE;
 
     // castlingrights changed?
     if ((castlingRights & WHITE_OO) || (castlingRights & WHITE_OOO)) {
@@ -200,7 +192,7 @@ void Position::doMove(Move m) {
 
     // castle move?
     if (m.castle()) {
-        moveCastleRook(from, to);
+        moveCastleRook(from, to); // Also sets kingpassant.
     }
     else {
         kingpassantTarget = NO_SQUARE;
@@ -211,6 +203,7 @@ void Position::doMove(Move m) {
         board[to] = makePiece(makeColor(p), move_to_promotion_piece[m.getFlag()]);
     }
 
+    // Add move to move list.
     moveList.push_back(m);
 }
 
