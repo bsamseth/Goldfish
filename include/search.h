@@ -12,7 +12,6 @@ const int MAX_SEARCH_DEPTH = 50;
 class Searcher {
     private:
     std::array<Move, MAX_SEARCH_DEPTH> pv;
-    //std::vector<Move> pv;
     int alpha_beta_negamax(Position & pos, int depth, int alpha, int beta, int side, std::array<Move, MAX_SEARCH_DEPTH> & PV);
     bool verbose;
     int nodes;
@@ -20,7 +19,7 @@ class Searcher {
     public:
     Searcher();
     Searcher(bool verbose);
-    std::string pvString();
+    std::string pvString() const;
     int search_depth(Position & pos, int max_depth);
 };
 

@@ -14,7 +14,7 @@ Move::Move(Square from, Square to) {
     m_Move = ((QUIET_MOVE & 0x0f) << 12) | ((to & 0x3f) << 6) | (from & 0x3f);
 }
 
-unsigned Move::getInteger() {
+unsigned Move::getInteger() const {
     return m_Move;
 }
 

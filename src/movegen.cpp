@@ -25,36 +25,6 @@ MoveGenerator::MoveGenerator(Position& position) {
     pos = &position;
 }
 
-/*
- * After a call the field std::vec<Move> generatedmoves
- * will be filled with all the possible moves from the
- * current position. All moves will be encoded with a
- * proper flag.
- */
-/* void MoveGenerator::generateMoves() { */
-/*   Square cSquare, target; */
-
-/*   for (int rank = RANK_1; rank <= RANK_8; rank++) { */
-/*     for (int file = FILE_A; file <= FILE_H; file++) { */
-
-/*       cSquare = Square(rank*8 + file); */
-/*       if (!pos->occupied(cSquare, pos->sideToMove)) { */
-/* 	continue; */
-/*       } */
-
-/*       for (int rank2 = RANK_1; rank2 <= RANK_8; rank2++) { */
-/* 	for (int file2 = FILE_A; file2 <= FILE_H; file2++) { */
-/* 	  target = Square(rank2*8 + file2); */
-/* 	  if (cSquare != target && pos->legal(Move(cSquare, target))) */
-/* 	    // cout << "found a move : " << Move(cSquare, target).str() << endl; */
-/* 	    encodeAndAddMove(cSquare, target); */
-/* 	} */
-/*       } */
-/*     } */
-/*   } */
-/* } */
-
-
 void MoveGenerator::generateMoves() {
     Square cSquare, target;
     for (int rank = RANK_1; rank <= RANK_8; rank++) {
@@ -189,7 +159,7 @@ void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
     generatedMoves.push_back(Move(from, to, QUIET_MOVE));
 }
 
-Move MoveGenerator::getRandomMove() {
+Move MoveGenerator::getRandomMove() const {
     int randIndex = rand() % generatedMoves.size();
     return generatedMoves[randIndex];
 }

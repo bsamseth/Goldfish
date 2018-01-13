@@ -89,10 +89,10 @@ int Searcher::alpha_beta_negamax(Position & pos, int depth, int alpha, int beta,
     return best_value;
 }
 
-std::string Searcher::pvString() {
+std::string Searcher::pvString() const {
     std::stringstream ss;
     for (int depth = pv.size() - 1; depth >= 0; depth--) {
-        Move &m = pv[depth];
+        const Move &m = pv[depth];
         if (m.getInteger() != NO_MOVE) {
             ss << m.str() << " ";
         }
