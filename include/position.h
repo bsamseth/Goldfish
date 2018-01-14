@@ -17,9 +17,9 @@ StateInfo* const rootState = new StateInfo(true);
 
 class Position {
     public:
-        // constructors
         Position();
         Position(std::string);
+        void initHashing();
         void setFromFEN(std::string fen);
         void doMove(Move m);
         void undoMove();
@@ -54,6 +54,7 @@ class Position {
         unsigned fullmoveNumber;
         Color sideToMove;
         vector<Move> moveList;
+        Key hash;
 };
 
 

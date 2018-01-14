@@ -7,7 +7,10 @@
 #include <string>
 #include <iostream>
 #include <numeric> // for std::iota
+
+// Type definitions:
 using Bitboard = uint64_t;
+using Key = uint64_t;      // Type used for Zobrist hashing.
 
 namespace Bitboards {
   std::string prettyString(Bitboard b);
@@ -25,11 +28,12 @@ enum CastlingSide {
  */
 enum CastlingRights {
   NO_CASTLING = 0,
-  WHITE_OO  = 1, 
+  WHITE_OO  = 1,
   WHITE_OOO = WHITE_OO << 1,
   BLACK_OO  = WHITE_OO << 2,
-  BLACK_OOO = WHITE_OO << 3, 
-  ANY_CASTLING = WHITE_OO | WHITE_OOO | BLACK_OO | BLACK_OOO
+  BLACK_OOO = WHITE_OO << 3,
+  ANY_CASTLING = WHITE_OO | WHITE_OOO | BLACK_OO | BLACK_OOO,
+  NUMBER_OF_CASTLING_RIGHTS
 };
 
 /*
@@ -44,7 +48,7 @@ enum Square {
   SQ_A6, SQ_B6, SQ_C6, SQ_D6, SQ_E6, SQ_F6, SQ_G6, SQ_H6,
   SQ_A7, SQ_B7, SQ_C7, SQ_D7, SQ_E7, SQ_F7, SQ_G7, SQ_H7,
   SQ_A8, SQ_B8, SQ_C8, SQ_D8, SQ_E8, SQ_F8, SQ_G8, SQ_H8,
-    
+
   NUMBER_OF_SQUARES = 64,
 
   D_NORTH = 8,
@@ -71,11 +75,13 @@ const std::string SquareName[] = {"a1", "b1", "c1","d1","e1","f1","g1","h1",
 
 
 enum File {
-  FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
+  FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
+  NUMBER_OF_FILES
 };
 
 enum Rank {
-  RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8
+  RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
+  NUMBER_OF_RANKS
 };
 
 
@@ -90,7 +96,8 @@ enum Color {
 enum Piece {
   NO_PIECE = 0,
   W_PAWN = (WHITE)*6 + PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
-  B_PAWN = (BLACK)*6 + PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING
+  B_PAWN = (BLACK)*6 + PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING,
+  NUMBER_OF_PIECES
 };
 
 const std::string PieceName[] = {"no-piece",
@@ -174,7 +181,7 @@ inline File makeFile(char f) {
     case 'f': return FILE_F; break;
     case 'g': return FILE_G; break;
     case 'h': return FILE_H; break;
-    default: throw 101; 
+    default: throw 101;
     }
   } catch (int e) {
     std::cout << "Tried to make File from char " << f << ". Exiting..." << std::endl;

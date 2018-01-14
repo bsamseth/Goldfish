@@ -5,6 +5,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <random>
 
 #include "types.h"
 #include "position.h"
@@ -19,15 +20,53 @@ using std::endl;
 using std::max;
 using std::log2;
 
+namespace Zobrist {
+    Key psq[NUMBER_OF_PIECES][NUMBER_OF_SQUARES];
+    Key enpassant[NUMBER_OF_FILES];
+    Key kingpassant[NUMBER_OF_FILES];
+    Key castling[NUMBER_OF_CASTLING_RIGHTS];
+    Key side;
+}
+
+void Position::initHashing() {
+    // Seed with first 8 digits of the SHA256 hexdigest of Goldfish.
+    std::mt19937_64 rng(0xc35adbe1e);
+    // Initialize th random numbers.
+    for (int p = NO_PIECE; p < NUMBER_OF_PIECES; p++)
+        for (Square s = SQ_A1; s <= SQ_H8; ++s)
+            Zobrist::psq[p][s] = rng();
+    for (File f = FILE_A; f <= FILE_H; ++f) {
+        Zobrist::enpassant[f] = rng();
+        Zobrist::kingpassant[f] = rng();
+    }
+    for (int cr = NO_CASTLING; cr <= ANY_CASTLING; ++cr)
+        Zobrist::castling[cr] = rng();
+    Zobrist::side = rng();
+
+    // Initialize hash
+    hash = 0;
+    for (Square s = SQ_A1; s <= SQ_H8; ++s)
+        hash ^= Zobrist::psq[board[s]][s];
+    if (enpassantTarget != NO_SQUARE)
+        hash ^= Zobrist::enpassant[makeFile(enpassantTarget)];
+    if (kingpassantTarget != NO_SQUARE)
+        hash ^= Zobrist::kingpassant[makeFile(kingpassantTarget)];
+    hash ^= Zobrist::castling[castlingRights];
+    hash ^= sideToMove == WHITE ? Zobrist::side : 0;
+}
+
 Position::Position() {
     clear();
     stateInfo = rootState; // root state, zero init
+    setFromFEN(STARTING_FEN);
+    initHashing();
 }
 
 Position::Position(std::string fen) {
     clear();
     stateInfo = rootState;
     setFromFEN(fen);
+    initHashing();
 }
 
 void Position::setFromFEN(std::string fen) {
@@ -77,10 +116,10 @@ void Position::setFromFEN(std::string fen) {
     if (c == '-')
         enpassantTarget = NO_SQUARE;
     else {
-        File enpassantFile = makeFile(c);
+        File enpassant = makeFile(c);
         ss >> c;
         Rank enpassantRank = makeRank(c);
-        enpassantTarget = Square(8*enpassantRank + enpassantFile);
+        enpassantTarget = Square(8*enpassantRank + enpassant);
     }
 
     ss >> c;
@@ -146,7 +185,6 @@ void Position::putPiece(Square sq, Piece p) {
 }
 
 
-
 void Position::doMove(Move m) {
     Square from = m.getFrom(), to = m.getTo();
     Piece p = board[from];
@@ -160,11 +198,20 @@ void Position::doMove(Move m) {
     st->lastMove_enpassantTarget = enpassantTarget;
     st->lastMove_kingpassantTarget = kingpassantTarget;
     st->previous_castlingRights = castlingRights;
+    st->lastHash = hash;
     st->previous = stateInfo;
     stateInfo = st;
 
     // place the piece
+    hash ^= Zobrist::psq[board[from]][from] ^ Zobrist::psq[board[to]][to];
+    hash ^= Zobrist::psq[NO_PIECE][from] ^ Zobrist::psq[board[from]][to];
+    hash ^= Zobrist::side;
+    hash ^= enpassantTarget != NO_SQUARE ? Zobrist::enpassant[makeFile(enpassantTarget)]
+                                         : 0;
+    hash ^= kingpassantTarget != NO_SQUARE ? Zobrist::kingpassant[makeFile(kingpassantTarget)]
+                                         : 0;
     silentDoMove(m);
+
 
     // update fields
     sideToMove = colorSwap(sideToMove);
@@ -173,6 +220,7 @@ void Position::doMove(Move m) {
     enpassantTarget = m.doublePawnPush() ? Square((to + from)/2) : NO_SQUARE;
 
     // castlingrights changed?
+    const CastlingRights old = castlingRights;
     if ((castlingRights & WHITE_OO) || (castlingRights & WHITE_OOO)) {
         if (p == W_KING)
             castlingRights = CastlingRights( castlingRights ^ (WHITE_OO | WHITE_OOO) );
@@ -189,19 +237,27 @@ void Position::doMove(Move m) {
         else if (from == SQ_A8)
             castlingRights = CastlingRights( castlingRights & ~(BLACK_OOO) );
     }
+    if (castlingRights != old)
+        hash ^= Zobrist::castling[old] ^ Zobrist::castling[castlingRights];
 
     // castle move?
-    if (m.castle()) {
+    if (m.castle())
         moveCastleRook(from, to); // Also sets kingpassant.
-    }
-    else {
+    else
         kingpassantTarget = NO_SQUARE;
-    }
 
     // Promotion?
     if (m.promotion()) {
+        hash ^= Zobrist::psq[board[to]][to];
         board[to] = makePiece(makeColor(p), move_to_promotion_piece[m.getFlag()]);
+        hash ^= Zobrist::psq[board[to]][to];
     }
+
+    // Set hash for passant targets.
+    hash ^= enpassantTarget != NO_SQUARE ? Zobrist::enpassant[makeFile(enpassantTarget)]
+                                         : 0;
+    hash ^= kingpassantTarget != NO_SQUARE ? Zobrist::kingpassant[makeFile(kingpassantTarget)]
+                                         : 0;
 
     // Add move to move list.
     moveList.push_back(m);
@@ -256,6 +312,7 @@ void Position::undoMove() {
     kingpassantTarget = stateInfo->lastMove_kingpassantTarget;
     putPiece(lastMove.getFrom(), stateInfo->lastMove_originPiece);
     putPiece(lastMove.getTo(), stateInfo->lastMove_destinationPiece);
+    hash = stateInfo->lastHash;
     StateInfo* &ptr = stateInfo->previous;
     delete stateInfo;
     stateInfo = ptr;

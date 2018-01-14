@@ -17,6 +17,7 @@ struct StateInfo {
   CastlingRights previous_castlingRights;
   Square lastMove_enpassantTarget;
   Square lastMove_kingpassantTarget;
+  Key lastHash;
   StateInfo* previous;
 };
 

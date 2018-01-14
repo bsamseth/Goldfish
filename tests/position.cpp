@@ -17,6 +17,7 @@ const std::string POSSIBLE_CASTLE = "r2qkbnr/ppp1pppp/2n5/3p4/6b1/5NP1/PPPPPPBP/
 
 TEST(Position, clear) {
   Position p = Position();
+  cout << "DONE with setup" << endl;
   p.clear();
   for (int c = WHITE; c < NUMBER_OF_COLORS - 1; c++) {
     for (int pt = PAWN; pt < NUMBER_OF_PIECE_TYPES; pt++) {
@@ -199,3 +200,43 @@ TEST (Position_score, after_e2e4) {
   int eval = p.score();
   EXPECT_EQ(40, eval);
 }
+
+TEST (Zobrist, same_hash_for_different_objects) {
+    Move m = Move(SQ_A2, SQ_A4, DOUBLE_PAWN_PUSH_MOVE);
+    Position p1 = Position(STARTING_FEN);
+    Position p2 = Position(STARTING_FEN);
+    p1.doMove(m);
+    p2.doMove(m);
+    EXPECT_EQ(p1.hash, p2.hash);
+}
+
+TEST (Zobrist, undo_restores_hash) {
+    Position p = Position(STARTING_FEN);
+    Key start_hash = p.hash;
+    p.doMove(Move(SQ_A2, SQ_A3));
+    p.doMove(Move(SQ_E7, SQ_E5, DOUBLE_PAWN_PUSH_MOVE));
+    p.undoMove();
+    p.undoMove();
+    EXPECT_EQ(start_hash, p.hash);
+}
+
+TEST (Zobrist, transposition_gives_same_hash) {
+    Move m[6] = { Move(SQ_E2, SQ_E4, DOUBLE_PAWN_PUSH_MOVE), Move(SQ_E7, SQ_E5, DOUBLE_PAWN_PUSH_MOVE),
+                  Move(SQ_B1, SQ_C3), Move(SQ_G8, SQ_F6), Move(SQ_A2, SQ_A3), Move(SQ_A7, SQ_A6)};
+    Position p1 = Position(STARTING_FEN);
+    Position p2 = Position(STARTING_FEN);
+    p1.doMove(m[0]); p1.doMove(m[1]); p1.doMove(m[2]); p1.doMove(m[3]);
+    p2.doMove(m[2]); p2.doMove(m[3]); p2.doMove(m[0]); p2.doMove(m[1]);
+    EXPECT_FALSE(p1.hash == p2.hash);  // Different due to enpassant.
+    p1.doMove(m[4]); p1.doMove(m[5]);
+    p2.doMove(m[4]); p2.doMove(m[5]);
+    EXPECT_EQ(p1.hash, p2.hash);      // Equal after all moves.
+    // Check that undo works, regardless of move order.
+    for (int i = 0; i < 6; i++) {
+        p1.undoMove();
+        p2.undoMove();
+    }
+    EXPECT_EQ(p1.hash, p2.hash);
+    EXPECT_EQ(p1.hash, Position(STARTING_FEN).hash);
+}
+
