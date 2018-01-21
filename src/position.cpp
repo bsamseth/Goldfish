@@ -350,7 +350,7 @@ int Position::maximizingScore() const {
 int Position::value(const Move &m) {
     int val = maximizingScore();
     doMove(m);
-    val = maximizingScore() - val;
+    val -= maximizingScore();
     undoMove();
     return val;
 }
