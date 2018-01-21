@@ -10,6 +10,8 @@
 
 const int MATE_LOWER = 60000 - 8*2700;
 const int MATE_UPPER = 60000 + 8*2700;
+const int QS_LIMIT = 150;
+const int EVAL_ROUGHNESS = 20;
 
 /* Piece value tables, taken from github.com/thomasahle/sunfish.
  * Values are assumed to be symetric along the file-axis. */
