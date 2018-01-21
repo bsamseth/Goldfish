@@ -164,3 +164,30 @@ Move MoveGenerator::getRandomMove() const {
     return generatedMoves[randIndex];
 }
 
+
+
+/*
+ * Sort moves in decreasing order of static evaluation change,
+ * positive for the side to move. Uses an insertion sort where
+ * pos->value(move) is only called once per move.
+ */
+void MoveGenerator::sortMoves() {
+    std::vector<Move> sorted = generatedMoves;
+    int values[generatedMoves.size()];
+    for (int i = 0; i < generatedMoves.size(); ++i) {
+        Move m = generatedMoves[i];
+        int m_val = pos->value(m);
+        int j = i;
+        while (j > 0 and values[j-1] < m_val) {
+            // Swap i and j.
+            values[j] = values[j-1];
+            sorted[j] = sorted[j-1];
+            --j;
+        }
+        values[j] = m_val;
+        sorted[j] = m;
+    }
+    generatedMoves = sorted;
+}
+
+

@@ -55,6 +55,7 @@ class MoveGenerator {
         std::vector<Move> getGeneratedMoves() const;
         void generateMoves();
         void encodeAndAddMove(Square s1, Square s2);
+        void sortMoves();
         Move getRandomMove() const;
 };
 
