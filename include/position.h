@@ -25,6 +25,8 @@ class Position {
         void undoMove();
         void doNullMove();
         int score() const;
+        int maximizingScore() const;
+        int value(const Move &m);
 
         // getters
         Bitboard getBoardForColor(Color c) const;

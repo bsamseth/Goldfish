@@ -343,6 +343,18 @@ int Position::score() const {
     return s;
 }
 
+int Position::maximizingScore() const {
+    return sideToMove == WHITE ? score() : -score();
+}
+
+int Position::value(const Move &m) {
+    int val = maximizingScore();
+    doMove(m);
+    val = maximizingScore() - val;
+    undoMove();
+    return val;
+}
+
 bool Position::occupied(Square s) const {
     return occupied(s, WHITE) || occupied(s, BLACK);
 }
