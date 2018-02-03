@@ -1,22 +1,20 @@
 #ifndef UCI_H
 #define UCI_H
 
-#include "types.h"
 #include "position.h"
-#include "move.h"
-#include "movegen.h"
+#include "search.h"
 
 
 class UCI {
-  public:
-  std::string ENGINE_NAME = "Goldfish";
-  std::string AUTHOR = "Bendik Samseth";
+    public:
+        std::string ENGINE_NAME = "Goldfish";
+        std::string AUTHOR = "Bendik Samseth";
 
-  Position pos;
-  MoveGenerator generator;
+        Position pos;
+        Searcher searcher;
 
-  UCI();
-  void startCommunication();
+        UCI();
+        void startCommunication();
 };
 
 
