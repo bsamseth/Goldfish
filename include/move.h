@@ -53,6 +53,7 @@ class Move {
         bool promotion() const;
         bool doublePawnPush() const;
         std::string str() const;
+        bool operator==(const Move &other) const;
     protected:
         unsigned int m_Move;
 };
@@ -91,6 +92,10 @@ inline bool Move::ep_capture() const {
 
 inline bool Move::promotion() const {
     return (getFlag() & 0x08);
+}
+
+inline bool Move::operator==(const Move &other) const {
+    return getInteger() == other.getInteger();
 }
 
 #endif
