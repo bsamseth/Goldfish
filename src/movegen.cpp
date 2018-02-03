@@ -190,4 +190,14 @@ void MoveGenerator::sortMoves() {
     generatedMoves = sorted;
 }
 
+void MoveGenerator::addKiller(const Move &killer) {
+    for (auto it = generatedMoves.begin(); it != generatedMoves.end(); ++it) {
+        if (killer == *it) {
+            auto x = std::move(*it);
+            generatedMoves.erase(it);
+            generatedMoves.insert(generatedMoves.begin(), std::move(x));
+            break;
+        }
+    }
+}
 

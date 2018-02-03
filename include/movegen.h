@@ -56,6 +56,7 @@ class MoveGenerator {
         void generateMoves();
         void encodeAndAddMove(Square s1, Square s2);
         void sortMoves();
+        void addKiller(const Move &killer);
         Move getRandomMove() const;
 };
 
