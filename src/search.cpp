@@ -17,87 +17,11 @@ using std::cout;
 using std::endl;
 
 Searcher::Searcher(bool v) : verbose(v), nodes(0), tp_move(TABLE_SIZE, CACHE_ELASTICITY),
-                       tp_score(TABLE_SIZE, CACHE_ELASTICITY) {}
+                             tp_score(TABLE_SIZE, CACHE_ELASTICITY),
+                             futureObj(exitSignal.get_future()) {}
 
-/* Convert evaluation to string, handling output of mate. */
-std::string valueToString(int value, Color side) {
-    std::stringstream ss;
-    if (std::abs(value) >= MATE_LOWER) {
-        ss << "M" << (MATE_UPPER - std::abs(value) - 2) / 2 + 1;
-    } else {
-        ss << value;
-    }
-    return ss.str();
-}
-
-/* Iterative deepening */
-int Searcher::search_depth(Position & pos, int max_depth) {
-    int value, depth;
-    int sign = pos.sideToMove == WHITE ? 1 : -1;
-    for (depth = 1; depth <= max_depth; depth++) {
-        nodes = 0; // Reset node counter.
-        value = sign * alpha_beta_negamax(pos, depth, -MATE_UPPER, MATE_UPPER, sign, pv);
-        if (verbose) {
-            printf("info nodes %d depth %d score cp %s pv %s\n",
-                   nodes, depth,
-                   valueToString(value, pos.sideToMove).c_str(),
-                   pvString().c_str());
-        }
-        // If a mate is found there is no need to continue.
-        if (std::abs(value) >= MATE_LOWER) {
-            break;
-        }
-    }
-    if (verbose) {
-        printf("bestmove %s\n", pvString().substr(0, 5).c_str());
-    }
-    return value;
-}
-
-int Searcher::alpha_beta_negamax(Position & pos, int depth, int alpha, int beta, int side, std::array<Move, MAX_SEARCH_DEPTH> & PV) {
-    nodes++;
-    if (side * pos.score() <= -MATE_LOWER) {
-        return - MATE_UPPER;
-    }
-    if (depth == 0) {
-        return side * pos.score();
-    }
-    int best_value = - MATE_UPPER;
-    std::array<Move, MAX_SEARCH_DEPTH> PV_tmp;
-    MoveGenerator mg = MoveGenerator(pos);
-    mg.generateMoves();
-    for (Move m : mg.getGeneratedMoves()) {
-        pos.doMove(m);
-        int v = -alpha_beta_negamax(pos, depth - 1, -beta, -alpha, -side, PV_tmp);
-        v += v > MATE_LOWER ? -1 :
-             v < -MATE_LOWER ? 1 : 0;
-        pos.undoMove();
-
-        if (v > best_value) {
-            best_value = v;
-            PV[depth] = m;
-            for (int i = 0; i < depth; i++) {
-                PV[i] = PV_tmp[i];
-            }
-        }
-        alpha = std::max(alpha, v);
-        if (alpha >= beta) {
-            break;
-        }
-    }
-    return best_value;
-}
-
-
-std::string Searcher::pvString() const {
-    std::stringstream ss;
-    for (int depth = pv.size() - 1; depth >= 0; depth--) {
-        const Move &m = pv[depth];
-        if (m.getInteger() != NO_MOVE) {
-            ss << m.str() << " ";
-        }
-    }
-    return ss.str();
+int Searcher::run(Position &pos) {
+    return search_depth_MTD(pos, MAX_SEARCH_DEPTH);
 }
 
 bool Searcher::check_move(Position &pos, const Move &m, int &best, int depth, int gamma) {
@@ -148,13 +72,13 @@ int Searcher::bound(Position& pos, int gamma, int depth, bool root) {
     if (tp_move.tryGet(pos.hash, killer))
         mg.addKiller(killer);
     for (const Move &m : mg.getGeneratedMoves()) {
-        if (interrupted or check_move(pos, m, best, depth, gamma)) {
+        if (stopRequested() or check_move(pos, m, best, depth, gamma)) {
             break;
         }
     }
 
     // Table part 2.
-    if (not interrupted) {
+    if (not stopRequested()) {
         if (best >= gamma)
             tp_score.insert({pos.hash, depth, root}, {best, entry.upper});
         if (best < gamma)
@@ -169,13 +93,12 @@ int Searcher::search_depth_MTD(Position & pos, int max_depth) {
     int depth;
     Entry value;
     Move m;
-    for (depth = 1; depth <= max_depth and not interrupted; depth++) {
+    for (depth = 1; depth <= max_depth and not stopRequested(); depth++) {
         nodes = 0; // Reset node counter.
-
 
         int score, gamma;
         value = {-MATE_LOWER, MATE_UPPER};
-        while (value.lower < value.upper - EVAL_ROUGHNESS and not interrupted) {
+        while (value.lower < value.upper - EVAL_ROUGHNESS and not stopRequested()) {
             gamma = (value.lower + value.upper + 1) / 2;
             score = bound(pos, gamma, depth);
             if (score >= gamma)
@@ -204,6 +127,5 @@ int Searcher::search_depth_MTD(Position & pos, int max_depth) {
     if (verbose) {
         printf("bestmove %s\n", m.str().c_str());
     }
-    interrupted = false;
     return value.lower;
 }

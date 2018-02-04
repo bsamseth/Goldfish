@@ -4,11 +4,14 @@
 #include <climits>
 #include <array>
 #include <vector>
+#include <chrono>
+#include <future>
 
 #include "types.h"
 #include "move.h"
 #include "position.h"
 #include "LRUCache.h"
+#include "stoppable.h"
 
 const int MAX_SEARCH_DEPTH = 50;
 const uint64_t TABLE_SIZE = 1e8;
@@ -38,11 +41,13 @@ namespace std {
 
 class Searcher {
     private:
-        bool verbose, interrupted = false;
+        bool verbose;
         int nodes;
         LRU::Cache<Key, Move> tp_move;
         LRU::Cache<ScoreLookupKey, Entry> tp_score;
         std::array<Move, MAX_SEARCH_DEPTH> pv;
+        std::promise<void> exitSignal;
+        std::future<void> futureObj;
 
         int alpha_beta_negamax(Position & pos, int depth, int alpha, int beta, int side,
                 std::array<Move, MAX_SEARCH_DEPTH> & PV);
@@ -51,14 +56,18 @@ class Searcher {
 
     public:
         Searcher(bool verbose = true);
-        void interrupt();
-        std::string pvString() const;
-        int search_depth(Position & pos, int max_depth);
         int search_depth_MTD(Position & pos, int max_depth);
+        int run(Position & pos);
+        bool stopRequested() const;
+        void stop();
 };
 
-inline void Searcher::interrupt() {
-    interrupted = true;
+inline bool Searcher::stopRequested() const {
+    return futureObj.wait_for(std::chrono::nanoseconds(0)) != std::future_status::timeout;
+}
+
+inline void Searcher::stop() {
+    exitSignal.set_value();
 }
 
 #endif /* SEARCH_H */
