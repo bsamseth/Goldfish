@@ -3,6 +3,7 @@
 
 #include "position.h"
 #include "search.h"
+#include <thread>
 
 
 class UCI {
@@ -12,6 +13,7 @@ class UCI {
 
         Position pos;
         Searcher searcher;
+        std::thread *search_thread;
 
         UCI();
         void startCommunication();

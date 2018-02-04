@@ -4,12 +4,15 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <thread>
+#include <unistd.h>
 
 #include "types.h"
 #include "position.h"
 #include "move.h"
 #include "movegen.h"
 #include "uci.h"
+#include "search.h"
 
 using std::cin;
 using std::cout;
@@ -17,7 +20,9 @@ using std::endl;
 using std::string;
 using std::getline;
 
+
 UCI::UCI() {}
+
 
 void UCI::startCommunication() {
     string input = "";
@@ -41,12 +46,8 @@ void UCI::startCommunication() {
             cout << "readyok" << endl;
         }
 
-        else if (input == "ucinewgame"){
-            // do init.
-            pos = Position();
-        }
-
         else if (input.substr(0, 8) == "position") {
+            pos = Position();
             string word;
             std::istringstream iss(input);
             while (iss >> word) {
@@ -82,11 +83,15 @@ void UCI::startCommunication() {
         }
 
         else if (input.substr(0,2) == "go") {
-            generator = MoveGenerator(pos);
-            generator.generateMoves();
-            Move bestMove = generator.getRandomMove();
-            cout << "info depth 1 score cp -1 time 10 nodes 26 nps 633 pv " << bestMove.str() << endl;
-            cout << "bestmove " << bestMove.str() << endl;
+            searcher = Searcher();
+            search_thread = new std::thread([&]() { searcher.run(pos); });
+        }
+
+        else if (input == "stop") {
+            /* cout << "**** Stop ***" << endl; */
+            searcher.stop();
+            search_thread->join();
+            delete search_thread;
         }
 
         else if (input == "print")
