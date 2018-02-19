@@ -11,7 +11,6 @@
 #include "move.h"
 #include "position.h"
 #include "LRUCache.h"
-#include "stoppable.h"
 
 const int MAX_SEARCH_DEPTH = 50;
 const uint64_t TABLE_SIZE = 1e8;
