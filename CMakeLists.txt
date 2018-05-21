@@ -55,9 +55,11 @@ set(TEST_MAIN unit_tests.x)
 add_library( engine ${SOURCES} )
 
 # Add an executables for main files in app/.
-add_executable(tester app/testing.cpp)
-add_dependencies(tester engine)
-target_link_libraries(tester engine)
+if(EXISTS "app/testing.cpp")
+    add_executable(tester app/testing.cpp)
+    add_dependencies(tester engine)
+    target_link_libraries(tester engine)
+endif()
 
 add_executable(goldfish app/goldfish.cpp)
 add_dependencies(goldfish engine)

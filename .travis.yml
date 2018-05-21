@@ -36,7 +36,7 @@ before_script:
 script:
   - cd $PARENTDIR/build
   - cmake $PARENTDIR -Dcoverage=ON
-  - make
+  - make gtest
   - ./unit_tests.x
 
 after_success:
