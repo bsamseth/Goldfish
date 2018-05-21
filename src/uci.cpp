@@ -74,7 +74,7 @@ void UCI::startCommunication() {
                             Square from, to;
                             from = Square((int)(makeFile(word[0])) + 8*(int)(makeRank(word[1])));
                             to = Square((int)(makeFile(word[2])) + 8*(int)(makeRank(word[3])));
-                            pos.doMove(Move(from, to));
+                            pos.doMove(MoveGenerator::encodeMove(from, to, pos));
                         }
                     }
                 }

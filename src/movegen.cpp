@@ -97,12 +97,8 @@ void MoveGenerator::generateMoves() {
     }
 }
 
-/*
- * Encode the suggested move, and then add it to the generatedMoves vector.
- * It assumes that pos->legal(s1, s2) has returned true.
- */
-void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
-    Piece p1 = pos->board[s1], p2 = pos->board[s2];
+Move MoveGenerator::encodeMove(Square s1, Square s2, const Position &pos) {
+    Piece p1 = pos.board[s1], p2 = pos.board[s2];
     Square up = makeColor(p1) == WHITE ? D_NORTH : D_SOUTH;
     Square from = s1;
     Square to   = s2;
@@ -111,52 +107,64 @@ void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
     if (makePieceType(p1) == KING) {
         if (s1 == SQ_E1 || s1 == SQ_E8) {
             if (s2 == SQ_G1 || s2 == SQ_G8) {
-                generatedMoves.push_back(Move(from, to, KING_CASTLE_MOVE));
-                return;
+                return Move(from, to, KING_CASTLE_MOVE);
             } else if (s2 == SQ_C1 || s2 == SQ_C8) {
-                generatedMoves.push_back(Move(from, to, QUEEN_CASTLE_MOVE));
-                return;
+                return Move(from, to, QUEEN_CASTLE_MOVE);
             }
         }
     }
 
     // en passant?
-    if (pos->enpassantTarget != NO_SQUARE && makePieceType(p1) == PAWN && s2 == pos->enpassantTarget) {
-        generatedMoves.push_back(Move(from, to, ENPASSANT_CAPTURE_MOVE));
-        return;
+    if (pos.enpassantTarget != NO_SQUARE && makePieceType(p1) == PAWN && s2 == pos.enpassantTarget) {
+        return Move(from, to, ENPASSANT_CAPTURE_MOVE);
     }
 
     // promotion?
     if (makePieceType(p1) == PAWN && (s2 & RANK_8_BB || s2 & RANK_8_BB) )  {
-        // generate all the possible promotions
         if (p2 != NO_PIECE) { // promo capture?
-            generatedMoves.push_back(Move(from, to, KNIGHT_PROMO_CAPTURE_MOVE));
-            generatedMoves.push_back(Move(from, to, BISHOP_PROMO_CAPTURE_MOVE));
-            generatedMoves.push_back(Move(from, to, ROOK_PROMO_CAPTURE_MOVE));
-            generatedMoves.push_back(Move(from, to, QUEEN_PROMO_CAPTURE_MOVE));
+            return Move(from , to, QUEEN_PROMO_CAPTURE_MOVE);
         } else {
-            generatedMoves.push_back(Move(from, to, KNIGHT_PROMO_MOVE));
-            generatedMoves.push_back(Move(from, to, BISHOP_PROMO_MOVE));
-            generatedMoves.push_back(Move(from, to, ROOK_PROMO_MOVE));
-            generatedMoves.push_back(Move(from, to, QUEEN_PROMO_MOVE));
+            return Move(from, to, QUEEN_PROMO_MOVE);
         }
-        return;
     }
 
     // capture?
     if (p2 != NO_PIECE) {
-        generatedMoves.push_back(Move(from, to, CAPTURE_MOVE));
-        return;
+        return Move(from, to, CAPTURE_MOVE);
     }
 
 
     // double pawn push?
     if (makePieceType(p1) == PAWN && (int(to) - int(from) == 2*int(up))) {
-        generatedMoves.push_back(Move(from, to, DOUBLE_PAWN_PUSH_MOVE));
-        return;
+        return Move(from, to, DOUBLE_PAWN_PUSH_MOVE);
     }
 
-    generatedMoves.push_back(Move(from, to, QUIET_MOVE));
+    return Move(from, to, QUIET_MOVE);
+}
+
+/*
+ * Encode the suggested move, and then add it to the generatedMoves vector.
+ * It assumes that pos->legal(s1, s2) has returned true.
+ */
+void MoveGenerator::encodeAndAddMove(Square s1, Square s2) {
+    Move move = encodeMove(s1, s2, *pos);
+    // promotion?
+    if (move.promotion()) {
+        // generate all the possible promotions
+        if (move.capture()) { // promo capture?
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), KNIGHT_PROMO_CAPTURE_MOVE));
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), BISHOP_PROMO_CAPTURE_MOVE));
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), ROOK_PROMO_CAPTURE_MOVE));
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), QUEEN_PROMO_CAPTURE_MOVE));
+        } else {
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), KNIGHT_PROMO_MOVE));
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), BISHOP_PROMO_MOVE));
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), ROOK_PROMO_MOVE));
+            generatedMoves.push_back(Move(move.getFrom(), move.getTo(), QUEEN_PROMO_MOVE));
+        }
+    } else {
+        generatedMoves.push_back(move);
+    }
 }
 
 Move MoveGenerator::getRandomMove() const {

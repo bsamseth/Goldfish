@@ -54,6 +54,7 @@ class MoveGenerator {
         MoveGenerator(Position& position);
         std::vector<Move> getGeneratedMoves() const;
         void generateMoves();
+        static Move encodeMove(Square s1, Square s2, const Position &pos);
         void encodeAndAddMove(Square s1, Square s2);
         void sortMoves();
         void addKiller(const Move &killer);
