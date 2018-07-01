@@ -190,6 +190,45 @@ int Position::remove(int square) {
     return piece;
 }
 
+void Position::make_null_move() {
+    State &entry = states[states_size];
+    entry.zobrist_key = zobrist_key;
+    entry.castling_rights = castling_rights;
+    entry.enpassant_square = enpassant_square;
+    entry.halfmove_clock = halfmove_clock;
+
+    states_size++;
+
+    // Remove enpassant if set.
+    if (enpassant_square != Square::NO_SQUARE) {
+        zobrist_key ^= zobrist.enpassant_square[enpassant_square];
+        enpassant_square = Square::NO_SQUARE;
+    }
+
+    // Change side to move.
+    zobrist_key ^= zobrist.active_color;
+    active_color = Color::swap_color(active_color);
+
+    // Update halfmove_clock
+    halfmove_clock++;
+
+    // Update full_move_number
+    halfmove_number++;
+}
+
+void Position::undo_null_move() {
+    states_size--;
+    State &entry = states[states_size];
+
+    zobrist_key = entry.zobrist_key;
+    enpassant_square = entry.enpassant_square;
+
+    active_color = Color::swap_color(active_color);
+
+    halfmove_clock--;
+    halfmove_number--;
+}
+
 void Position::make_move(int move) {
     // Save state
     State &entry = states[states_size];

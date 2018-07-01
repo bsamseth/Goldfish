@@ -333,3 +333,18 @@ Notation::from_position(position)
 EXPECT_EQ(zobrist_key, position
 .zobrist_key);
 }
+
+TEST(positiontest, test_null_move) {
+    // Test with position that has enpassant.
+    Position initial_position(Notation::to_position("5k2/8/8/8/3Pp3/8/8/3K4 b - d3 0 1"));
+    Position copy = initial_position;
+    copy.make_null_move();
+
+    EXPECT_EQ(Color::swap_color(initial_position.active_color), copy.active_color);
+    EXPECT_EQ(copy.board, initial_position.board);
+    EXPECT_EQ(copy.pieces, initial_position.pieces);
+
+    copy.undo_null_move();
+
+    EXPECT_EQ(copy, initial_position);
+}

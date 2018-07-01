@@ -59,6 +59,10 @@ public:
 
     void make_move(int move);
 
+    void make_null_move();
+
+    void undo_null_move();
+
     void undo_move(int move);
 
     bool is_check();
