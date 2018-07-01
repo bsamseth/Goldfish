@@ -2,9 +2,12 @@
 [![Coverage Status](https://coveralls.io/repos/github/bsamseth/Goldfish/badge.svg?branch=master)](https://coveralls.io/github/bsamseth/Goldfish?branch=master)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/bsamseth/Goldfish/blob/master/LICENCE)
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
+[![Play link](https://img.shields.io/badge/Play%20Goldfish-lichess-green.svg)](https://lichess.org/@/Goldfish-Engine)
 
 # Goldfish
 ###### Stockfish's very distant and not so bright cousin
+
+### [Play Goldfish](https://lichess.org/@/Goldfish-Engine)
 
 This is a UCI chess engine. It is was originally developed from scratch as a
 practice project for learning C++. The end vision at that point was to have a
@@ -30,7 +33,7 @@ limited to:
 - [ ] Staged move generation
 - [ ] Better search algorithms, such as MTD-bi
 - [ ] More sophisticated static evaluation
-- [ ] Making the engine playable on [lichess.org](lichess.org)
+- [X] Making the engine playable on [lichess.org](lichess.org)
 
 This is meant as a project to work on as practice/just for the fun of it.
 Contributions are welcome if you feel like it.
