@@ -39,3 +39,4 @@ xcode.build/*
 .vscode
 cmake-build*
 .idea
+.env

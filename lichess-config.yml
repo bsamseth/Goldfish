@@ -1,9 +1,9 @@
-token: "xxxxxxxxxxxxxxxx"    # lichess OAuth2 Token
+token: "vOh4qrHRxXUUfBZZ"    # lichess OAuth2 Token
 url: "https://lichess.org/"  # lichess base URL
 
 engine:                      # engine settings
-  dir: "./engines/"          # dir containing engines, relative to this project
-  name: "engine_name"        # binary name of the engine to use
+  dir: "./build-release/"          # dir containing engines, relative to this project
+  name: "goldfish.x"        # binary name of the engine to use
   protocol: "uci"            # "uci" or "xboard"
   polyglot:
     enabled: false           # activate polyglot book
@@ -50,7 +50,7 @@ fake_think_time: false       # artificially slow down the bot to pretend like it
 challenge:                   # incoming challenges
   concurrency: 1             # number of games to play simultaneously
   sort_by: "best"            # possible values: "best", "first"
-  accept_bot: false          # accepts challenges coming from other bots
+  accept_bot: true           # accepts challenges coming from other bots
   variants:                  # chess variants to accept (http://lichess.org/variant)
     - standard
 #   - fromPosition
