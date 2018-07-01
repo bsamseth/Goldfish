@@ -1,29 +1,29 @@
+language: cpp
+compiler: gcc
+dist: trusty
 notifications:
   email: false
 
-language: cpp
-compiler: g++
+before_install:
+  # C++17
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
 
-install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
-  - gem install coveralls-lcov	
-  # install newer LCOV (1.9 was failing)
+install: 
+  # C++17
+  - sudo apt-get install -qq g++-7 gcc-7
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 90
+  - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 90
+   
+  # install newer LCOV (apt version outdated and fails for new gcov).
   - wget http://ftp.de.debian.org/debian/pool/main/l/lcov/lcov_1.11.orig.tar.gz
   - tar xf lcov_1.11.orig.tar.gz
-  - sudo make -C lcov-1.11/ install
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
-  - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-4.8 90
+  - sudo make -C lcov-1.11/ install  
+  - which lcov 
 
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-4.8
-    - g++-4.8
-    - clang
-    - lcov
+  # Install coverals gem for uploading coverage to coveralls.
+  - gem install coveralls-lcov
 
 before_script:
   - lcov --version
@@ -31,17 +31,16 @@ before_script:
   - g++ --version
   - PARENTDIR=$(pwd)
   - mkdir $PARENTDIR/build && cd $PARENTDIR/build
-  - lcov --directory $PARENTDIR/build --zerocounters
 
 script:
   - cd $PARENTDIR/build
-  - cmake $PARENTDIR -Dcoverage=ON
+  - cmake -DCMAKE_BUILD_TYPE=Coverage $PARENTDIR
+  - make
   - make gtest
-  - ./unit_tests.x
+  - make coverage
 
 after_success:
-  - lcov --directory $PARENTDIR/build --capture --output-file coverage.info # capture coverage info
-  - lcov --remove coverage.info 'tests/*' 'app/*' 'external/*' 'cmake/*' '/usr/*' --output-file coverage.info # filter out system and test code
-  - lcov --list coverage.info # debug before upload
-  - coveralls-lcov coverage.info #--repo-token DgxCA08W90xv6lNs8QhXZnzK5meIpcGgJ coverage.info # uploads to coveralls
+  - cd $PARENTDIR/build
+  - lcov --list coverage_out.info.cleaned  # Show test report in travis log.
+  - coveralls-lcov coverage_out.info.cleaned  # uploads to coveralls
 

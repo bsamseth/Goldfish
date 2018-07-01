@@ -1,39 +1,50 @@
-cmake_minimum_required(VERSION 2.8)
+# CMake config based on github.com/bsamseth/cpp-project
+
+# This file specifies how the project should be built, using CMake.
+# If you are unfamiliar with CMake, don't worry about all the details.
+# The sections you might want to edit are marked as such, and 
+# the comments should hopefully make most of it clear.
+#
+# For many purposes, you may not need to change anything about this file.
+
+cmake_minimum_required(VERSION 3.0)
+
+# Set project name here.
 project(Goldfish)
- 
-enable_language(C CXX)
+enable_language(CXX)
 
-
+# Set version number (change as needed). These definitions are available
+# by including "projectmeta.hpp" in the source. 
+# See projectmeta.hpp.in for some more details.
 set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 1)
+set(PROJECT_VERSION_MINOR 2)
+
+
+# Include stuff. No change needed.
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+include(ConfigSafeGuards)
+include(Colors)
+
 
 # --------------------------------------------------------------------------------
-#                          Compile flags.
+#                          Compile flags
 # --------------------------------------------------------------------------------
-# These options can be turned on/off from the 'make' command.
-option(debug "Use debugging flag" ON)
-option(coverage "Use coverage flag" OFF)
+# Set the C++ standard you wish to use (will apply to all files).
+# If you do not use any features that limits the standard required,
+# you could omit this line.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
-# Set the C++ standard.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# Things to always include as flags. Change as needed.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")  
 
-# Things to always include as flags.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")  
+# Build-type specific flags. Change as needed.
+SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
-# Set debug/coverage flags, or optimize, depending on options.
-if (debug)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-    # Coverage can only be set if -g is used.
-    if (coverage)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-    endif()
-else ()
-    # Optimize flag for production code. Change as needed.
-    set(CMAKE_CXX_FLAGS "-O2")
-endif()
+message(STATUS "Building with the following extra flags: ${CMAKE_CXX_FLAGS}")
 
 # --------------------------------------------------------------------------------
-#                         Locate files.
+#                         Locate files 
 # --------------------------------------------------------------------------------
 # We make sure that CMake sees all the files.
 include_directories(
@@ -43,31 +54,87 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/external/googletest
     ${PROJECT_SOURCE_DIR}/external/googletest/include)
 
-# Make variables referring to all the sources and test files.
-file(GLOB SOURCES "src/*.cpp")
-file(GLOB TESTFILES "tests/*.cpp")
-set(TEST_MAIN unit_tests.x)
+# Make variables referring to all the sources and test files.  Could use file
+# globbing, but this does not play nice with IDEs and is also discouraged due
+# to a reload having to be done anyway when we add new files.
+set(HEADERS
+        include/LRUCache.hpp
+        include/bitboard.hpp
+        include/castling.hpp
+        include/castlingtype.hpp
+        include/color.hpp
+        include/depth.hpp
+        include/evaluation.hpp
+        include/file.hpp
+        include/goldfish.hpp
+        include/move.hpp
+        include/movegenerator.hpp
+        include/movelist.hpp
+        include/movetype.hpp
+        include/notation.hpp
+        include/perft.hpp
+        include/piece.hpp
+        include/piecetype.hpp
+        include/position.hpp
+        include/projectmeta.hpp.in
+        include/protocol.hpp
+        include/rank.hpp
+        include/search.hpp
+        include/square.hpp
+        include/value.hpp)
+set(SOURCES
+        src/bitboard.cpp
+        src/castling.cpp
+        src/castlingtype.cpp
+        src/color.cpp
+        src/evaluation.cpp
+        src/file.cpp
+        src/goldfish.cpp
+        src/move.cpp
+        src/movegenerator.cpp
+        src/movelist.cpp
+        src/notation.cpp
+        src/perft.cpp
+        src/piece.cpp
+        src/piecetype.cpp
+        src/position.cpp
+        src/rank.cpp
+        src/search.cpp
+        src/square.cpp
+        src/value.cpp)
+set(TESTFILES
+        tests/bitboardtest.cpp
+        tests/castlingtest.cpp
+        tests/castlingtypetest.cpp
+        tests/colortest.cpp
+        tests/evaluationtest.cpp
+        tests/filetest.cpp
+        tests/movegeneratortest.cpp
+        tests/movelisttest.cpp
+        tests/movetest.cpp
+        tests/notationtest.cpp
+        tests/piecetest.cpp
+        tests/piecetypetest.cpp
+        tests/positiontest.cpp
+        tests/ranktest.cpp
+        tests/squaretest.cpp)
+set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you wish).
+
+
 
 # --------------------------------------------------------------------------------
 #                            Build! 
 # --------------------------------------------------------------------------------
 # Compile all sources into a library. Called engine here (change if you wish).
-add_library( engine ${SOURCES} )
+add_library( engine ${SOURCES} ${HEADERS})
 
-# Add an executables for main files in app/.
-if(EXISTS "app/testing.cpp")
-    add_executable(tester app/testing.cpp)
-    add_dependencies(tester engine)
-    target_link_libraries(tester engine)
-endif()
-
-add_executable(goldfish app/goldfish.cpp)
-add_dependencies(goldfish engine)
-target_link_libraries(goldfish engine)
+add_executable(goldfish.x app/goldfish.cpp)
+add_dependencies(goldfish.x engine)
+target_link_libraries(goldfish.x engine pthread)
 
 
 # --------------------------------------------------------------------------------
-#                         Make Tests (no change needed).
+#                         Make Tests
 # --------------------------------------------------------------------------------
 # Add a make target 'gtest', that runs the tests (and builds all dependencies).
 # The setup of Google Test is done at the very end of this file.
@@ -84,27 +151,31 @@ include(CTest)
 enable_testing()
 add_test(unit_tests ${PROJECT_BINARY_DIR}/${TEST_MAIN})
 
-
+# --------------------------------------------------------------------------------
+#                         Code Coverage 
+# --------------------------------------------------------------------------------
+# If CMake aborts due to missing dependencies for code coverage 
+# (gcov, lcov, genhtml and supported compiler), comment this line.
+include(CodeCoverage)
 
 # --------------------------------------------------------------------------------
-#                         Documentation.
+#                         Documentation 
 # --------------------------------------------------------------------------------
 # Add a make target 'doc' to generate API documentation with Doxygen.
 # You should set options to your liking in the file 'Doxyfile.in'.
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-    add_custom_target(doc ALL
+    add_custom_target(doc 
         ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile &> doxygen.log
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen" VERBATIM
+        COMMENT "${BoldMagenta}Generating API documentation with Doxygen (open ./html/index.html to view).${ColourReset}" VERBATIM
         )
 endif(DOXYGEN_FOUND)
 
 
-
 # --------------------------------------------------------------------------------
-#                         Google Test.
+#                         Google Test
 # --------------------------------------------------------------------------------
 # The following makes sure that an up-to-date version of googletest is available,
 # and built so that it may be used by your tests. 
@@ -120,15 +191,19 @@ set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/src/gtest-
 set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/src/gtest_main.cc PROPERTIES GENERATED 1)
 
 
+
 # --------------------------------------------------------------------------------
-#                            Misc (no change needed).
+#                            Misc
 # --------------------------------------------------------------------------------
 # Have CMake parse the config file, generating the config header, with
 # correct definitions. Here only used to make version number available to
-# the source code. Include "exampleConfig.h" (no .in suffix) in the source.
+# the source code. Include "projectmeta.hpp" (no .in suffix) in the source.
 configure_file (
-  "${PROJECT_SOURCE_DIR}/include/goldfish.h.in"
-  "${PROJECT_BINARY_DIR}/goldfish.h")
+  "${PROJECT_SOURCE_DIR}/include/projectmeta.hpp.in"
+  "${PROJECT_BINARY_DIR}/projectmeta.hpp")
 # add the binary tree to the search path for include files
-# so that we will find exampleConfig.h
+# so that we will find projectmeta.hpp
 include_directories("${PROJECT_BINARY_DIR}")
+
+# Ask CMake to output a compile_commands.json file for use with things like Vim YCM.
+set( CMAKE_EXPORT_COMPILE_COMMANDS 1 )
