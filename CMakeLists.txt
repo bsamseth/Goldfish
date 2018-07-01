@@ -69,9 +69,8 @@ set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you w
 add_library( engine ${SOURCES} ${HEADERS})
 
 add_executable(goldfish.x app/goldfish.cpp)
-add_dependencies(goldfish.x engine)       
-target_link_libraries(goldfish.x engine) 
-
+add_dependencies(goldfish.x engine)
+target_link_libraries(goldfish.x engine pthread)
 
 
 # --------------------------------------------------------------------------------
