@@ -37,3 +37,5 @@
 build*
 xcode.build/*
 .vscode
+cmake-build*
+.idea
