@@ -1,37 +1,53 @@
+#include "move.hpp"
 
-#include "types.h"
-#include "move.h"
+namespace goldfish {
 
-Move::Move() {
-    m_Move = NO_MOVE;
+int Move::value_of(int type, int origin_square, int target_square, int origin_piece, int target_piece, int promotion) {
+    int move = 0;
+
+    // Encode type
+    move |= type << TYPE_SHIFT;
+
+    // Encode origin square
+    move |= origin_square << ORIGIN_SQUARE_SHIFT;
+
+    // Encode target square
+    move |= target_square << TARGET_SQUARE_SHIFT;
+
+    // Encode origin piece
+    move |= origin_piece << ORIGIN_PIECE_SHIFT;
+
+    // Encode target piece
+    move |= target_piece << TARGET_PIECE_SHIFT;
+
+    // Encode promotion
+    move |= promotion << PROMOTION_SHIFT;
+
+    return move;
 }
 
-Move::Move(Square from, Square to, MoveFlag moveflag) {
-    m_Move = ((moveflag & 0x0f) << 12) | ((to & 0x3f) << 6) | (from & 0x3f);
+int Move::get_type(int move) {
+    return (move & TYPE_MASK) >> TYPE_SHIFT;
 }
 
-Move::Move(Square from, Square to) {
-    m_Move = ((QUIET_MOVE & 0x0f) << 12) | ((to & 0x3f) << 6) | (from & 0x3f);
+int Move::get_origin_square(int move) {
+    return (move & ORIGIN_SQUARE_MASK) >> ORIGIN_SQUARE_SHIFT;
 }
 
-unsigned Move::getInteger() const {
-    return m_Move;
+int Move::get_target_square(int move) {
+    return (move & TARGET_SQUARE_MASK) >> TARGET_SQUARE_SHIFT;
 }
 
-Square Move::getFrom() const {
-    return Square(m_Move & 0x3f);
+int Move::get_origin_piece(int move) {
+    return (move & ORIGIN_PIECE_MASK) >> ORIGIN_PIECE_SHIFT;
 }
-Square Move::getTo() const {
-    return Square((m_Move >> 6) & 0x3f);
+
+int Move::get_target_piece(int move) {
+    return (move & TARGET_PIECE_MASK) >> TARGET_PIECE_SHIFT;
 }
-MoveFlag Move::getFlag() const {
-    return (MoveFlag)((m_Move >> 12) & 0x0f);
+
+int Move::get_promotion(int move) {
+    return (move & PROMOTION_MASK) >> PROMOTION_SHIFT;
 }
-void Move::setFrom(Square to) {
-  m_Move = m_Move & ~0x3f;
-  m_Move = m_Move | (to & 0x3f);
-}
-void Move::setTo(Square from) {
-  m_Move = m_Move & ~(0x3f << 6);
-  m_Move = m_Move | ((from & 0x3f) << 6);
+
 }
