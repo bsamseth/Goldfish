@@ -3,6 +3,7 @@
 #include <chrono>
 
 #include "goldfish.hpp"
+#include "projectmeta.hpp"
 
 namespace goldfish {
 
@@ -52,8 +53,8 @@ void Goldfish::receive_initialize() {
     // program.
 
     // We must send an initialization answer back!
-    std::cout << "id name Goldfish 1.7.0-cpp" << std::endl;
-    std::cout << "id author Phokham Nonava" << std::endl;
+    std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << '\n';
+    std::cout << "id author Bendik Samseth" << '\n';
     std::cout << "uciok" << std::endl;
 }
 
@@ -304,7 +305,7 @@ std::string Goldfish::from_move(int move) {
 
     int promotion = Move::get_promotion(move);
     if (promotion != PieceType::NO_PIECE_TYPE) {
-        notation += std::tolower(Notation::from_piece_type(promotion));
+        notation += (char) std::tolower(Notation::from_piece_type(promotion));
     }
 
     return notation;
