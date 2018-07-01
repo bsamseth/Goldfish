@@ -27,7 +27,7 @@ include(Colors)
 
 
 # --------------------------------------------------------------------------------
-#                          Compile flags (change as needed).
+#                          Compile flags
 # --------------------------------------------------------------------------------
 # Set the C++ standard you wish to use (will apply to all files).
 # If you do not use any features that limits the standard required,
@@ -44,7 +44,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 message(STATUS "Building with the following extra flags: ${CMAKE_CXX_FLAGS}")
 
 # --------------------------------------------------------------------------------
-#                         Locate files (no change needed).
+#                         Locate files 
 # --------------------------------------------------------------------------------
 # We make sure that CMake sees all the files.
 include_directories(
@@ -54,16 +54,76 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/external/googletest
     ${PROJECT_SOURCE_DIR}/external/googletest/include)
 
-# Make variables referring to all the sources and test files.
-file(GLOB SOURCES "src/*.cpp")
-file(GLOB HEADERS "inlcude/*.hpp")
-file(GLOB TESTFILES "tests/*.cpp")
+# Make variables referring to all the sources and test files.  Could use file
+# globbing, but this does not play nice with IDEs and is also discouraged due
+# to a reload having to be done anyway when we add new files.
+set(HEADERS
+        include/LRUCache.hpp
+        include/bitboard.hpp
+        include/castling.hpp
+        include/castlingtype.hpp
+        include/color.hpp
+        include/depth.hpp
+        include/evaluation.hpp
+        include/file.hpp
+        include/goldfish.hpp
+        include/move.hpp
+        include/movegenerator.hpp
+        include/movelist.hpp
+        include/movetype.hpp
+        include/notation.hpp
+        include/perft.hpp
+        include/piece.hpp
+        include/piecetype.hpp
+        include/position.hpp
+        include/projectmeta.hpp.in
+        include/protocol.hpp
+        include/rank.hpp
+        include/search.hpp
+        include/square.hpp
+        include/value.hpp)
+set(SOURCES
+        src/bitboard.cpp
+        src/castling.cpp
+        src/castlingtype.cpp
+        src/color.cpp
+        src/evaluation.cpp
+        src/file.cpp
+        src/goldfish.cpp
+        src/move.cpp
+        src/movegenerator.cpp
+        src/movelist.cpp
+        src/notation.cpp
+        src/perft.cpp
+        src/piece.cpp
+        src/piecetype.cpp
+        src/position.cpp
+        src/rank.cpp
+        src/search.cpp
+        src/square.cpp
+        src/value.cpp)
+set(TESTFILES
+        tests/bitboardtest.cpp
+        tests/castlingtest.cpp
+        tests/castlingtypetest.cpp
+        tests/colortest.cpp
+        tests/evaluationtest.cpp
+        tests/filetest.cpp
+        tests/movegeneratortest.cpp
+        tests/movelisttest.cpp
+        tests/movetest.cpp
+        tests/notationtest.cpp
+        tests/piecetest.cpp
+        tests/piecetypetest.cpp
+        tests/positiontest.cpp
+        tests/ranktest.cpp
+        tests/squaretest.cpp)
 set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you wish).
 
 
 
 # --------------------------------------------------------------------------------
-#                            Build! (Change as needed)
+#                            Build! 
 # --------------------------------------------------------------------------------
 # Compile all sources into a library. Called engine here (change if you wish).
 add_library( engine ${SOURCES} ${HEADERS})
@@ -74,7 +134,7 @@ target_link_libraries(goldfish.x engine pthread)
 
 
 # --------------------------------------------------------------------------------
-#                         Make Tests (no change needed).
+#                         Make Tests
 # --------------------------------------------------------------------------------
 # Add a make target 'gtest', that runs the tests (and builds all dependencies).
 # The setup of Google Test is done at the very end of this file.
@@ -92,14 +152,14 @@ enable_testing()
 add_test(unit_tests ${PROJECT_BINARY_DIR}/${TEST_MAIN})
 
 # --------------------------------------------------------------------------------
-#                         Code Coverage (no change needed).
+#                         Code Coverage 
 # --------------------------------------------------------------------------------
 # If CMake aborts due to missing dependencies for code coverage 
 # (gcov, lcov, genhtml and supported compiler), comment this line.
 include(CodeCoverage)
 
 # --------------------------------------------------------------------------------
-#                         Documentation (no change needed).
+#                         Documentation 
 # --------------------------------------------------------------------------------
 # Add a make target 'doc' to generate API documentation with Doxygen.
 # You should set options to your liking in the file 'Doxyfile.in'.
@@ -115,7 +175,7 @@ endif(DOXYGEN_FOUND)
 
 
 # --------------------------------------------------------------------------------
-#                         Google Test (no change needed).
+#                         Google Test
 # --------------------------------------------------------------------------------
 # The following makes sure that an up-to-date version of googletest is available,
 # and built so that it may be used by your tests. 
@@ -133,7 +193,7 @@ set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/src/gtest_
 
 
 # --------------------------------------------------------------------------------
-#                            Misc (no change needed).
+#                            Misc
 # --------------------------------------------------------------------------------
 # Have CMake parse the config file, generating the config header, with
 # correct definitions. Here only used to make version number available to
