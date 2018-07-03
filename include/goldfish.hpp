@@ -48,6 +48,8 @@ private:
     void receive_stop();
 
     void receive_quit();
+
+    void receive_bench();
 };
 
 }

@@ -59,6 +59,7 @@ include_directories(
 # to a reload having to be done anyway when we add new files.
 set(HEADERS
         include/LRUCache.hpp
+        include/benchmark.hpp
         include/bitboard.hpp
         include/castling.hpp
         include/castlingtype.hpp
@@ -83,6 +84,7 @@ set(HEADERS
         include/square.hpp
         include/value.hpp)
 set(SOURCES
+        src/benchmark.cpp
         src/bitboard.cpp
         src/castling.cpp
         src/castlingtype.cpp

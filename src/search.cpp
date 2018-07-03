@@ -150,7 +150,7 @@ void Search::new_ponder_search(Position &position,
 Search::Search(Protocol &protocol)
         : protocol(protocol),
           timer(timer_stopped, do_time_management, current_depth, initial_depth, abort),
-          wakeup_signal(0), run_signal(0), stop_signal(0) {
+          wakeup_signal(0), run_signal(0), stop_signal(0), finished_signal(0) {
 
     reset();
 
@@ -220,6 +220,14 @@ void Search::quit() {
     thread.join();
 }
 
+void Search::wait_for_finished() {
+    // Finished signal only available after run is finished.
+    finished_signal.acquire();
+
+    // Don't release again - a later call should not
+    // acquire before run has drained and released again.
+}
+
 void Search::run() {
     while (true) {
         wakeup_signal.acquire();
@@ -244,6 +252,7 @@ void Search::run() {
         }
 
         // Go...
+        finished_signal.drain_permits();
         stop_signal.drain_permits();
         running = true;
         run_signal.release();
@@ -291,6 +300,7 @@ void Search::run() {
 
         running = false;
         stop_signal.release();
+        finished_signal.release();
     }
 }
 
@@ -346,6 +356,7 @@ void Search::search_root(int depth, int alpha, int beta) {
     for (int i = 0; i < root_moves.size; i++) {
         root_moves.entries[i]->value = -Value::INFINITE;
     }
+
 
     for (int i = 0; i < root_moves.size; i++) {
         int move = root_moves.entries[i]->move;
@@ -404,6 +415,38 @@ int Search::search(int depth, int alpha, int beta, int ply) {
     int best_value = -Value::INFINITE;
     int searched_moves = 0;
     bool is_check = position.is_check();
+
+    // Null move pruning.
+    // Only use when not in check, and when at least one piece is present
+    // on the board. This avoids most zugzwang cases.
+    if (!is_check && (
+        position.pieces[position.active_color][PieceType::QUEEN] ||
+        position.pieces[position.active_color][PieceType::ROOK]  ||
+        position.pieces[position.active_color][PieceType::BISHOP] ||
+        position.pieces[position.active_color][PieceType::KNIGHT])) {
+
+
+        position.make_null_move();
+
+        // We do recursive null move, with depth reduction factor 3.
+        // Why 3? Because this is common, for instance in sunfish.
+        int value = -search(depth - 3, -beta, -alpha, ply + 1);
+
+        position.undo_null_move();
+
+        // The value is at worst equal to best_value's initial value.
+        best_value = value;
+
+        // New best move?
+        if (value > alpha) {
+            alpha = value;
+
+            // Beta cutoff?
+            if (value >= beta)
+                return best_value;
+
+        }
+    }
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
@@ -537,6 +580,9 @@ void Search::save_pv(int move, MoveVariation &src, MoveVariation &dest) {
         dest.moves[i + 1] = src.moves[i];
     }
     dest.size = src.size + 1;
+}
+uint64_t Search::get_total_nodes() {
+    return total_nodes;
 }
 
 }

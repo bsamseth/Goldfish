@@ -1,9 +1,14 @@
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include <chrono>
+#include <algorithm>
 
 #include "goldfish.hpp"
 #include "projectmeta.hpp"
+#include "benchmark.hpp"
+
+extern std::vector<std::string> setup_bench();
 
 namespace goldfish {
 
@@ -30,7 +35,9 @@ void Goldfish::run() {
             receive_stop();
         } else if (token == "ponderhit") {
             receive_ponder_hit();
-        } else if (token == "quit") {
+        } else if (token == "bench") {
+            receive_bench();
+        }else if (token == "quit") {
             receive_quit();
             break;
         }
@@ -215,6 +222,40 @@ void Goldfish::receive_ponder_hit() {
 void Goldfish::receive_stop() {
     // We received a stop command. If a search is running, stop it.
     search->stop();
+}
+
+void Goldfish::receive_bench() {
+
+    auto list = setup_bench();
+    auto num_positions = std::count_if(list.begin(), list.end(),
+                                       [](std::string s) { return s.find("go ") == 0; });
+    int count = 1;
+    uint64_t total_nodes = 0;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    for (const auto& cmd : list) {
+        std::string token;
+        std::istringstream is(cmd);
+        is >> std::skipws >> token;
+
+        if (token == "go") {
+            std::cerr << "\nPosition: " << count++ << '/' << num_positions << std::endl;
+
+            receive_go(is);
+            search->wait_for_finished();
+            total_nodes += search->get_total_nodes();
+
+        }
+        else if (token == "position") receive_position(is);
+        else if (token == "ucinewgame") receive_new_game();
+    }
+    auto end_time = std::chrono::high_resolution_clock::now();
+    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() + 1;
+
+    std::cerr << "\n==========================="
+              << "\nTotal time (ms) : " << time
+              << "\nNodes searched  : " << total_nodes
+              << "\nNodes/second    : " << 1000*total_nodes/time << std::endl;
 }
 
 void Goldfish::send_best_move(int best_move, int ponder_move) {

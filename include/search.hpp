@@ -47,7 +47,11 @@ public:
 
     void quit();
 
+    void wait_for_finished();
+
     void run();
+
+    uint64_t get_total_nodes();
 
 private:
     /**
@@ -96,6 +100,7 @@ private:
     Semaphore wakeup_signal;
     Semaphore run_signal;
     Semaphore stop_signal;
+    Semaphore finished_signal;
     std::recursive_mutex sync;
     Protocol &protocol;
     bool running = false;
