@@ -26,7 +26,7 @@ As suggested in [fluxroot/pulse](https://github.com/fluxroot/pulse), the
 current plan for the project is to improve the strength, including, but not
 limited to:
 
-- [ ] Null move pruning
+- [X] Null move pruning
 - [ ] Transposition table
 - [ ] Check extensions
 - [ ] Passed pawn
