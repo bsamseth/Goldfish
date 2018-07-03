@@ -1,7 +1,6 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <string>
 #include <chrono>
 #include <algorithm>
 
@@ -228,8 +227,10 @@ void Goldfish::receive_stop() {
 void Goldfish::receive_bench() {
 
     auto list = setup_bench();
-    int num_positions = std::count_if(list.begin(), list.end(), [](std::string s) { return s.find("go ") == 0; });
+    auto num_positions = std::count_if(list.begin(), list.end(),
+                                       [](std::string s) { return s.find("go ") == 0; });
     int count = 1;
+    uint64_t total_nodes = 0;
 
     auto start_time = std::chrono::high_resolution_clock::now();
     for (const auto& cmd : list) {
@@ -242,14 +243,19 @@ void Goldfish::receive_bench() {
 
             receive_go(is);
             search->wait_for_finished();
+            total_nodes += search->get_total_nodes();
 
         }
         else if (token == "position") receive_position(is);
         else if (token == "ucinewgame") receive_new_game();
     }
     auto end_time = std::chrono::high_resolution_clock::now();
-    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    std::cerr << "\nTotal time: " << time << " ms." << std::endl;
+    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() + 1;
+
+    std::cerr << "\n==========================="
+              << "\nTotal time (ms) : " << time
+              << "\nNodes searched  : " << total_nodes
+              << "\nNodes/second    : " << 1000*total_nodes/time << std::endl;
 }
 
 void Goldfish::send_best_move(int best_move, int ponder_move) {

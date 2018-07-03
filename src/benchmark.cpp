@@ -4,7 +4,6 @@
 
 #include "benchmark.hpp"
 #include "notation.hpp"
-#include "position.hpp"
 #include "search.hpp"
 
 
@@ -68,7 +67,7 @@ std::vector<std::string> setup_bench() {
     std::string go, token;
     std::vector<std::string> list;
 
-    go = "go depth 7";
+    go = "go depth 6";
 
     list.emplace_back("ucinewgame");
 

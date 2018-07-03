@@ -51,6 +51,8 @@ public:
 
     void run();
 
+    uint64_t get_total_nodes();
+
 private:
     /**
      * This is our search timer for time & clock & ponder searches.
@@ -98,6 +100,7 @@ private:
     Semaphore wakeup_signal;
     Semaphore run_signal;
     Semaphore stop_signal;
+    Semaphore finished_signal;
     std::recursive_mutex sync;
     Protocol &protocol;
     bool running = false;

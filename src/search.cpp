@@ -150,7 +150,7 @@ void Search::new_ponder_search(Position &position,
 Search::Search(Protocol &protocol)
         : protocol(protocol),
           timer(timer_stopped, do_time_management, current_depth, initial_depth, abort),
-          wakeup_signal(0), run_signal(0), stop_signal(0) {
+          wakeup_signal(0), run_signal(0), stop_signal(0), finished_signal(0) {
 
     reset();
 
@@ -221,7 +221,11 @@ void Search::quit() {
 }
 
 void Search::wait_for_finished() {
-    thread.join();
+    // Finished signal only available after run is finished.
+    finished_signal.acquire();
+
+    // Don't release again - a later call should not
+    // acquire before run has drained and released again.
 }
 
 void Search::run() {
@@ -248,6 +252,7 @@ void Search::run() {
         }
 
         // Go...
+        finished_signal.drain_permits();
         stop_signal.drain_permits();
         running = true;
         run_signal.release();
@@ -295,6 +300,7 @@ void Search::run() {
 
         running = false;
         stop_signal.release();
+        finished_signal.release();
     }
 }
 
@@ -574,6 +580,9 @@ void Search::save_pv(int move, MoveVariation &src, MoveVariation &dest) {
         dest.moves[i + 1] = src.moves[i];
     }
     dest.size = src.size + 1;
+}
+uint64_t Search::get_total_nodes() {
+    return total_nodes;
 }
 
 }
