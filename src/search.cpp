@@ -220,6 +220,10 @@ void Search::quit() {
     thread.join();
 }
 
+void Search::wait_for_finished() {
+    thread.join();
+}
+
 void Search::run() {
     while (true) {
         wakeup_signal.acquire();

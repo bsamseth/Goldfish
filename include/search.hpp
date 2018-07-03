@@ -47,6 +47,8 @@ public:
 
     void quit();
 
+    void wait_for_finished();
+
     void run();
 
 private:
