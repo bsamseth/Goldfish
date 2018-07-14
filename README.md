@@ -28,7 +28,7 @@ limited to:
 
 - [X] Null move pruning
 - [ ] Transposition table
-- [ ] Check extensions
+- [X] Check extensions
 - [ ] Passed pawn
 - [ ] Staged move generation
 - [ ] Better search algorithms, such as MTD-bi
