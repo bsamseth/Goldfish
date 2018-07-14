@@ -411,6 +411,9 @@ int Search::search(int depth, int alpha, int beta, int ply) {
         return Value::DRAW;
     }
 
+    if (position.is_check())
+        depth += 1;
+
     // Initialize
     int best_value = -Value::INFINITE;
     int searched_moves = 0;
