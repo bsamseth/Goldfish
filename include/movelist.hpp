@@ -30,14 +30,14 @@ public:
 
 class MoveVariation {
 public:
-    std::array<int, Depth::MAX_PLY> moves;
+    std::array<Move, Depth::MAX_PLY> moves;
     int size = 0;
 };
 
 class MoveEntry {
 public:
-    int move = Move::NO_MOVE;
-    int value = Value::NOVALUE;
+    Move move = Moves::NO_MOVE;
+    int value = Value::NO_VALUE;
 };
 
 class RootEntry : public MoveEntry {

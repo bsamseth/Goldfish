@@ -1,14 +1,11 @@
 #include "evaluation.hpp"
 
-namespace goldfish {
+namespace goldfish::Evaluation {
 
-int Evaluation::material_weight = 100;
-int Evaluation::mobility_weight = 80;
-
-int Evaluation::evaluate(Position &position) {
+int evaluate(Position &position) {
     // Initialize
-    int my_color = position.active_color;
-    int opposite_color = Color::swap_color(my_color);
+    Color my_color = position.active_color;
+    Color opposite_color = ~my_color;
     int value = 0;
 
     // Evaluate material
@@ -27,44 +24,44 @@ int Evaluation::evaluate(Position &position) {
     return value;
 }
 
-int Evaluation::evaluate_material(int color, Position &position) {
-    int material = position.material[color];
+int evaluate_material(Color color, Position &position) {
+    int material = position.material[static_cast<int>(color)];
 
     // Add bonus for bishop pair
-    if (Bitboard::size(position.pieces[color][PieceType::BISHOP]) >= 2) {
+    if (Bitboard::size(position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::BISHOP)]) >= 2) {
         material += 50;
     }
 
     return material;
 }
 
-int Evaluation::evaluate_mobility(int color, Position &position) {
+int evaluate_mobility(Color color, Position &position) {
     int knight_mobility = 0;
-    for (auto squares = position.pieces[color][PieceType::KNIGHT];
+    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::KNIGHT)];
          squares != 0; squares = Bitboard::remainder(squares)) {
         int square = Bitboard::next(squares);
-        knight_mobility += evaluate_mobility(color, position, square, Square::knight_directions);
+        knight_mobility += evaluate_mobility(color, position, square, Squares::knight_directions);
     }
 
     int bishop_mobility = 0;
-    for (auto squares = position.pieces[color][PieceType::BISHOP];
+    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::BISHOP)];
          squares != 0; squares = Bitboard::remainder(squares)) {
         int square = Bitboard::next(squares);
-        bishop_mobility += evaluate_mobility(color, position, square, Square::bishop_directions);
+        bishop_mobility += evaluate_mobility(color, position, square, Squares::bishop_directions);
     }
 
     int rook_mobility = 0;
-    for (auto squares = position.pieces[color][PieceType::ROOK];
+    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::ROOK)];
          squares != 0; squares = Bitboard::remainder(squares)) {
         int square = Bitboard::next(squares);
-        rook_mobility += evaluate_mobility(color, position, square, Square::rook_directions);
+        rook_mobility += evaluate_mobility(color, position, square, Squares::rook_directions);
     }
 
     int queen_mobility = 0;
-    for (auto squares = position.pieces[color][PieceType::QUEEN];
+    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::QUEEN)];
          squares != 0; squares = Bitboard::remainder(squares)) {
         int square = Bitboard::next(squares);
-        queen_mobility += evaluate_mobility(color, position, square, Square::queen_directions);
+        queen_mobility += evaluate_mobility(color, position, square, Squares::queen_directions);
     }
 
     return knight_mobility * 4
@@ -73,18 +70,18 @@ int Evaluation::evaluate_mobility(int color, Position &position) {
            + queen_mobility;
 }
 
-int Evaluation::evaluate_mobility(int color, Position &position, int square, const std::vector<int> &directions) {
+int evaluate_mobility(Color color, Position &position, int square, const std::vector<int> &directions) {
     int mobility = 0;
-    bool sliding = PieceType::is_sliding(Piece::get_type(position.board[square]));
+    bool sliding = PieceTypes::is_sliding(Pieces::get_type(position.board[square]));
 
     for (auto direction : directions) {
-        int target_square = square + direction;
+        Square target_square = static_cast<Square>(static_cast<int>(square) + direction);
 
-        while (Square::is_valid(target_square)) {
+        while (Squares::is_valid(target_square)) {
             mobility++;
 
-            if (sliding && position.board[target_square] == Piece::NO_PIECE) {
-                target_square += direction;
+            if (sliding && position.board[static_cast<int>(target_square)] == Piece::NO_PIECE) {
+                target_square = static_cast<Square>(static_cast<int>(target_square) + direction);
             } else {
                 break;
             }

@@ -169,7 +169,7 @@ void Search::reset() {
     total_nodes = 0;
     current_depth = initial_depth;
     current_max_depth = 0;
-    current_move = Move::NO_MOVE;
+    current_move = Moves::NO_MOVE;
     current_move_number = 0;
 }
 
@@ -286,8 +286,8 @@ void Search::run() {
         protocol.send_status(true, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 
         // Send the best move and ponder move
-        int best_move = Move::NO_MOVE;
-        int ponder_move = Move::NO_MOVE;
+        int best_move = Moves::NO_MOVE;
+        int ponder_move = Moves::NO_MOVE;
         if (root_moves.size > 0) {
             best_move = root_moves.entries[0]->move;
             if (root_moves.entries[0]->pv.size >= 2) {
@@ -403,7 +403,7 @@ int Search::search(int depth, int alpha, int beta, int ply) {
 
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY) {
-        return evaluation.evaluate(position);
+        return Evaluation::evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
@@ -423,10 +423,10 @@ int Search::search(int depth, int alpha, int beta, int ply) {
     // Only use when not in check, and when at least one piece is present
     // on the board. This avoids most zugzwang cases.
     if (!is_check && (
-        position.pieces[position.active_color][PieceType::QUEEN] ||
-        position.pieces[position.active_color][PieceType::ROOK]  ||
-        position.pieces[position.active_color][PieceType::BISHOP] ||
-        position.pieces[position.active_color][PieceType::KNIGHT])) {
+        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::QUEEN)] ||
+        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::ROOK)]  ||
+        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::BISHOP)] ||
+        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::KNIGHT)])) {
 
 
         position.make_null_move();
@@ -457,7 +457,7 @@ int Search::search(int depth, int alpha, int beta, int ply) {
         int value = best_value;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             searched_moves++;
             value = -search(depth - 1, -beta, -alpha, ply + 1);
         }
@@ -504,7 +504,7 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
 
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY) {
-        return evaluation.evaluate(position);
+        return Evaluation::evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
@@ -519,7 +519,7 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
 
     //### BEGIN Stand pat
     if (!is_check) {
-        best_value = evaluation.evaluate(position);
+        best_value = Evaluation::evaluate(position);
 
         // Do we have a better value?
         if (best_value > alpha) {
@@ -540,7 +540,7 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
         int value = best_value;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             searched_moves++;
             value = -quiescent(depth - 1, -beta, -alpha, ply + 1);
         }

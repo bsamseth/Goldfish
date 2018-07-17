@@ -58,7 +58,6 @@ include_directories(
 # globbing, but this does not play nice with IDEs and is also discouraged due
 # to a reload having to be done anyway when we add new files.
 set(HEADERS
-        include/LRUCache.hpp
         include/benchmark.hpp
         include/bitboard.hpp
         include/castling.hpp
@@ -86,24 +85,14 @@ set(HEADERS
 set(SOURCES
         src/benchmark.cpp
         src/bitboard.cpp
-        src/castling.cpp
-        src/castlingtype.cpp
-        src/color.cpp
         src/evaluation.cpp
-        src/file.cpp
         src/goldfish.cpp
-        src/move.cpp
         src/movegenerator.cpp
         src/movelist.cpp
         src/notation.cpp
         src/perft.cpp
-        src/piece.cpp
-        src/piecetype.cpp
         src/position.cpp
-        src/rank.cpp
-        src/search.cpp
-        src/square.cpp
-        src/value.cpp)
+        src/search.cpp)
 set(TESTFILES
         tests/bitboardtest.cpp
         tests/castlingtest.cpp

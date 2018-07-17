@@ -1,10 +1,3 @@
-/*
- * Copyright (C) 2013-2016 Phokham Nonava
- *
- * Use of this source code is governed by the MIT license that can be
- * found in the LICENSE file.
- */
-
 #include "movegenerator.hpp"
 #include "notation.hpp"
 
@@ -218,7 +211,7 @@ uint64_t mini_max(int depth, Position &position, int ply) {
         int move = moves.entries[i]->move;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             total_nodes += mini_max(depth - 1, position, ply + 1);
         }
         position.undo_move(move);
@@ -227,34 +220,21 @@ uint64_t mini_max(int depth, Position &position, int ply) {
     return total_nodes;
 }
 
-TEST(movegeneratortest, test_perft
-) {
-for (
-unsigned int i = 0;
-i < 4; i++) {
-for (
-const auto &p
-: perft_positions) {
-if (p.perft_entries.
+TEST(movegeneratortest, test_perft) {
+    for (unsigned int i = 0; i < 4; i++) {
+        for (const auto &p : perft_positions) {
+            if (p.perft_entries.size() > i) {
+                int depth = p.perft_entries[i].depth;
+                uint64_t nodes = p.perft_entries[i].nodes;
 
-size()
+                Position position(Notation::to_position(p.fen));
 
-> i) {
-int depth = p.perft_entries[i].depth;
-uint64_t nodes = p.perft_entries[i].nodes;
-
-Position position(Notation::to_position(p.fen));
-
-uint64_t result = mini_max(depth, position, 0);
-EXPECT_EQ(nodes, result
-)
-<<
-Notation::from_position(position)
-<< ", depth " << i
-<< ": expected " << nodes
-<< ", actual " <<
-result;
-}
-}
-}
+                uint64_t result = mini_max(depth, position, 0);
+                EXPECT_EQ(nodes, result) << Notation::from_position(position)
+                                         << ", depth " << i
+                                         << ": expected " << nodes
+                                         << ", actual " << result;
+            }
+        }
+    }
 }

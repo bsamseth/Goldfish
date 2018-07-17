@@ -56,7 +56,7 @@ uint64_t Perft::mini_max(int depth, Position &position, int ply) {
         int move = moves.entries[i]->move;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             total_nodes += mini_max(depth - 1, position, ply + 1);
         }
         position.undo_move(move);

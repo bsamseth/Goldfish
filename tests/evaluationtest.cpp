@@ -1,10 +1,3 @@
-/*
- * Copyright (C) 2013-2016 Phokham Nonava
- *
- * Use of this source code is governed by the MIT license that can be
- * found in the LICENSE file.
- */
-
 #include "evaluation.hpp"
 #include "notation.hpp"
 
@@ -12,12 +5,8 @@
 
 using namespace goldfish;
 
-TEST(evaluationtest, test_evaluate
-) {
-Position position(Notation::to_position(Notation::STANDARDPOSITION));
-Evaluation evaluation;
+TEST(evaluationtest, test_evaluate) {
+    Position position(Notation::to_position(Notation::STANDARDPOSITION));
 
-EXPECT_EQ(+Evaluation::TEMPO, evaluation.
-evaluate(position)
-);
+    EXPECT_EQ(Evaluation::TEMPO, Evaluation::evaluate(position));
 }

@@ -6,11 +6,11 @@
 #include "castlingtype.hpp"
 
 
-namespace goldfish {
+namespace goldfish::Notation {
 
-const std::string Notation::STANDARDPOSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+using namespace Definitions;
 
-Position Notation::to_position(const std::string &fen) {
+Position to_position(const std::string &fen) {
     Position position;
 
     // Clean and split into tokens
@@ -32,30 +32,26 @@ Position Notation::to_position(const std::string &fen) {
 
     // Parse pieces
     token = tokens[tokens_index++];
-    int file = File::A;
-    int rank = Rank::R8;
+    File file = File::A;
+    Rank rank = Rank::R8;
 
     for (auto character : token) {
-        int piece = to_piece(character);
+        Piece piece = to_piece(character);
         if (piece != Piece::NO_PIECE) {
-            if (!File::is_valid(file) || !Rank::is_valid(rank)) {
+            if (!Files::is_valid(file) || !Ranks::is_valid(rank)) {
                 throw std::invalid_argument("Illegal file or rank");
             }
 
-            position.put(piece, Square::value_of(file, rank));
+            position.put(piece, Squares::value_of(file, rank));
 
-            if (file == File::H) {
-                file = File::NO_FILE;
-            } else {
-                file++;
-            }
+            ++file;
         } else if (character == '/') {
             if (file != File::NO_FILE || rank == Rank::R1) {
                 throw std::invalid_argument("Illegal file or rank");
             }
 
             file = File::A;
-            rank--;
+            --rank;
         } else {
             std::string s = {character};
             int empty_squares = std::stoi(s);
@@ -64,15 +60,11 @@ Position Notation::to_position(const std::string &fen) {
             }
 
             file += empty_squares - 1;
-            if (!File::is_valid(file)) {
+            if (!Files::is_valid(file)) {
                 throw std::invalid_argument("Illegal number of empty squares");
             }
 
-            if (file == File::H) {
-                file = File::NO_FILE;
-            } else {
-                file++;
-            }
+            ++file;
         }
     }
 
@@ -83,7 +75,7 @@ Position Notation::to_position(const std::string &fen) {
         throw std::exception();
     }
 
-    int active_color = to_color(token[0]);
+    Color active_color = to_color(token[0]);
     if (active_color == Color::NO_COLOR) {
         throw std::exception();
     }
@@ -94,8 +86,8 @@ Position Notation::to_position(const std::string &fen) {
 
     if (token != "-") {
         for (auto character : token) {
-            int castling_file;
-            int king_file;
+            File castling_file;
+            File king_file;
             int castling = to_castling(character);
             if (castling == Castling::NO_CASTLING) {
                 castling_file = to_file(character);
@@ -103,13 +95,13 @@ Position Notation::to_position(const std::string &fen) {
                     throw std::exception();
                 }
 
-                int color = color_of(character);
+                Color color = color_of(character);
 
-                if (position.pieces[color][PieceType::KING] == 0) {
+                if (position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::KING)] == 0) {
                     throw std::exception();
                 }
 
-                king_file = Square::get_file(Bitboard::next(position.pieces[color][PieceType::KING]));
+                king_file = Squares::get_file(static_cast<Square>(Bitboard::next(position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::KING)])));
                 if (castling_file > king_file) {
                     castling = Castling::value_of(color, CastlingType::KING_SIDE);
                 } else {
@@ -135,14 +127,14 @@ Position Notation::to_position(const std::string &fen) {
             throw std::exception();
         }
 
-        int enpassant_file = to_file(token[0]);
-        int enpassant_rank = to_rank(token[1]);
+        File enpassant_file = to_file(token[0]);
+        Rank enpassant_rank = to_rank(token[1]);
         if (!(active_color == Color::BLACK && enpassant_rank == Rank::R3)
             && !(active_color == Color::WHITE && enpassant_rank == Rank::R6)) {
             throw std::exception();
         }
 
-        position.set_enpassant_square(Square::value_of(enpassant_file, enpassant_rank));
+        position.set_enpassant_square(Squares::value_of(enpassant_file, enpassant_rank));
     }
 
     // Parse halfmove clock
@@ -172,16 +164,16 @@ Position Notation::to_position(const std::string &fen) {
     return position;
 }
 
-std::string Notation::from_position(const Position &position) {
+std::string from_position(const Position &position) {
     std::string fen;
 
     // Pieces
-    for (auto iter = Rank::values.rbegin(); iter != Rank::values.rend(); iter++) {
-        int rank = *iter;
+    for (auto iter = Ranks::values.rbegin(); iter != Ranks::values.rend(); iter++) {
+        Rank rank = *iter;
         unsigned int empty_squares = 0;
 
-        for (auto file : File::values) {
-            int piece = position.board[Square::value_of(file, rank)];
+        for (auto file : Files::values) {
+            Piece piece = position.board[static_cast<int>(Squares::value_of(file, rank))];
 
             if (piece == Piece::NO_PIECE) {
                 empty_squares++;
@@ -252,7 +244,7 @@ std::string Notation::from_position(const Position &position) {
     return fen;
 }
 
-int Notation::to_color(char notation) {
+Color to_color(char notation) {
     char lowercase_notation = std::tolower(notation);
     switch (lowercase_notation) {
         case WHITE_NOTATION:
@@ -264,19 +256,18 @@ int Notation::to_color(char notation) {
     }
 }
 
-char Notation::from_color(int color) {
+char from_color(Color color) {
     switch (color) {
         case Color::WHITE:
             return WHITE_NOTATION;
         case Color::BLACK:
             return BLACK_NOTATION;
         case Color::NO_COLOR:
-        default:
             throw std::exception();
     }
 }
 
-int Notation::color_of(char notation) {
+Color Definitions::color_of(char notation) {
     if (std::islower(notation)) {
         return Color::BLACK;
     } else {
@@ -284,7 +275,7 @@ int Notation::color_of(char notation) {
     }
 }
 
-char Notation::transform(char notation, int color) {
+char Definitions::transform(char notation, Color color) {
     switch (color) {
         case Color::WHITE:
             return std::toupper(notation);
@@ -295,7 +286,7 @@ char Notation::transform(char notation, int color) {
     }
 }
 
-int Notation::to_piece_type(char notation) {
+PieceType to_piece_type(char notation) {
     char uppercase_notation = std::toupper(notation);
     switch (uppercase_notation) {
         case PAWN_NOTATION:
@@ -315,7 +306,7 @@ int Notation::to_piece_type(char notation) {
     }
 }
 
-char Notation::from_piece_type(int piecetype) {
+char from_piece_type(PieceType piecetype) {
     switch (piecetype) {
         case PieceType::PAWN:
             return PAWN_NOTATION;
@@ -330,27 +321,26 @@ char Notation::from_piece_type(int piecetype) {
         case PieceType::KING:
             return KING_NOTATION;
         case PieceType::NO_PIECE_TYPE:
-        default:
             throw std::exception();
     }
 }
 
-int Notation::to_piece(char notation) {
-    int color = color_of(notation);
-    int piecetype = to_piece_type(notation);
+Piece to_piece(char notation) {
+    Color color = color_of(notation);
+    PieceType piecetype = to_piece_type(notation);
 
     if (piecetype != PieceType::NO_PIECE_TYPE) {
-        return Piece::value_of(color, piecetype);
+        return Pieces::value_of(color, piecetype);
     } else {
         return Piece::NO_PIECE;
     }
 }
 
-char Notation::from_piece(int piece) {
-    return transform(from_piece_type(Piece::get_type(piece)), Piece::get_color(piece));
+char from_piece(Piece piece) {
+    return transform(from_piece_type(Pieces::get_type(piece)), Pieces::get_color(piece));
 }
 
-int Notation::to_castling_type(char notation) {
+CastlingType to_castling_type(char notation) {
     char uppercase_notation = std::toupper(notation);
     switch (uppercase_notation) {
         case KING_SIDE_NOTATION:
@@ -362,21 +352,20 @@ int Notation::to_castling_type(char notation) {
     }
 }
 
-char Notation::from_castling_type(int castlingtype) {
+char from_castling_type(CastlingType castlingtype) {
     switch (castlingtype) {
         case CastlingType::KING_SIDE:
             return KING_SIDE_NOTATION;
         case CastlingType::QUEEN_SIDE:
             return QUEEN_SIDE_NOTATION;
         case CastlingType::NO_CASTLING_TYPE:
-        default:
             throw std::exception();
     }
 }
 
-int Notation::to_castling(char notation) {
-    int color = color_of(notation);
-    int castlingtype = to_castling_type(notation);
+int to_castling(char notation) {
+    Color color = color_of(notation);
+    CastlingType castlingtype = to_castling_type(notation);
 
     if (castlingtype != CastlingType::NO_CASTLING_TYPE) {
         return Castling::value_of(color, castlingtype);
@@ -385,11 +374,11 @@ int Notation::to_castling(char notation) {
     }
 }
 
-char Notation::from_castling(int castling) {
+char from_castling(int castling) {
     return transform(from_castling_type(Castling::get_type(castling)), Castling::get_color(castling));
 }
 
-int Notation::to_file(char notation) {
+File to_file(char notation) {
     char lowercase_notation = std::tolower(notation);
     switch (lowercase_notation) {
         case A_NOTATION:
@@ -413,7 +402,7 @@ int Notation::to_file(char notation) {
     }
 }
 
-char Notation::from_file(int file) {
+char from_file(File file) {
     switch (file) {
         case File::A:
             return A_NOTATION;
@@ -432,12 +421,11 @@ char Notation::from_file(int file) {
         case File::H:
             return H_NOTATION;
         case File::NO_FILE:
-        default:
             throw std::exception();
     }
 }
 
-int Notation::to_rank(char notation) {
+Rank to_rank(char notation) {
     switch (notation) {
         case R1_NOTATION:
             return Rank::R1;
@@ -460,7 +448,7 @@ int Notation::to_rank(char notation) {
     }
 }
 
-char Notation::from_rank(int rank) {
+char from_rank(Rank rank) {
     switch (rank) {
         case Rank::R1:
             return R1_NOTATION;
@@ -479,26 +467,25 @@ char Notation::from_rank(int rank) {
         case Rank::R8:
             return R8_NOTATION;
         case Rank::NO_RANK:
-        default:
             throw std::exception();
     }
 }
 
-int Notation::to_square(const std::string &notation) {
-    int file = to_file(notation[0]);
-    int rank = to_rank(notation[1]);
+Square to_square(const std::string &notation) {
+    File file = to_file(notation[0]);
+    Rank rank = to_rank(notation[1]);
 
     if (file != File::NO_FILE && rank != Rank::NO_RANK) {
-        return (rank << 4) + file;
+        return Squares::value_of(file, rank);
     } else {
         return Square::NO_SQUARE;
     }
 }
 
-std::string Notation::from_square(int square) {
+std::string from_square(Square square) {
     std::string notation;
-    notation += from_file(Square::get_file(square));
-    notation += from_rank(Square::get_rank(square));
+    notation += from_file(Squares::get_file(square));
+    notation += from_rank(Squares::get_rank(square));
 
     return notation;
 }

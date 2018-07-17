@@ -1,91 +1,89 @@
 #pragma once
 
 #include <array>
+#include <string>
 
+#include "file.hpp"
+#include "rank.hpp"
 #include "position.hpp"
 
-namespace goldfish {
+namespace goldfish::Notation {
 
-class Notation {
-public:
-    static const std::string STANDARDPOSITION;
+const std::string STANDARDPOSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    static Position to_position(const std::string &fen);
+Position to_position(const std::string &fen);
 
-    static std::string from_position(const Position &position);
+std::string from_position(const Position &position);
 
-    static int to_color(char notation);
+Color to_color(char notation);
 
-    static char from_color(int color);
+char from_color(Color color);
 
-    static int to_piece_type(char notation);
+PieceType to_piece_type(char notation);
 
-    static char from_piece_type(int piecetype);
+char from_piece_type(PieceType piecetype);
 
-    static int to_piece(char notation);
+Piece to_piece(char notation);
 
-    static char from_piece(int piece);
+char from_piece(Piece piece);
 
-    static int to_castling_type(char notation);
+CastlingType to_castling_type(char notation);
 
-    static char from_castling_type(int castlingtype);
+char from_castling_type(CastlingType castlingtype);
 
-    static int to_castling(char notation);
+int to_castling(char notation);
 
-    static char from_castling(int castling);
+char from_castling(int castling);
 
-    static int to_file(char notation);
+File to_file(char notation);
 
-    static char from_file(int file);
+char from_file(File file);
 
-    static int to_rank(char notation);
+Rank to_rank(char notation);
 
-    static char from_rank(int rank);
+char from_rank(Rank rank);
 
-    static int to_square(const std::string &notation);
+Square to_square(const std::string &notation);
 
-    static std::string from_square(int square);
+std::string from_square(Square square);
 
-    Notation() = delete;
+namespace Definitions {
 
-    ~Notation() = delete;
+constexpr char WHITE_NOTATION = 'w';
+constexpr char BLACK_NOTATION = 'b';
 
-private:
-    static const char WHITE_NOTATION = 'w';
-    static const char BLACK_NOTATION = 'b';
+constexpr char PAWN_NOTATION = 'P';
+constexpr char KNIGHT_NOTATION = 'N';
+constexpr char BISHOP_NOTATION = 'B';
+constexpr char ROOK_NOTATION = 'R';
+constexpr char QUEEN_NOTATION = 'Q';
+constexpr char KING_NOTATION = 'K';
 
-    static const char PAWN_NOTATION = 'P';
-    static const char KNIGHT_NOTATION = 'N';
-    static const char BISHOP_NOTATION = 'B';
-    static const char ROOK_NOTATION = 'R';
-    static const char QUEEN_NOTATION = 'Q';
-    static const char KING_NOTATION = 'K';
+constexpr char KING_SIDE_NOTATION = 'K';
+constexpr char QUEEN_SIDE_NOTATION = 'Q';
 
-    static const char KING_SIDE_NOTATION = 'K';
-    static const char QUEEN_SIDE_NOTATION = 'Q';
+constexpr char A_NOTATION = 'a';
+constexpr char B_NOTATION = 'b';
+constexpr char C_NOTATION = 'c';
+constexpr char D_NOTATION = 'd';
+constexpr char E_NOTATION = 'e';
+constexpr char F_NOTATION = 'f';
+constexpr char G_NOTATION = 'g';
+constexpr char H_NOTATION = 'h';
 
-    static const char A_NOTATION = 'a';
-    static const char B_NOTATION = 'b';
-    static const char C_NOTATION = 'c';
-    static const char D_NOTATION = 'd';
-    static const char E_NOTATION = 'e';
-    static const char F_NOTATION = 'f';
-    static const char G_NOTATION = 'g';
-    static const char H_NOTATION = 'h';
+constexpr char R1_NOTATION = '1';
+constexpr char R2_NOTATION = '2';
+constexpr char R3_NOTATION = '3';
+constexpr char R4_NOTATION = '4';
+constexpr char R5_NOTATION = '5';
+constexpr char R6_NOTATION = '6';
+constexpr char R7_NOTATION = '7';
+constexpr char R8_NOTATION = '8';
 
-    static const char R1_NOTATION = '1';
-    static const char R2_NOTATION = '2';
-    static const char R3_NOTATION = '3';
-    static const char R4_NOTATION = '4';
-    static const char R5_NOTATION = '5';
-    static const char R6_NOTATION = '6';
-    static const char R7_NOTATION = '7';
-    static const char R8_NOTATION = '8';
+Color color_of(char notation);
 
-    static int color_of(char notation);
-
-    static char transform(char notation, int color);
-};
+char transform(char notation, Color color);
+}
 
 }
 
