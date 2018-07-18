@@ -121,7 +121,7 @@ void Goldfish::receive_position(std::istringstream &input) {
         MoveList<MoveEntry> &moves = move_generator.get_legal_moves(*current_position, 1, current_position->is_check());
         bool found = false;
         for (int i = 0; i < moves.size; i++) {
-            int move = moves.entries[i]->move;
+            Move move = moves.entries[i]->move;
             if (from_move(move) == token) {
                 current_position->make_move(move);
                 found = true;
@@ -261,10 +261,10 @@ void Goldfish::receive_bench() {
 void Goldfish::send_best_move(int best_move, int ponder_move) {
     std::cout << "bestmove ";
 
-    if (best_move != Move::NO_MOVE) {
+    if (best_move != Moves::NO_MOVE) {
         std::cout << from_move(best_move);
 
-        if (ponder_move != Move::NO_MOVE) {
+        if (ponder_move != Moves::NO_MOVE) {
             std::cout << " ponder " << from_move(ponder_move);
         }
     } else {
@@ -296,7 +296,7 @@ void Goldfish::send_status(
         std::cout << " time " << time_delta.count();
         std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
 
-        if (current_move != Move::NO_MOVE) {
+        if (current_move != Moves::NO_MOVE) {
             std::cout << " currmove " << from_move(current_move);
             std::cout << " currmovenumber " << current_move_number;
         }
@@ -341,10 +341,10 @@ void Goldfish::send_move(RootEntry entry, int current_depth, int current_max_dep
 std::string Goldfish::from_move(int move) {
     std::string notation;
 
-    notation += Notation::from_square(Move::get_origin_square(move));
-    notation += Notation::from_square(Move::get_target_square(move));
+    notation += Notation::from_square(Moves::get_origin_square(move));
+    notation += Notation::from_square(Moves::get_target_square(move));
 
-    int promotion = Move::get_promotion(move);
+    PieceType promotion = Moves::get_promotion(move);
     if (promotion != PieceType::NO_PIECE_TYPE) {
         notation += (char) std::tolower(Notation::from_piece_type(promotion));
     }

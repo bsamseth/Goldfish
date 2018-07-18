@@ -2,25 +2,20 @@
 
 #include "position.hpp"
 
-namespace goldfish {
 
-class Evaluation {
-public:
-    static const int TEMPO = 1;
+namespace goldfish::Evaluation {
 
-    static int material_weight;
-    static int mobility_weight;
+constexpr int TEMPO = 1;
+constexpr int MAX_WEIGHT = 100;
+constexpr int material_weight = 100;
+constexpr int mobility_weight = 80;
 
-    int evaluate(Position &position);
+int evaluate(Position &position);
 
-private:
-    static const int MAX_WEIGHT = 100;
+int evaluate_material(Color color, Position &position);
 
-    int evaluate_material(int color, Position &position);
+int evaluate_mobility(Color color, Position &position);
 
-    int evaluate_mobility(int color, Position &position);
-
-    int evaluate_mobility(int color, Position &position, int square, const std::vector<int> &directions);
-};
+int evaluate_mobility(Color color, Position &position, Square square, const std::vector<Square> &directions);
 
 }

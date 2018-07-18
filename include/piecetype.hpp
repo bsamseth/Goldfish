@@ -4,39 +4,76 @@
 
 namespace goldfish {
 
-class PieceType {
-public:
-    static const int MASK = 0x7;
-
-    static const int PAWN = 0;
-    static const int KNIGHT = 1;
-    static const int BISHOP = 2;
-    static const int ROOK = 3;
-    static const int QUEEN = 4;
-    static const int KING = 5;
-
-    static const int NO_PIECE_TYPE = 6;
-
-    static const int VALUES_SIZE = 6;
-    static const std::array<int, VALUES_SIZE> values;
-
-    // Piece values as defined by Larry Kaufman
-    static const int PAWN_VALUE = 100;
-    static const int KNIGHT_VALUE = 325;
-    static const int BISHOP_VALUE = 325;
-    static const int ROOK_VALUE = 500;
-    static const int QUEEN_VALUE = 975;
-    static const int KING_VALUE = 20000;
-
-    static bool is_valid_promotion(int piecetype);
-
-    static bool is_sliding(int piecetype);
-
-    static int get_value(int piecetype);
-
-    PieceType() = delete;
-
-    ~PieceType() = delete;
+enum PieceType {
+    PAWN, KNIGHT, BISHOP,
+    ROOK, QUEEN, KING,
+    NO_PIECE_TYPE
 };
+
+namespace PieceTypes {
+
+constexpr int MASK = 0x7;
+
+constexpr int VALUES_SIZE = 6;
+constexpr std::array<PieceType, VALUES_SIZE> values{
+    PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP,
+    PieceType::ROOK, PieceType::QUEEN, PieceType::KING
+};
+
+// Piece values as defined by Larry Kaufman
+constexpr int PAWN_VALUE = 100;
+constexpr int KNIGHT_VALUE = 325;
+constexpr int BISHOP_VALUE = 325;
+constexpr int ROOK_VALUE = 500;
+constexpr int QUEEN_VALUE = 975;
+constexpr int KING_VALUE = 20000;
+
+inline constexpr bool is_valid_promotion(PieceType piecetype) {
+    switch (piecetype) {
+        case PieceType::KNIGHT:
+        case PieceType::BISHOP:
+        case PieceType::ROOK:
+        case PieceType::QUEEN:
+            return true;
+        default:
+            return false;
+    }
+}
+
+inline constexpr bool is_sliding(PieceType piecetype) {
+    switch (piecetype) {
+        case PieceType::BISHOP:
+        case PieceType::ROOK:
+        case PieceType::QUEEN:
+            return true;
+        case PieceType::PAWN:
+        case PieceType::KNIGHT:
+        case PieceType::KING:
+            return false;
+        default:
+            throw std::exception();
+    }
+}
+
+inline constexpr int get_value(PieceType piecetype) {
+    switch (piecetype) {
+        case PieceType::PAWN:
+            return PAWN_VALUE;
+        case PieceType::KNIGHT:
+            return KNIGHT_VALUE;
+        case PieceType::BISHOP:
+            return BISHOP_VALUE;
+        case PieceType::ROOK:
+            return ROOK_VALUE;
+        case PieceType::QUEEN:
+            return QUEEN_VALUE;
+        case PieceType::KING:
+            return KING_VALUE;
+        default:
+            throw std::exception();
+    }
+}
+
+}
 
 }

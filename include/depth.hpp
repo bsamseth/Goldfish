@@ -1,15 +1,8 @@
 #pragma once
 
-namespace goldfish {
+namespace goldfish::Depth {
 
-class Depth {
-public:
-    static const int MAX_PLY = 256;
-    static const int MAX_DEPTH = 64;
-
-    Depth() = delete;
-
-    ~Depth() = delete;
-};
+constexpr int MAX_PLY = 256;
+constexpr int MAX_DEPTH = 64;
 
 }

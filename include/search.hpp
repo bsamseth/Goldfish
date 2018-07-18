@@ -107,7 +107,6 @@ private:
     bool shutdown = false;
 
     Position position;
-    Evaluation evaluation;
 
     // We will store a MoveGenerator for each ply so we don't have to create them
     // in search. (which is expensive)

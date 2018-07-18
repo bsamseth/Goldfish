@@ -169,7 +169,7 @@ void Search::reset() {
     total_nodes = 0;
     current_depth = initial_depth;
     current_max_depth = 0;
-    current_move = Move::NO_MOVE;
+    current_move = Moves::NO_MOVE;
     current_move_number = 0;
 }
 
@@ -244,7 +244,7 @@ void Search::run() {
         // Populate root move list
         MoveList<MoveEntry> &moves = move_generators[0].get_legal_moves(position, 1, position.is_check());
         for (int i = 0; i < moves.size; i++) {
-            int move = moves.entries[i]->move;
+            Move move = moves.entries[i]->move;
             root_moves.entries[root_moves.size]->move = move;
             root_moves.entries[root_moves.size]->pv.moves[0] = move;
             root_moves.entries[root_moves.size]->pv.size = 1;
@@ -286,8 +286,8 @@ void Search::run() {
         protocol.send_status(true, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 
         // Send the best move and ponder move
-        int best_move = Move::NO_MOVE;
-        int ponder_move = Move::NO_MOVE;
+        int best_move = Moves::NO_MOVE;
+        int ponder_move = Moves::NO_MOVE;
         if (root_moves.size > 0) {
             best_move = root_moves.entries[0]->move;
             if (root_moves.entries[0]->pv.size >= 2) {
@@ -359,7 +359,7 @@ void Search::search_root(int depth, int alpha, int beta) {
 
 
     for (int i = 0; i < root_moves.size; i++) {
-        int move = root_moves.entries[i]->move;
+        Move move = root_moves.entries[i]->move;
 
         current_move = move;
         current_move_number = i + 1;
@@ -403,7 +403,7 @@ int Search::search(int depth, int alpha, int beta, int ply) {
 
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY) {
-        return evaluation.evaluate(position);
+        return Evaluation::evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
@@ -453,11 +453,11 @@ int Search::search(int depth, int alpha, int beta, int ply) {
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
-        int move = moves.entries[i]->move;
+        Move move = moves.entries[i]->move;
         int value = best_value;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             searched_moves++;
             value = -search(depth - 1, -beta, -alpha, ply + 1);
         }
@@ -504,7 +504,7 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
 
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY) {
-        return evaluation.evaluate(position);
+        return Evaluation::evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
@@ -519,7 +519,7 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
 
     //### BEGIN Stand pat
     if (!is_check) {
-        best_value = evaluation.evaluate(position);
+        best_value = Evaluation::evaluate(position);
 
         // Do we have a better value?
         if (best_value > alpha) {
@@ -536,11 +536,11 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
-        int move = moves.entries[i]->move;
+        Move move = moves.entries[i]->move;
         int value = best_value;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             searched_moves++;
             value = -quiescent(depth - 1, -beta, -alpha, ply + 1);
         }
