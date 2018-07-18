@@ -121,7 +121,7 @@ void Goldfish::receive_position(std::istringstream &input) {
         MoveList<MoveEntry> &moves = move_generator.get_legal_moves(*current_position, 1, current_position->is_check());
         bool found = false;
         for (int i = 0; i < moves.size; i++) {
-            int move = moves.entries[i]->move;
+            Move move = moves.entries[i]->move;
             if (from_move(move) == token) {
                 current_position->make_move(move);
                 found = true;

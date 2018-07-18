@@ -6,7 +6,7 @@ using namespace goldfish;
 
 TEST(colortest, test_values) {
     for (auto color : Colors::values) {
-        EXPECT_EQ(color, Colors::values[static_cast<int>(color)]);
+        EXPECT_EQ(color, Colors::values[color]);
     }
 }
 

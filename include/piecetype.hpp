@@ -4,7 +4,7 @@
 
 namespace goldfish {
 
-enum class PieceType {
+enum PieceType {
     PAWN, KNIGHT, BISHOP,
     ROOK, QUEEN, KING,
     NO_PIECE_TYPE

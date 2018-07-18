@@ -75,7 +75,7 @@ private:
     class Zobrist {
     public:
         std::array<std::array<uint64_t, Squares::VALUES_LENGTH>, Pieces::VALUES_SIZE> board;
-        std::array<uint64_t, Castling::VALUES_LENGTH> castling_rights;
+        std::array<uint64_t, Castlings::VALUES_LENGTH> castling_rights;
         std::array<uint64_t, Squares::VALUES_LENGTH> enpassant_square;
         uint64_t active_color;
 
@@ -110,9 +110,9 @@ private:
 
     void clear_castling(Square square);
 
-    bool is_attacked(Square target_square, Piece attacker_piece, const std::vector<int> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, const std::vector<Square> &directions);
 
-    bool is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<int> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Square> &directions);
 };
 
 }

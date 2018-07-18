@@ -2,28 +2,16 @@
 
 #include <array>
 
+#include "operations.hpp"
+
 namespace goldfish {
 
-enum class Rank {
+enum Rank {
     R1, R2, R3, R4, R5, R6, R7, R8, NO_RANK
 };
 
-inline constexpr Rank& operator++ (Rank& rank) {
-    return rank = static_cast<Rank>(static_cast<int>(rank) + 1);
-}
-
-inline constexpr Rank& operator-- (Rank& rank) {
-    return rank = static_cast<Rank>(static_cast<int>(rank) - 1);
-}
-
-inline constexpr Rank& operator+= (Rank& rank, int increment) {
-    int rank_n = static_cast<int>(rank) + increment;
-
-    if (rank_n >= static_cast<int>(Rank::NO_RANK))
-        return rank = Rank::NO_RANK;
-
-    return rank = static_cast<Rank>(rank_n);
-}
+ENABLE_BASE_OPERATORS_ON(Rank);
+ENABLE_INCR_OPERATORS_ON(Rank);
 
 namespace Ranks {
 

@@ -72,6 +72,7 @@ set(HEADERS
         include/movelist.hpp
         include/movetype.hpp
         include/notation.hpp
+        include/operations.hpp
         include/perft.hpp
         include/piece.hpp
         include/piecetype.hpp

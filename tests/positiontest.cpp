@@ -46,7 +46,7 @@ TEST(positiontest, test_active_color) {
     Position position(Notation::to_position(Notation::STANDARDPOSITION));
 
     // Move white pawn
-    int move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
     EXPECT_EQ(Color::BLACK, position.active_color);
@@ -62,7 +62,7 @@ TEST(positiontest, test_half_moveClock) {
     Position position(Notation::to_position(Notation::STANDARDPOSITION));
 
     // Move white pawn
-    int move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
     EXPECT_EQ(0, position.halfmove_clock);
@@ -83,7 +83,7 @@ TEST(positiontest, test_full_moveNumber) {
     Position position(Notation::to_position(Notation::STANDARDPOSITION));
 
     // Move white pawn
-    int move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
     EXPECT_EQ(1, position.get_fullmove_number() );
@@ -99,7 +99,7 @@ TEST(positiontest, test_is_repetition) {
     Position position(Notation::to_position(Notation::STANDARDPOSITION));
 
     // Move white knight
-    int move = Moves::value_of(MoveType::NORMAL, Square::B1, Square::C3, Piece::WHITE_KNIGHT, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::NORMAL, Square::B1, Square::C3, Piece::WHITE_KNIGHT, Piece::NO_PIECE,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
 
@@ -142,7 +142,7 @@ TEST(positiontest, test_normal_move) {
 
     uint64_t zobrist_key = position.zobrist_key;
 
-    int move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::NORMAL, Square::A2, Square::A3, Piece::WHITE_PAWN, Piece::NO_PIECE,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
     position.undo_move(move);
@@ -156,7 +156,7 @@ TEST(positiontest, test_pawn_doubleMove) {
 
     uint64_t zobrist_key = position.zobrist_key;
 
-    int move = Moves::value_of(MoveType::PAWN_DOUBLE, Square::A2, Square::A4, Piece::WHITE_PAWN, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::PAWN_DOUBLE, Square::A2, Square::A4, Piece::WHITE_PAWN, Piece::NO_PIECE,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
 
@@ -172,11 +172,11 @@ TEST(positiontest, test_pawn_promotionMove) {
     Position position(Notation::to_position("8/P5k1/8/8/2K5/8/8/8 w - - 0 1"));
     uint64_t zobrist_key = position.zobrist_key;
 
-    int move = Moves::value_of(MoveType::PAWN_PROMOTION, Square::A7, Square::A8, Piece::WHITE_PAWN, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::PAWN_PROMOTION, Square::A7, Square::A8, Piece::WHITE_PAWN, Piece::NO_PIECE,
                               PieceType::QUEEN);
     position.make_move(move);
 
-    EXPECT_EQ(Piece::WHITE_QUEEN, position.board[static_cast<int>(Square::A8)]);
+    EXPECT_EQ(Piece::WHITE_QUEEN, position.board[Square::A8]);
 
     position.undo_move(move);
 
@@ -189,12 +189,12 @@ TEST(positiontest, test_enpassantMove) {
     uint64_t zobrist_key = position.zobrist_key;
 
     // Make en passant move
-    int move = Moves::value_of(MoveType::EN_PASSANT, Square::E4, Square::D3, Piece::BLACK_PAWN, Piece::WHITE_PAWN,
+    Move move = Moves::value_of(MoveType::EN_PASSANT, Square::E4, Square::D3, Piece::BLACK_PAWN, Piece::WHITE_PAWN,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
 
-    EXPECT_EQ(Piece::NO_PIECE, position.board[static_cast<int>(Square::D4)]);
-    EXPECT_EQ(Piece::BLACK_PAWN, position.board[static_cast<int>(Square::D3)]);
+    EXPECT_EQ(Piece::NO_PIECE, position.board[Square::D4]);
+    EXPECT_EQ(Piece::BLACK_PAWN, position.board[Square::D3]);
     EXPECT_EQ(Square::NO_SQUARE, position.enpassant_square);
 
     position.undo_move(move);
@@ -207,7 +207,7 @@ TEST(positiontest, test_castling_move) {
     Position position(Notation::to_position("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"));
     uint64_t zobrist_key = position.zobrist_key;
 
-    int move = Moves::value_of(MoveType::CASTLING, Square::E1, Square::C1, Piece::WHITE_KING, Piece::NO_PIECE,
+    Move move = Moves::value_of(MoveType::CASTLING, Square::E1, Square::C1, Piece::WHITE_KING, Piece::NO_PIECE,
                               PieceType::NO_PIECE_TYPE);
     position.make_move(move);
 

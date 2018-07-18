@@ -3,9 +3,11 @@
 #include <array>
 #include <cassert>
 
+#include "operations.hpp"
+
 namespace goldfish {
 
-enum class Color {
+enum Color {
     WHITE, BLACK, NO_COLOR
 };
 
@@ -13,6 +15,7 @@ inline constexpr Color operator~(Color c) {
     assert(c != Color::NO_COLOR);
     return c == Color::WHITE ? Color::BLACK : Color::WHITE;
 }
+
 
 namespace Colors {
 

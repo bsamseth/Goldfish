@@ -6,7 +6,7 @@
 using namespace goldfish;
 
 TEST(movetest, test_creation) {
-    int move = Moves::value_of(MoveType::PAWN_PROMOTION, Square::A7, Square::B8,
+    Move move = Moves::value_of(MoveType::PAWN_PROMOTION, Square::A7, Square::B8,
                               Piece::WHITE_PAWN, Piece::BLACK_QUEEN, PieceType::KNIGHT);
 
     EXPECT_EQ(MoveType::PAWN_PROMOTION, Moves::get_type(move));
@@ -18,7 +18,7 @@ TEST(movetest, test_creation) {
 }
 
 TEST(movetest, test_promotion) {
-    int move = Moves::value_of(MoveType::PAWN_PROMOTION, Square::B7, Square::C8,
+    Move move = Moves::value_of(MoveType::PAWN_PROMOTION, Square::B7, Square::C8,
                               Piece::WHITE_PAWN, Piece::BLACK_QUEEN, PieceType::KNIGHT);
 
     EXPECT_EQ(PieceType::KNIGHT, Moves::get_promotion(move));

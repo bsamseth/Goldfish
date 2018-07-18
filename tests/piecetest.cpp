@@ -8,7 +8,7 @@ using namespace goldfish;
 
 TEST(piecetest, test_values) {
     for (auto piece : Pieces::values) {
-        EXPECT_EQ(piece, Pieces::values[static_cast<int>(piece)]);
+        EXPECT_EQ(piece, Pieces::values[piece]);
     }
 }
 

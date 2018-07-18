@@ -6,7 +6,7 @@ using namespace goldfish;
 
 TEST(piecetypetest, test_values) {
     for (auto piecetype : PieceTypes::values) {
-        EXPECT_EQ(piecetype, PieceTypes::values[static_cast<int>(piecetype)]);
+        EXPECT_EQ(piecetype, PieceTypes::values[piecetype]);
     }
 }
 

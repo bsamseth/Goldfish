@@ -16,6 +16,6 @@ int evaluate_material(Color color, Position &position);
 
 int evaluate_mobility(Color color, Position &position);
 
-int evaluate_mobility(Color color, Position &position, int square, const std::vector<int> &directions);
+int evaluate_mobility(Color color, Position &position, Square square, const std::vector<Square> &directions);
 
 }

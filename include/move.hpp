@@ -23,7 +23,7 @@ namespace goldfish::Moves {
 
 // These are our bit masks
 constexpr int TYPE_SHIFT = 0;
-constexpr int TYPE_MASK = MoveType::MASK << TYPE_SHIFT;
+constexpr int TYPE_MASK = MoveTypes::MASK << TYPE_SHIFT;
 constexpr int ORIGIN_SQUARE_SHIFT = 3;
 constexpr int ORIGIN_SQUARE_MASK = Squares::MASK << ORIGIN_SQUARE_SHIFT;
 constexpr int TARGET_SQUARE_SHIFT = 10;
@@ -36,28 +36,28 @@ constexpr int PROMOTION_SHIFT = 27;
 constexpr int PROMOTION_MASK = PieceTypes::MASK << PROMOTION_SHIFT;
 
 // We don't use 0 as a null value to protect against errors.
-constexpr int NO_MOVE =
+constexpr Move NO_MOVE =
       (MoveType::NO_MOVE_TYPE << TYPE_SHIFT)
-    | (static_cast<int>(Square::NO_SQUARE) << ORIGIN_SQUARE_SHIFT)
-    | (static_cast<int>(Square::NO_SQUARE) << TARGET_SQUARE_SHIFT)
-    | (static_cast<int>(Piece::NO_PIECE) << ORIGIN_PIECE_SHIFT)
-    | (static_cast<int>(Piece::NO_PIECE) << TARGET_PIECE_SHIFT)
-    | (static_cast<int>(PieceType::NO_PIECE_TYPE) << PROMOTION_SHIFT);
+    | (Square::NO_SQUARE << ORIGIN_SQUARE_SHIFT)
+    | (Square::NO_SQUARE << TARGET_SQUARE_SHIFT)
+    | (Piece::NO_PIECE << ORIGIN_PIECE_SHIFT)
+    | (Piece::NO_PIECE << TARGET_PIECE_SHIFT)
+    | (PieceType::NO_PIECE_TYPE << PROMOTION_SHIFT);
 
 constexpr Move value_of(int type, Square origin_square, Square target_square,
                        Piece origin_piece, Piece target_piece, PieceType promotion) {
     Move move = 0;
     move |= type << TYPE_SHIFT;
-    move |= static_cast<int>(origin_square) << ORIGIN_SQUARE_SHIFT;
-    move |= static_cast<int>(target_square) << TARGET_SQUARE_SHIFT;
-    move |= static_cast<int>(origin_piece) << ORIGIN_PIECE_SHIFT;
-    move |= static_cast<int>(target_piece) << TARGET_PIECE_SHIFT;
-    move |= static_cast<int>(promotion) << PROMOTION_SHIFT;
+    move |= origin_square << ORIGIN_SQUARE_SHIFT;
+    move |= target_square << TARGET_SQUARE_SHIFT;
+    move |= origin_piece << ORIGIN_PIECE_SHIFT;
+    move |= target_piece << TARGET_PIECE_SHIFT;
+    move |= promotion << PROMOTION_SHIFT;
     return move;
 }
 
-inline constexpr int get_type(Move move) {
-    return (move & TYPE_MASK) >> TYPE_SHIFT;
+inline constexpr MoveType get_type(Move move) {
+    return static_cast<MoveType>((move & TYPE_MASK) >> TYPE_SHIFT);
 }
 
 inline constexpr Square get_origin_square(Move move) {

@@ -2,24 +2,16 @@
 
 #include <array>
 
+#include "operations.hpp"
+
 namespace goldfish {
 
-enum class File {
+enum File {
     A, B, C, D, E, F, G, H, NO_FILE
 };
 
-inline constexpr File& operator++ (File& file) {
-    return file = static_cast<File>(static_cast<int>(file) + 1);
-}
-
-inline constexpr File& operator+= (File& file, int increment) {
-    int file_n = static_cast<int>(file) + increment;
-
-    if (file_n >= static_cast<int>(File::NO_FILE))
-        return file = File::NO_FILE;
-
-    return file = static_cast<File>(file_n);
-}
+ENABLE_BASE_OPERATORS_ON(File);
+ENABLE_INCR_OPERATORS_ON(File);
 
 namespace Files {
 

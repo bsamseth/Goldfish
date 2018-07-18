@@ -244,7 +244,7 @@ void Search::run() {
         // Populate root move list
         MoveList<MoveEntry> &moves = move_generators[0].get_legal_moves(position, 1, position.is_check());
         for (int i = 0; i < moves.size; i++) {
-            int move = moves.entries[i]->move;
+            Move move = moves.entries[i]->move;
             root_moves.entries[root_moves.size]->move = move;
             root_moves.entries[root_moves.size]->pv.moves[0] = move;
             root_moves.entries[root_moves.size]->pv.size = 1;
@@ -359,7 +359,7 @@ void Search::search_root(int depth, int alpha, int beta) {
 
 
     for (int i = 0; i < root_moves.size; i++) {
-        int move = root_moves.entries[i]->move;
+        Move move = root_moves.entries[i]->move;
 
         current_move = move;
         current_move_number = i + 1;
@@ -423,10 +423,10 @@ int Search::search(int depth, int alpha, int beta, int ply) {
     // Only use when not in check, and when at least one piece is present
     // on the board. This avoids most zugzwang cases.
     if (!is_check && (
-        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::QUEEN)] ||
-        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::ROOK)]  ||
-        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::BISHOP)] ||
-        position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::KNIGHT)])) {
+        position.pieces[position.active_color][PieceType::QUEEN] ||
+        position.pieces[position.active_color][PieceType::ROOK]  ||
+        position.pieces[position.active_color][PieceType::BISHOP] ||
+        position.pieces[position.active_color][PieceType::KNIGHT])) {
 
 
         position.make_null_move();
@@ -453,7 +453,7 @@ int Search::search(int depth, int alpha, int beta, int ply) {
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
-        int move = moves.entries[i]->move;
+        Move move = moves.entries[i]->move;
         int value = best_value;
 
         position.make_move(move);
@@ -536,7 +536,7 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
-        int move = moves.entries[i]->move;
+        Move move = moves.entries[i]->move;
         int value = best_value;
 
         position.make_move(move);

@@ -17,7 +17,7 @@ private:
     void add_moves(MoveList<MoveEntry> &list, Position &position);
 
     void
-    add_moves(MoveList<MoveEntry> &list, Square origin_square, const std::vector<int> &directions, Position &position);
+    add_moves(MoveList<MoveEntry> &list, Square origin_square, const std::vector<Square> &directions, Position &position);
 
     void add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square, Position &position);
 

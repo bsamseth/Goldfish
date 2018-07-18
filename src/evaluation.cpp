@@ -25,10 +25,10 @@ int evaluate(Position &position) {
 }
 
 int evaluate_material(Color color, Position &position) {
-    int material = position.material[static_cast<int>(color)];
+    int material = position.material[color];
 
     // Add bonus for bishop pair
-    if (Bitboard::size(position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::BISHOP)]) >= 2) {
+    if (Bitboard::size(position.pieces[color][PieceType::BISHOP]) >= 2) {
         material += 50;
     }
 
@@ -37,30 +37,30 @@ int evaluate_material(Color color, Position &position) {
 
 int evaluate_mobility(Color color, Position &position) {
     int knight_mobility = 0;
-    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::KNIGHT)];
+    for (auto squares = position.pieces[color][PieceType::KNIGHT];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
+        Square square = Square(Bitboard::next(squares));
         knight_mobility += evaluate_mobility(color, position, square, Squares::knight_directions);
     }
 
     int bishop_mobility = 0;
-    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::BISHOP)];
+    for (auto squares = position.pieces[color][PieceType::BISHOP];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
+        Square square = Square(Bitboard::next(squares));
         bishop_mobility += evaluate_mobility(color, position, square, Squares::bishop_directions);
     }
 
     int rook_mobility = 0;
-    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::ROOK)];
+    for (auto squares = position.pieces[color][PieceType::ROOK];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
+        Square square = Square(Bitboard::next(squares));
         rook_mobility += evaluate_mobility(color, position, square, Squares::rook_directions);
     }
 
     int queen_mobility = 0;
-    for (auto squares = position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::QUEEN)];
+    for (auto squares = position.pieces[color][PieceType::QUEEN];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
+        Square square = Square(Bitboard::next(squares));
         queen_mobility += evaluate_mobility(color, position, square, Squares::queen_directions);
     }
 
@@ -70,18 +70,18 @@ int evaluate_mobility(Color color, Position &position) {
            + queen_mobility;
 }
 
-int evaluate_mobility(Color color, Position &position, int square, const std::vector<int> &directions) {
+int evaluate_mobility(Color color, Position &position, Square square, const std::vector<Square> &directions) {
     int mobility = 0;
     bool sliding = PieceTypes::is_sliding(Pieces::get_type(position.board[square]));
 
     for (auto direction : directions) {
-        Square target_square = static_cast<Square>(static_cast<int>(square) + direction);
+        Square target_square = square + direction;
 
         while (Squares::is_valid(target_square)) {
             mobility++;
 
-            if (sliding && position.board[static_cast<int>(target_square)] == Piece::NO_PIECE) {
-                target_square = static_cast<Square>(static_cast<int>(target_square) + direction);
+            if (sliding && position.board[target_square] == Piece::NO_PIECE) {
+                target_square = target_square + direction;
             } else {
                 break;
             }

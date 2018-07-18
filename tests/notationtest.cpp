@@ -11,35 +11,35 @@ TEST(notationtest, test_standard_position) {
 
     // Test pawns
     for ( auto file : Files::values) {
-        EXPECT_EQ(Piece::WHITE_PAWN, position.board[static_cast<int>(Squares::value_of(file, Rank::R2))]);
-        EXPECT_EQ(Piece::BLACK_PAWN, position.board[static_cast<int>(Squares::value_of(file, Rank::R7))]);
+        EXPECT_EQ(Piece::WHITE_PAWN, position.board[Squares::value_of(file, Rank::R2)]);
+        EXPECT_EQ(Piece::BLACK_PAWN, position.board[Squares::value_of(file, Rank::R7)]);
     }
 
     // Test knights
-    EXPECT_EQ(Piece::WHITE_KNIGHT, position.board[static_cast<int>(Square::B1)]);
-    EXPECT_EQ(Piece::WHITE_KNIGHT, position.board[static_cast<int>(Square::G1)]);
-    EXPECT_EQ(Piece::BLACK_KNIGHT, position.board[static_cast<int>(Square::B8)]);
-    EXPECT_EQ(Piece::BLACK_KNIGHT, position.board[static_cast<int>(Square::G8)]);
+    EXPECT_EQ(Piece::WHITE_KNIGHT, position.board[Square::B1]);
+    EXPECT_EQ(Piece::WHITE_KNIGHT, position.board[Square::G1]);
+    EXPECT_EQ(Piece::BLACK_KNIGHT, position.board[Square::B8]);
+    EXPECT_EQ(Piece::BLACK_KNIGHT, position.board[Square::G8]);
 
     // Test bishops
-    EXPECT_EQ(Piece::WHITE_BISHOP, position.board[static_cast<int>(Square::C1)]);
-    EXPECT_EQ(Piece::WHITE_BISHOP, position.board[static_cast<int>(Square::F1)]);
-    EXPECT_EQ(Piece::BLACK_BISHOP, position.board[static_cast<int>(Square::C8)]);
-    EXPECT_EQ(Piece::BLACK_BISHOP, position.board[static_cast<int>(Square::F8)]);
+    EXPECT_EQ(Piece::WHITE_BISHOP, position.board[Square::C1]);
+    EXPECT_EQ(Piece::WHITE_BISHOP, position.board[Square::F1]);
+    EXPECT_EQ(Piece::BLACK_BISHOP, position.board[Square::C8]);
+    EXPECT_EQ(Piece::BLACK_BISHOP, position.board[Square::F8]);
 
     // Test rooks
-    EXPECT_EQ(Piece::WHITE_ROOK, position.board[static_cast<int>(Square::A1)]);
-    EXPECT_EQ(Piece::WHITE_ROOK, position.board[static_cast<int>(Square::H1)]);
-    EXPECT_EQ(Piece::BLACK_ROOK, position.board[static_cast<int>(Square::A8)]);
-    EXPECT_EQ(Piece::BLACK_ROOK, position.board[static_cast<int>(Square::H8)]);
+    EXPECT_EQ(Piece::WHITE_ROOK, position.board[Square::A1]);
+    EXPECT_EQ(Piece::WHITE_ROOK, position.board[Square::H1]);
+    EXPECT_EQ(Piece::BLACK_ROOK, position.board[Square::A8]);
+    EXPECT_EQ(Piece::BLACK_ROOK, position.board[Square::H8]);
 
     // Test queens
-    EXPECT_EQ(Piece::WHITE_QUEEN, position.board[static_cast<int>(Square::D1)]);
-    EXPECT_EQ(Piece::BLACK_QUEEN, position.board[static_cast<int>(Square::D8)]);
+    EXPECT_EQ(Piece::WHITE_QUEEN, position.board[Square::D1]);
+    EXPECT_EQ(Piece::BLACK_QUEEN, position.board[Square::D8]);
 
     // Test kings
-    EXPECT_EQ(Piece::WHITE_KING, position.board[static_cast<int>(Square::E1)]);
-    EXPECT_EQ(Piece::BLACK_KING, position.board[static_cast<int>(Square::E8)]);
+    EXPECT_EQ(Piece::WHITE_KING, position.board[Square::E1]);
+    EXPECT_EQ(Piece::BLACK_KING, position.board[Square::E8]);
 
     EXPECT_EQ(8 * PieceTypes::PAWN_VALUE
                   + 2 * PieceTypes::KNIGHT_VALUE
@@ -47,14 +47,14 @@ TEST(notationtest, test_standard_position) {
                   + 2 * PieceTypes::ROOK_VALUE
                   + PieceTypes::QUEEN_VALUE
                   + PieceTypes::KING_VALUE,
-              position.material[static_cast<int>(Color::WHITE)]);
+              position.material[Color::WHITE]);
     EXPECT_EQ(8 * PieceTypes::PAWN_VALUE
                   + 2 * PieceTypes::KNIGHT_VALUE
                   + 2 * PieceTypes::BISHOP_VALUE
                   + 2 * PieceTypes::ROOK_VALUE
                   + PieceTypes::QUEEN_VALUE
                   + PieceTypes::KING_VALUE,
-              position.material[static_cast<int>(Color::BLACK)]);
+              position.material[Color::BLACK]);
 
     // Test castling
     EXPECT_NE(Castling::NO_CASTLING, position.castling_rights &Castling::WHITE_KING_SIDE);

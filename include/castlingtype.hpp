@@ -4,7 +4,7 @@
 
 namespace goldfish {
 
-enum class CastlingType {
+enum CastlingType {
     KING_SIDE, QUEEN_SIDE, NO_CASTLING_TYPE
 };
 

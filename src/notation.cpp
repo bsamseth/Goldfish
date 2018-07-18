@@ -59,7 +59,7 @@ Position to_position(const std::string &fen) {
                 throw std::invalid_argument("Illegal number of empty squares");
             }
 
-            file += empty_squares - 1;
+            file += File(empty_squares - 1);
             if (!Files::is_valid(file)) {
                 throw std::invalid_argument("Illegal number of empty squares");
             }
@@ -97,17 +97,17 @@ Position to_position(const std::string &fen) {
 
                 Color color = color_of(character);
 
-                if (position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::KING)] == 0) {
+                if (position.pieces[color][PieceType::KING] == 0) {
                     throw std::exception();
                 }
 
-                king_file = Squares::get_file(static_cast<Square>(Bitboard::next(position.pieces[static_cast<int>(color)][static_cast<int>(PieceType::KING)])));
+                king_file = Squares::get_file(Square(Bitboard::next(position.pieces[color][PieceType::KING])));
                 if (castling_file > king_file) {
-                    castling = Castling::value_of(color, CastlingType::KING_SIDE);
+                    castling = Castlings::value_of(color, CastlingType::KING_SIDE);
                 } else {
-                    castling = Castling::value_of(color, CastlingType::QUEEN_SIDE);
+                    castling = Castlings::value_of(color, CastlingType::QUEEN_SIDE);
                 }
-            } else if (Castling::get_type(castling) == CastlingType::KING_SIDE) {
+            } else if (Castlings::get_type(castling) == CastlingType::KING_SIDE) {
                 castling_file = File::H;
                 king_file = File::E;
             } else {
@@ -173,7 +173,7 @@ std::string from_position(const Position &position) {
         unsigned int empty_squares = 0;
 
         for (auto file : Files::values) {
-            Piece piece = position.board[static_cast<int>(Squares::value_of(file, rank))];
+            Piece piece = position.board[Squares::value_of(file, rank)];
 
             if (piece == Piece::NO_PIECE) {
                 empty_squares++;
@@ -368,14 +368,14 @@ int to_castling(char notation) {
     CastlingType castlingtype = to_castling_type(notation);
 
     if (castlingtype != CastlingType::NO_CASTLING_TYPE) {
-        return Castling::value_of(color, castlingtype);
+        return Castlings::value_of(color, castlingtype);
     } else {
         return Castling::NO_CASTLING;
     }
 }
 
 char from_castling(int castling) {
-    return transform(from_castling_type(Castling::get_type(castling)), Castling::get_color(castling));
+    return transform(from_castling_type(Castlings::get_type(castling)), Castlings::get_color(castling));
 }
 
 File to_file(char notation) {

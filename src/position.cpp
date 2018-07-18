@@ -10,7 +10,7 @@ namespace goldfish {
 Position::Zobrist::Zobrist() {
     for (auto piece : Pieces::values) {
         for (int i = 0; i < Squares::VALUES_LENGTH; i++) {
-            board[static_cast<int>(piece)][i] = next();
+            board[piece][i] = next();
         }
     }
 
@@ -115,10 +115,10 @@ void Position::set_castling_right(int castling) {
 
 void Position::set_enpassant_square(Square enpassant_square) {
     if (this->enpassant_square != Square::NO_SQUARE) {
-        zobrist_key ^= zobrist.enpassant_square[static_cast<int>(this->enpassant_square)];
+        zobrist_key ^= zobrist.enpassant_square[this->enpassant_square];
     }
     if (enpassant_square != Square::NO_SQUARE) {
-        zobrist_key ^= zobrist.enpassant_square[static_cast<int>(enpassant_square)];
+        zobrist_key ^= zobrist.enpassant_square[enpassant_square];
     }
     this->enpassant_square = enpassant_square;
 }
@@ -152,42 +152,40 @@ bool Position::is_repetition() {
 
 bool Position::has_insufficient_material() {
     // If there is only one minor left, we are unable to checkmate
-    constexpr int white = static_cast<int>(Color::WHITE);
-    constexpr int black = static_cast<int>(Color::BLACK);
-    return Bitboard::size(pieces[white][static_cast<int>(PieceType::PAWN)]) == 0
-           && Bitboard::size(pieces[black][static_cast<int>(PieceType::PAWN)]) == 0
-           && Bitboard::size(pieces[white][static_cast<int>(PieceType::ROOK)]) == 0
-           && Bitboard::size(pieces[black][static_cast<int>(PieceType::ROOK)]) == 0
-           && Bitboard::size(pieces[white][static_cast<int>(PieceType::QUEEN)]) == 0
-           && Bitboard::size(pieces[black][static_cast<int>(PieceType::QUEEN)]) == 0
-           && (Bitboard::size(pieces[white][static_cast<int>(PieceType::KNIGHT)]) +
-               Bitboard::size(pieces[white][static_cast<int>(PieceType::BISHOP)]) <= 1)
-           && (Bitboard::size(pieces[black][static_cast<int>(PieceType::KNIGHT)]) +
-               Bitboard::size(pieces[black][static_cast<int>(PieceType::BISHOP)]) <= 1);
+    return Bitboard::size(pieces[Color::WHITE][PieceType::PAWN]) == 0
+           && Bitboard::size(pieces[Color::BLACK][PieceType::PAWN]) == 0
+           && Bitboard::size(pieces[Color::WHITE][PieceType::ROOK]) == 0
+           && Bitboard::size(pieces[Color::BLACK][PieceType::ROOK]) == 0
+           && Bitboard::size(pieces[Color::WHITE][PieceType::QUEEN]) == 0
+           && Bitboard::size(pieces[Color::BLACK][PieceType::QUEEN]) == 0
+           && (Bitboard::size(pieces[Color::WHITE][PieceType::KNIGHT]) +
+               Bitboard::size(pieces[Color::WHITE][PieceType::BISHOP]) <= 1)
+           && (Bitboard::size(pieces[Color::BLACK][PieceType::KNIGHT]) +
+               Bitboard::size(pieces[Color::BLACK][PieceType::BISHOP]) <= 1);
 }
 
 void Position::put(Piece piece, Square square) {
     PieceType piecetype = Pieces::get_type(piece);
     Color color = Pieces::get_color(piece);
 
-    board[static_cast<int>(square)] = piece;
-    pieces[static_cast<int>(color)][static_cast<int>(piecetype)] = Bitboard::add(static_cast<int>(square), pieces[static_cast<int>(color)][static_cast<int>(piecetype)]);
-    material[static_cast<int>(color)] += PieceTypes::get_value(piecetype);
+    board[square] = piece;
+    pieces[color][piecetype] = Bitboard::add(square, pieces[color][piecetype]);
+    material[color] += PieceTypes::get_value(piecetype);
 
-    zobrist_key ^= zobrist.board[static_cast<int>(piece)][static_cast<int>(square)];
+    zobrist_key ^= zobrist.board[piece][square];
 }
 
 Piece Position::remove(Square square) {
-    Piece piece = board[static_cast<int>(square)];
+    Piece piece = board[square];
 
     PieceType piecetype = Pieces::get_type(piece);
     Color color = Pieces::get_color(piece);
 
-    board[static_cast<int>(square)] = Piece::NO_PIECE;
-    pieces[static_cast<int>(color)][static_cast<int>(piecetype)] = Bitboard::remove(static_cast<int>(square), pieces[static_cast<int>(color)][static_cast<int>(piecetype)]);
-    material[static_cast<int>(color)] -= PieceTypes::get_value(piecetype);
+    board[square] = Piece::NO_PIECE;
+    pieces[color][piecetype] = Bitboard::remove(square, pieces[color][piecetype]);
+    material[color] -= PieceTypes::get_value(piecetype);
 
-    zobrist_key ^= zobrist.board[static_cast<int>(piece)][static_cast<int>(square)];
+    zobrist_key ^= zobrist.board[piece][square];
 
     return piece;
 }
@@ -203,7 +201,7 @@ void Position::make_null_move() {
 
     // Remove enpassant if set.
     if (enpassant_square != Square::NO_SQUARE) {
-        zobrist_key ^= zobrist.enpassant_square[static_cast<int>(enpassant_square)];
+        zobrist_key ^= zobrist.enpassant_square[enpassant_square];
         enpassant_square = Square::NO_SQUARE;
     }
 
@@ -253,7 +251,7 @@ void Position::make_move(int move) {
     if (target_piece != Piece::NO_PIECE) {
         Square capture_square = target_square;
         if (type == MoveType::EN_PASSANT) {
-            capture_square = static_cast<Square>(static_cast<int>(capture_square) + (origin_color == Color::WHITE ? Squares::S : Squares::N));
+            capture_square = capture_square + (origin_color == Color::WHITE ? Square::SOUTH : Square::NORTH);
         }
         remove(capture_square);
 
@@ -302,11 +300,11 @@ void Position::make_move(int move) {
 
     // Update enpassant_square
     if (enpassant_square != Square::NO_SQUARE) {
-        zobrist_key ^= zobrist.enpassant_square[static_cast<int>(enpassant_square)];
+        zobrist_key ^= zobrist.enpassant_square[enpassant_square];
     }
     if (type == MoveType::PAWN_DOUBLE) {
-        enpassant_square = static_cast<Square>(static_cast<int>(target_square) + (origin_color == Color::WHITE ? Squares::S : Squares::N));
-        zobrist_key ^= zobrist.enpassant_square[static_cast<int>(enpassant_square)];
+        enpassant_square = target_square + (origin_color == Color::WHITE ? Square::SOUTH : Square::NORTH);
+        zobrist_key ^= zobrist.enpassant_square[enpassant_square];
     } else {
         enpassant_square = Square::NO_SQUARE;
     }
@@ -378,7 +376,7 @@ void Position::undo_move(int move) {
     if (target_piece != Piece::NO_PIECE) {
         Square capture_square = target_square;
         if (type == MoveType::EN_PASSANT) {
-            capture_square = static_cast<Square>(static_cast<int>(capture_square) + (origin_color == Color::WHITE ? Squares::S : Squares::N));
+            capture_square = capture_square + (origin_color == Color::WHITE ? Square::SOUTH : Square::NORTH);
         }
         put(target_piece, capture_square);
     }
@@ -427,12 +425,12 @@ void Position::clear_castling(Square square) {
 
 bool Position::is_check() {
     // Check whether our king is attacked by any opponent piece
-    return is_attacked(static_cast<Square>(Bitboard::next(pieces[static_cast<int>(active_color)][static_cast<int>(PieceType::KING)])), ~active_color);
+    return is_attacked(Square(Bitboard::next(pieces[active_color][PieceType::KING])), ~active_color);
 }
 
 bool Position::is_check(Color color) {
     // Check whether the king for color is attacked by any opponent piece
-    return is_attacked(static_cast<Square>(Bitboard::next(pieces[static_cast<int>(color)][static_cast<int>(PieceType::KING)])), ~color);
+    return is_attacked(Square(Bitboard::next(pieces[color][PieceType::KING])), ~color);
 }
 
 /**
@@ -446,10 +444,10 @@ bool Position::is_check(Color color) {
 bool Position::is_attacked(Square target_square, Color attacker_color) {
     // Pawn attacks
     Piece pawn_piece = Pieces::value_of(attacker_color, PieceType::PAWN);
-    for (unsigned int i = 1; i < Squares::pawn_directions[static_cast<int>(attacker_color)].size(); i++) {
-        Square attacker_square = static_cast<Square>(static_cast<int>(target_square) - Squares::pawn_directions[static_cast<int>(attacker_color)][i]);
+    for (unsigned int i = 1; i < Squares::pawn_directions[attacker_color].size(); i++) {
+        Square attacker_square = target_square - Squares::pawn_directions[attacker_color][i];
         if (Squares::is_valid(attacker_square)) {
-            Piece attacker_pawn = board[static_cast<int>(attacker_square)];
+            Piece attacker_pawn = board[attacker_square];
 
             if (attacker_pawn == pawn_piece) {
                 return true;
@@ -481,11 +479,11 @@ bool Position::is_attacked(Square target_square, Color attacker_color) {
 /**
  * Returns whether the target_square is attacked by a non-sliding piece.
  */
-bool Position::is_attacked(Square target_square, Piece attacker_piece, const std::vector<int> &directions) {
+bool Position::is_attacked(Square target_square, Piece attacker_piece, const std::vector<Square> &directions) {
     for (auto direction : directions) {
-        Square attacker_square = static_cast<Square>(static_cast<int>(target_square) + direction);
+        Square attacker_square = target_square + direction;
 
-        if (Squares::is_valid(attacker_square) && board[static_cast<int>(attacker_square)] == attacker_piece) {
+        if (Squares::is_valid(attacker_square) && board[attacker_square] == attacker_piece) {
             return true;
         }
     }
@@ -499,12 +497,12 @@ bool Position::is_attacked(Square target_square, Piece attacker_piece, const std
 bool Position::is_attacked(Square target_square,
                            Piece attacker_piece,
                            Piece queen_piece,
-                           const std::vector<int> &directions) {
+                           const std::vector<Square> &directions) {
     for (auto direction : directions) {
-        Square attacker_square = static_cast<Square>(static_cast<int>(target_square) + direction);
+        Square attacker_square = target_square + direction;
 
         while (Squares::is_valid(attacker_square)) {
-            Piece piece = board[static_cast<int>(attacker_square)];
+            Piece piece = board[attacker_square];
 
             if (Pieces::is_valid(piece)) {
                 if (piece == attacker_piece || piece == queen_piece) {
@@ -513,7 +511,7 @@ bool Position::is_attacked(Square target_square,
 
                 break;
             } else {
-                attacker_square = static_cast<Square>(static_cast<int>(attacker_square) + direction);
+                attacker_square = attacker_square + direction;
             }
         }
     }

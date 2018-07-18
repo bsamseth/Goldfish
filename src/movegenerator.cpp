@@ -9,7 +9,7 @@ MoveList<MoveEntry> &MoveGenerator::get_legal_moves(Position &position, int dept
     int size = legal_moves.size;
     legal_moves.size = 0;
     for (int i = 0; i < size; i++) {
-        int move = legal_moves.entries[i]->move;
+        Move move = legal_moves.entries[i]->move;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
@@ -30,7 +30,7 @@ MoveList<MoveEntry> &MoveGenerator::get_moves(Position &position, int depth, boo
         add_moves(moves, position);
 
         if (!is_check) {
-            Square square = static_cast<Square>(Bitboard::next(position.pieces[static_cast<int>(position.active_color)][static_cast<int>(PieceType::KING)]));
+            Square square = Square(Bitboard::next(position.pieces[position.active_color][PieceType::KING]));
             add_castling_moves(moves, square, position);
         }
     } else {
@@ -57,50 +57,50 @@ MoveList<MoveEntry> &MoveGenerator::get_moves(Position &position, int depth, boo
 }
 
 void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Position &position) {
-    int active_color = static_cast<int>(position.active_color);
+    int active_color = position.active_color;
 
-    for (auto squares = position.pieces[active_color][static_cast<int>(PieceType::PAWN)];
+    for (auto squares = position.pieces[active_color][PieceType::PAWN];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        Square square = static_cast<Square>(Bitboard::next(squares));
+        Square square = Square(Bitboard::next(squares));
         add_pawn_moves(list, square, position);
     }
-    for (auto squares = position.pieces[active_color][static_cast<int>(PieceType::KNIGHT)];
+    for (auto squares = position.pieces[active_color][PieceType::KNIGHT];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        Square square = static_cast<Square>(Bitboard::next(squares));
+        Square square = Square(Bitboard::next(squares));
         add_moves(list, square, Squares::knight_directions, position);
     }
-    for (auto squares = position.pieces[active_color][static_cast<int>(PieceType::BISHOP)];
+    for (auto squares = position.pieces[active_color][PieceType::BISHOP];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        Square square = static_cast<Square>(Bitboard::next(squares));
+        Square square = Square(Bitboard::next(squares));
         add_moves(list, square, Squares::bishop_directions, position);
     }
-    for (auto squares = position.pieces[active_color][static_cast<int>(PieceType::ROOK)];
+    for (auto squares = position.pieces[active_color][PieceType::ROOK];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        Square square = static_cast<Square>(Bitboard::next(squares));
+        Square square = Square(Bitboard::next(squares));
         add_moves(list, square, Squares::rook_directions, position);
     }
-    for (auto squares = position.pieces[active_color][static_cast<int>(PieceType::QUEEN)];
+    for (auto squares = position.pieces[active_color][PieceType::QUEEN];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        Square square = static_cast<Square>(Bitboard::next(squares));
+        Square square = Square(Bitboard::next(squares));
         add_moves(list, square, Squares::queen_directions, position);
     }
-    Square square = static_cast<Square>(Bitboard::next(position.pieces[active_color][static_cast<int>(PieceType::KING)]));
+    Square square = Square(Bitboard::next(position.pieces[active_color][PieceType::KING]));
     add_moves(list, square, Squares::king_directions, position);
 }
 
-void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Square origin_square, const std::vector<int> &directions,
+void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Square origin_square, const std::vector<Square> &directions,
                               Position &position) {
-    Piece origin_piece = position.board[static_cast<int>(origin_square)];
+    Piece origin_piece = position.board[origin_square];
     bool sliding = PieceTypes::is_sliding(Pieces::get_type(origin_piece));
     Color opposite_color = ~Pieces::get_color(origin_piece);
 
     // Go through all move directions for this piece
     for (auto direction : directions) {
-        Square target_square = static_cast<Square>(static_cast<int>(origin_square) + direction);
+        Square target_square = origin_square + direction;
 
         // Check if we're still on the board
         while (Squares::is_valid(target_square)) {
-            Piece target_piece = position.board[static_cast<int>(target_square)];
+            Piece target_piece = position.board[target_square];
 
             if (target_piece == Piece::NO_PIECE) {
                 // quiet move
@@ -112,7 +112,7 @@ void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Square origin_square, c
                     break;
                 }
 
-                target_square = static_cast<Square>(static_cast<int>(target_square) + direction);
+                target_square = target_square + direction;
             } else {
                 if (Pieces::get_color(target_piece) == opposite_color) {
                     // capturing move
@@ -128,16 +128,16 @@ void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Square origin_square, c
 }
 
 void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square, Position &position) {
-    Piece pawn_piece = position.board[static_cast<int>(pawn_square)];
+    Piece pawn_piece = position.board[pawn_square];
     Color pawn_color = Pieces::get_color(pawn_piece);
 
     // Generate only capturing moves first (i = 1)
-    for (unsigned int i = 1; i < Squares::pawn_directions[static_cast<int>(pawn_color)].size(); i++) {
-        int direction = Squares::pawn_directions[static_cast<int>(pawn_color)][i];
+    for (unsigned int i = 1; i < Squares::pawn_directions[pawn_color].size(); i++) {
+        Square direction = Squares::pawn_directions[pawn_color][i];
 
-        Square target_square = static_cast<Square>(static_cast<int>(pawn_square) + direction);
+        Square target_square = pawn_square + direction;
         if (Squares::is_valid(target_square)) {
-            Piece target_piece = position.board[static_cast<int>(target_square)];
+            Piece target_piece = position.board[target_square];
 
             if (target_piece != Piece::NO_PIECE) {
                 if (Pieces::get_color(target_piece) == ~pawn_color) {
@@ -169,8 +169,8 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square
                 }
             } else if (target_square == position.enpassant_square) {
                 // En passant move
-                Square capture_square = static_cast<Square>(static_cast<int>(target_square) + (pawn_color == Color::WHITE ? Squares::S : Squares::N));
-                target_piece = position.board[static_cast<int>(capture_square)];
+                Square capture_square = target_square + (pawn_color == Color::WHITE ? Square::SOUTH : Square::NORTH);
+                target_piece = position.board[capture_square];
 
                 list.entries[list.size++]->move = Moves::value_of(
                         MoveType::EN_PASSANT, pawn_square, target_square, pawn_piece, target_piece,
@@ -180,11 +180,11 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square
     }
 
     // Generate non-capturing moves
-    int direction = Squares::pawn_directions[static_cast<int>(pawn_color)][0];
+    Square direction = Squares::pawn_directions[pawn_color][0];
 
     // Move one rank forward
-    Square target_square = static_cast<Square>(static_cast<int>(pawn_square) + direction);
-    if (Squares::is_valid(target_square) && position.board[static_cast<int>(target_square)] == Piece::NO_PIECE) {
+    Square target_square = pawn_square + direction;
+    if (Squares::is_valid(target_square) && position.board[target_square] == Piece::NO_PIECE) {
         if ((pawn_color == Color::WHITE && Squares::get_rank(target_square) == Rank::R8)
             || (pawn_color == Color::BLACK && Squares::get_rank(target_square) == Rank::R1)) {
             // Pawn promotion move
@@ -208,8 +208,8 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square
                     PieceType::NO_PIECE_TYPE);
 
             // Move another rank forward
-            target_square = static_cast<Square>(static_cast<int>(target_square) + direction);
-            if (Squares::is_valid(target_square) && position.board[static_cast<int>(target_square)] == Piece::NO_PIECE) {
+            target_square = target_square + direction;
+            if (Squares::is_valid(target_square) && position.board[target_square] == Piece::NO_PIECE) {
                 if ((pawn_color == Color::WHITE && Squares::get_rank(target_square) == Rank::R4)
                     || (pawn_color == Color::BLACK && Squares::get_rank(target_square) == Rank::R5)) {
                     // Pawn double move
@@ -224,22 +224,22 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square
 }
 
 void MoveGenerator::add_castling_moves(MoveList<MoveEntry> &list, Square king_square, Position &position) {
-    Piece king_piece = position.board[static_cast<int>(king_square)];
+    Piece king_piece = position.board[king_square];
 
     if (Pieces::get_color(king_piece) == Color::WHITE) {
         // Do not test g1 whether it is attacked as we will test it in is_legal()
         if ((position.castling_rights & Castling::WHITE_KING_SIDE) != Castling::NO_CASTLING
-            && position.board[static_cast<int>(Square::F1)] == Piece::NO_PIECE
-            && position.board[static_cast<int>(Square::G1)] == Piece::NO_PIECE
+            && position.board[Square::F1] == Piece::NO_PIECE
+            && position.board[Square::G1] == Piece::NO_PIECE
             && !position.is_attacked(Square::F1, Color::BLACK)) {
             list.entries[list.size++]->move = Moves::value_of(
                     MoveType::CASTLING, king_square, Square::G1, king_piece, Piece::NO_PIECE, PieceType::NO_PIECE_TYPE);
         }
         // Do not test c1 whether it is attacked as we will test it in is_legal()
         if ((position.castling_rights & Castling::WHITE_QUEEN_SIDE) != Castling::NO_CASTLING
-            && position.board[static_cast<int>(Square::B1)] == Piece::NO_PIECE
-            && position.board[static_cast<int>(Square::C1)] == Piece::NO_PIECE
-            && position.board[static_cast<int>(Square::D1)] == Piece::NO_PIECE
+            && position.board[Square::B1] == Piece::NO_PIECE
+            && position.board[Square::C1] == Piece::NO_PIECE
+            && position.board[Square::D1] == Piece::NO_PIECE
             && !position.is_attacked(Square::D1, Color::BLACK)) {
             list.entries[list.size++]->move = Moves::value_of(
                     MoveType::CASTLING, king_square, Square::C1, king_piece, Piece::NO_PIECE, PieceType::NO_PIECE_TYPE);
@@ -247,17 +247,17 @@ void MoveGenerator::add_castling_moves(MoveList<MoveEntry> &list, Square king_sq
     } else {
         // Do not test g8 whether it is attacked as we will test it in is_legal()
         if ((position.castling_rights & Castling::BLACK_KING_SIDE) != Castling::NO_CASTLING
-            && position.board[static_cast<int>(Square::F8)] == Piece::NO_PIECE
-            && position.board[static_cast<int>(Square::G8)] == Piece::NO_PIECE
+            && position.board[Square::F8] == Piece::NO_PIECE
+            && position.board[Square::G8] == Piece::NO_PIECE
             && !position.is_attacked(Square::F8, Color::WHITE)) {
             list.entries[list.size++]->move = Moves::value_of(
                     MoveType::CASTLING, king_square, Square::G8, king_piece, Piece::NO_PIECE, PieceType::NO_PIECE_TYPE);
         }
         // Do not test c8 whether it is attacked as we will test it in is_legal()
         if ((position.castling_rights & Castling::BLACK_QUEEN_SIDE) != Castling::NO_CASTLING
-            && position.board[static_cast<int>(Square::B8)] == Piece::NO_PIECE
-            && position.board[static_cast<int>(Square::C8)] == Piece::NO_PIECE
-            && position.board[static_cast<int>(Square::D8)] == Piece::NO_PIECE
+            && position.board[Square::B8] == Piece::NO_PIECE
+            && position.board[Square::C8] == Piece::NO_PIECE
+            && position.board[Square::D8] == Piece::NO_PIECE
             && !position.is_attacked(Square::D8, Color::WHITE)) {
             list.entries[list.size++]->move = Moves::value_of(
                     MoveType::CASTLING, king_square, Square::C8, king_piece, Piece::NO_PIECE, PieceType::NO_PIECE_TYPE);
