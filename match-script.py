@@ -27,7 +27,7 @@ bookdepth = 4
 fcp = 'cmd={}'.format(args.fcp)
 scp = 'cmd={}'.format(args.scp)
 both = 'proto=uci book={bookfile} bookdepth={bookdepth} tc={tc}'.format(bookfile=bookfile, bookdepth=bookdepth, tc=args.tc)
-general = '-games {games} -pgnout {pgnout} -resign 3 500 -draw 20 5'.format(games=args.games, pgnout=pgnout)
+general = '-repeat -games {games} -pgnout {pgnout} -resign 3 500 -draw 20 5'.format(games=args.games, pgnout=pgnout)
 
 command = 'cutechess-cli -fcp {fcp} -scp {scp} -both {both} {general}'.format(fcp=fcp, scp=scp, both=both, general=general)
 
