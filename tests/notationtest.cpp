@@ -1,10 +1,12 @@
 #include "notation.hpp"
 #include "file.hpp"
 #include "rank.hpp"
+#include "value.hpp"
 
 #include "gtest/gtest.h"
 
 using namespace goldfish;
+using namespace goldfish::Values;
 
 TEST(notationtest, test_standard_position) {
     Position position(Notation::to_position(Notation::STANDARDPOSITION));
@@ -41,20 +43,8 @@ TEST(notationtest, test_standard_position) {
     EXPECT_EQ(Piece::WHITE_KING, position.board[Square::E1]);
     EXPECT_EQ(Piece::BLACK_KING, position.board[Square::E8]);
 
-    EXPECT_EQ(8 * PieceTypes::PAWN_VALUE
-                  + 2 * PieceTypes::KNIGHT_VALUE
-                  + 2 * PieceTypes::BISHOP_VALUE
-                  + 2 * PieceTypes::ROOK_VALUE
-                  + PieceTypes::QUEEN_VALUE
-                  + PieceTypes::KING_VALUE,
-              position.material[Color::WHITE]);
-    EXPECT_EQ(8 * PieceTypes::PAWN_VALUE
-                  + 2 * PieceTypes::KNIGHT_VALUE
-                  + 2 * PieceTypes::BISHOP_VALUE
-                  + 2 * PieceTypes::ROOK_VALUE
-                  + PieceTypes::QUEEN_VALUE
-                  + PieceTypes::KING_VALUE,
-              position.material[Color::BLACK]);
+    // Test material
+    EXPECT_EQ(position.material[Color::WHITE], position.material[Color::BLACK]);
 
     // Test castling
     EXPECT_NE(Castling::NO_CASTLING, position.castling_rights &Castling::WHITE_KING_SIDE);

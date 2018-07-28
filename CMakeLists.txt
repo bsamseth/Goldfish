@@ -17,7 +17,7 @@ enable_language(CXX)
 # by including "projectmeta.hpp" in the source. 
 # See projectmeta.hpp.in for some more details.
 set(PROJECT_VERSION_MAJOR 1)
-set(PROJECT_VERSION_MINOR 3)
+set(PROJECT_VERSION_MINOR 4)
 
 
 # Include stuff. No change needed.
@@ -77,9 +77,11 @@ set(HEADERS
         include/piece.hpp
         include/piecetype.hpp
         include/position.hpp
+        include/prettyprint.hpp
         include/projectmeta.hpp.in
         include/protocol.hpp
         include/rank.hpp
+        include/score.hpp
         include/search.hpp
         include/square.hpp
         include/value.hpp)
@@ -93,7 +95,8 @@ set(SOURCES
         src/notation.cpp
         src/perft.cpp
         src/position.cpp
-        src/search.cpp)
+        src/search.cpp
+        src/value.cpp)
 set(TESTFILES
         tests/bitboardtest.cpp
         tests/castlingtest.cpp

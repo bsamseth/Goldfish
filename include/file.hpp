@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 
 #include "operations.hpp"
 
@@ -23,6 +24,11 @@ constexpr std::array<File, VALUES_SIZE> values = {
 
 inline constexpr bool is_valid(File file) {
     return file != File::NO_FILE;
+}
+
+inline constexpr File invert(File f) {
+    assert(f != File::NO_FILE);
+    return File::H - f;
 }
 
 }
