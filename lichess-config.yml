@@ -48,7 +48,7 @@ abort_time: 20               # time to abort a game in seconds when there is no 
 fake_think_time: false       # artificially slow down the bot to pretend like it's thinking
 
 challenge:                   # incoming challenges
-  concurrency: 1             # number of games to play simultaneously
+  concurrency: 5             # number of games to play simultaneously
   sort_by: "best"            # possible values: "best", "first"
   accept_bot: true           # accepts challenges coming from other bots
   variants:                  # chess variants to accept (http://lichess.org/variant)
