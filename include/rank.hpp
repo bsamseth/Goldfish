@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <cassert>
+#include <iostream>
 
 #include "operations.hpp"
 
@@ -21,8 +23,13 @@ constexpr std::array<Rank, VALUES_SIZE> values = {
     Rank::R1, Rank::R2, Rank::R3, Rank::R4, Rank::R5, Rank::R6, Rank::R7, Rank::R8
 };
 
-constexpr bool is_valid(Rank rank) {
+inline constexpr bool is_valid(Rank rank) {
     return rank != Rank::NO_RANK;
+}
+
+inline constexpr Rank invert(Rank r) {
+    assert(r != Rank::NO_RANK);
+    return Rank::R8 - r;
 }
 
 }

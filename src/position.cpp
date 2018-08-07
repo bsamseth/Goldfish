@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <sstream>
+#include <value.hpp>
 
 #include "position.hpp"
 #include "move.hpp"
@@ -52,6 +53,7 @@ uint64_t Position::Zobrist::next() {
 Position::Position()
         : zobrist(Zobrist::instance()) {
     board.fill(Piece::NO_PIECE);
+    Values::init_psqt();
 }
 
 Position::Position(const Position &position)
@@ -170,7 +172,7 @@ void Position::put(Piece piece, Square square) {
 
     board[square] = piece;
     pieces[color][piecetype] = Bitboard::add(square, pieces[color][piecetype]);
-    material[color] += PieceTypes::get_value(piecetype);
+    material[color] += Values::psqt[piece][square];
 
     zobrist_key ^= zobrist.board[piece][square];
 }
@@ -183,7 +185,7 @@ Piece Position::remove(Square square) {
 
     board[square] = Piece::NO_PIECE;
     pieces[color][piecetype] = Bitboard::remove(square, pieces[color][piecetype]);
-    material[color] -= PieceTypes::get_value(piecetype);
+    material[color] -= Values::psqt[piece][square];
 
     zobrist_key ^= zobrist.board[piece][square];
 

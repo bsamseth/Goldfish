@@ -100,6 +100,12 @@ inline constexpr Rank get_rank(Square square) {
     return static_cast<Rank>(square >> 4);
 }
 
+inline constexpr Square invert(Square square) {
+    const File f = get_file(square);
+    const Rank r = get_rank(square);
+    return value_of(f, Ranks::invert(r));
+}
+
 }
 
 }

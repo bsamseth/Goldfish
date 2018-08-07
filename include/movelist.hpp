@@ -37,7 +37,7 @@ public:
 class MoveEntry {
 public:
     Move move = Moves::NO_MOVE;
-    int value = Value::NO_VALUE;
+    int value = Value::VALUE_NONE;
 };
 
 class RootEntry : public MoveEntry {
