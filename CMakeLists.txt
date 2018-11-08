@@ -82,6 +82,7 @@ set(HEADERS
         include/rank.hpp
         include/search.hpp
         include/square.hpp
+        include/tt.hpp
         include/value.hpp)
 set(SOURCES
         src/benchmark.cpp
@@ -103,7 +104,7 @@ set(SOURCES
         src/rank.cpp
         src/search.cpp
         src/square.cpp
-        src/value.cpp)
+        )
 set(TESTFILES
         tests/bitboardtest.cpp
         tests/castlingtest.cpp

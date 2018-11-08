@@ -1,15 +1,15 @@
 #pragma once
 
+#include <cstdint>
+
 namespace goldfish {
 
-class Depth {
-public:
-    static const int MAX_PLY = 256;
-    static const int MAX_DEPTH = 64;
+using Depth = uint16_t;
 
-    Depth() = delete;
+namespace Depths {
 
-    ~Depth() = delete;
-};
+constexpr Depth MAX_PLY = 256;
+constexpr Depth MAX_DEPTH = 64;
 
+}
 }

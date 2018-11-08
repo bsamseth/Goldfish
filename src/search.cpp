@@ -56,7 +56,7 @@ void Search::Semaphore::drain_permits() {
 }
 
 void Search::new_depth_search(Position &position, int search_depth) {
-    if (search_depth < 1 || search_depth > Depth::MAX_DEPTH) throw std::exception();
+    if (search_depth < 1 || search_depth > Depths::MAX_DEPTH) throw std::exception();
     if (running) throw std::exception();
 
     reset();
@@ -158,7 +158,7 @@ Search::Search(Protocol &protocol)
 }
 
 void Search::reset() {
-    search_depth = Depth::MAX_DEPTH;
+    search_depth = Depths::MAX_DEPTH;
     search_nodes = std::numeric_limits<uint64_t>::max();
     search_time = 0;
     run_timer = false;
@@ -264,7 +264,7 @@ void Search::run() {
             protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
                                  current_move_number);
 
-            search_root(current_depth, -Value::INFINITE, Value::INFINITE);
+            search_root(current_depth, -Values::INFINITE, Values::INFINITE);
 
             // Sort the root move list, so that the next iteration begins with the
             // best move first.
@@ -317,8 +317,8 @@ void Search::check_stop_conditions() {
             } else
 
                 // Check if we have a checkmate
-            if (Value::is_checkmate(root_moves.entries[0]->value)
-                && current_depth >= (Value::CHECKMATE - std::abs(root_moves.entries[0]->value))) {
+            if (Values::is_checkmate(root_moves.entries[0]->value)
+                && current_depth >= (Values::CHECKMATE - std::abs(root_moves.entries[0]->value))) {
                 abort = true;
             }
         }
@@ -354,7 +354,7 @@ void Search::search_root(int depth, int alpha, int beta) {
 
     // Reset all values, so the best move is pushed to the front
     for (int i = 0; i < root_moves.size; i++) {
-        root_moves.entries[i]->value = -Value::INFINITE;
+        root_moves.entries[i]->value = -Values::INFINITE;
     }
 
 
@@ -402,20 +402,20 @@ int Search::search(int depth, int alpha, int beta, int ply) {
     update_search(ply);
 
     // Abort conditions
-    if (abort || ply == Depth::MAX_PLY) {
+    if (abort || ply == Depths::MAX_PLY) {
         return evaluation.evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
     if (position.is_repetition() || position.has_insufficient_material() || position.halfmove_clock >= 100) {
-        return Value::DRAW;
+        return Values::DRAW;
     }
 
     if (position.is_check())
         depth += 1;
 
     // Initialize
-    int best_value = -Value::INFINITE;
+    int best_value = -Values::INFINITE;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -489,10 +489,10 @@ int Search::search(int depth, int alpha, int beta, int ply) {
     if (searched_moves == 0) {
         if (is_check) {
             // We have a check mate. This is bad for us, so return a -CHECKMATE.
-            return -Value::CHECKMATE + ply;
+            return -Values::CHECKMATE + ply;
         } else {
             // We have a stale mate. Return the draw value.
-            return Value::DRAW;
+            return Values::DRAW;
         }
     }
 
@@ -503,17 +503,17 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
     update_search(ply);
 
     // Abort conditions
-    if (abort || ply == Depth::MAX_PLY) {
+    if (abort || ply == Depths::MAX_PLY) {
         return evaluation.evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
     if (position.is_repetition() || position.has_insufficient_material() || position.halfmove_clock >= 100) {
-        return Value::DRAW;
+        return Values::DRAW;
     }
 
     // Initialize
-    int best_value = -Value::INFINITE;
+    int best_value = -Values::INFINITE;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -571,7 +571,7 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
     // If we cannot move, check for checkmate.
     if (searched_moves == 0 && is_check) {
         // We have a check mate. This is bad for us, so return a -CHECKMATE.
-        return -Value::CHECKMATE + ply;
+        return -Values::CHECKMATE + ply;
     }
 
     return best_value;

@@ -1,23 +1,25 @@
 #pragma once
 
+#include <cstdint>
+#include <cstdlib>
 #include "depth.hpp"
 
 namespace goldfish {
 
-class Value {
-public:
-    static const int INFINITE = 200000;
-    static const int CHECKMATE = 100000;
-    static const int CHECKMATE_THRESHOLD = CHECKMATE - Depth::MAX_PLY;
-    static const int DRAW = 0;
+using Value = int32_t;
 
-    static const int NOVALUE = 300000;
+namespace Values {
 
-    static bool is_checkmate(int value);
+constexpr Value INFINITE = 200000;
+constexpr Value CHECKMATE = 100000;
+constexpr Value CHECKMATE_THRESHOLD = CHECKMATE - Depths::MAX_PLY;
+constexpr Value DRAW = 0;
+constexpr Value NOVALUE = 300000;
 
-    Value() = delete;
+inline constexpr bool is_checkmate(Value value) {
+    Value absvalue = std::abs(value);
+    return absvalue >= CHECKMATE_THRESHOLD && absvalue <= CHECKMATE;
+}
 
-    ~Value() = delete;
-};
-
+}
 }

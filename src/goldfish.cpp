@@ -318,9 +318,9 @@ void Goldfish::send_move(RootEntry entry, int current_depth, int current_max_dep
     std::cout << " time " << time_delta.count();
     std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
 
-    if (std::abs(entry.value) >= Value::CHECKMATE_THRESHOLD) {
+    if (std::abs(entry.value) >= Values::CHECKMATE_THRESHOLD) {
         // Calculate mate distance
-        int mate_depth = Value::CHECKMATE - std::abs(entry.value);
+        int mate_depth = Values::CHECKMATE - std::abs(entry.value);
         std::cout << " score mate " << ((entry.value > 0) - (entry.value < 0)) * (mate_depth + 1) / 2;
     } else {
         std::cout << " score cp " << entry.value;
