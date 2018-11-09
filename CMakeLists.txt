@@ -61,6 +61,7 @@ set(HEADERS
         include/LRUCache.hpp
         include/benchmark.hpp
         include/bitboard.hpp
+        include/bound.hpp
         include/castling.hpp
         include/castlingtype.hpp
         include/color.hpp
