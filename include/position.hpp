@@ -7,6 +7,7 @@
 #include "piece.hpp"
 #include "piecetype.hpp"
 #include "depth.hpp"
+#include "value.hpp"
 
 #include <random>
 
@@ -18,7 +19,7 @@ public:
 
     std::array<std::array<uint64_t, PieceType::VALUES_SIZE>, Color::VALUES_SIZE> pieces = {};
 
-    std::array<int, Color::VALUES_SIZE> material = {};
+    std::array<Value, Color::VALUES_SIZE> material = {};
 
     int castling_rights = Castling::NO_CASTLING;
     int enpassant_square = Square::NO_SQUARE;
@@ -97,7 +98,7 @@ private:
         int halfmove_clock = 0;
     };
 
-    static const int MAX_MOVES = Depth::MAX_PLY + 1024;
+    static const int MAX_MOVES = Depths::MAX_PLY + 1024;
 
     int halfmove_number = 2;
 

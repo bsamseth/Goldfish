@@ -10,6 +10,7 @@
 #include "position.hpp"
 #include "movegenerator.hpp"
 #include "evaluation.hpp"
+#include "tt.hpp"
 
 namespace goldfish {
 
@@ -111,9 +112,9 @@ private:
 
     // We will store a MoveGenerator for each ply so we don't have to create them
     // in search. (which is expensive)
-    std::array<MoveGenerator, Depth::MAX_PLY> move_generators;
+    std::array<MoveGenerator, Depths::MAX_PLY> move_generators;
 
-    // Depth search
+    // Depths search
     int search_depth;
 
     // Nodes search
@@ -135,7 +136,7 @@ private:
     int current_max_depth;
     int current_move;
     int current_move_number;
-    std::array<MoveVariation, Depth::MAX_PLY + 1> pv;
+    std::array<MoveVariation, Depths::MAX_PLY + 1> pv;
 
     void check_stop_conditions();
 
