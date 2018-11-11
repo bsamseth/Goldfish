@@ -4,21 +4,18 @@
 
 namespace goldfish {
 
-class CastlingType {
-public:
-    static const int KING_SIDE = 0;
-    static const int QUEEN_SIDE = 1;
+enum CastlingType {
+    KING_SIDE = 0,
+    QUEEN_SIDE,
+    NO_CASTLING_TYPE
+};
 
-    static const int NO_CASTLING_TYPE = 2;
+namespace CastlingTypes {
 
-    static const int VALUES_SIZE = 2;
-    static const std::array<int, VALUES_SIZE> values;
-
-private:
-    CastlingType();
-
-    ~CastlingType();
+constexpr int VALUES_SIZE = 2;
+constexpr std::array<CastlingType, VALUES_SIZE> values = {
+    KING_SIDE, QUEEN_SIDE
 };
 
 }
-
+}

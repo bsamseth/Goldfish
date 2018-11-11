@@ -1,42 +1,144 @@
 #pragma once
 
 #include <array>
+#include "piecetype.hpp"
+#include "color.hpp"
 
 namespace goldfish {
 
-class Piece {
-public:
-    static const int MASK = 0x1F;
-
-    static const int WHITE_PAWN = 0;
-    static const int WHITE_KNIGHT = 1;
-    static const int WHITE_BISHOP = 2;
-    static const int WHITE_ROOK = 3;
-    static const int WHITE_QUEEN = 4;
-    static const int WHITE_KING = 5;
-    static const int BLACK_PAWN = 6;
-    static const int BLACK_KNIGHT = 7;
-    static const int BLACK_BISHOP = 8;
-    static const int BLACK_ROOK = 9;
-    static const int BLACK_QUEEN = 10;
-    static const int BLACK_KING = 11;
-
-    static const int NO_PIECE = 12;
-
-    static const int VALUES_SIZE = 12;
-    static const std::array<int, VALUES_SIZE> values;
-
-    static bool is_valid(int piece);
-
-    static int value_of(int color, int piecetype);
-
-    static int get_type(int piece);
-
-    static int get_color(int piece);
-
-    Piece() = delete;
-
-    ~Piece() = delete;
+enum Piece {
+    WHITE_PAWN = 0,
+    WHITE_KNIGHT,
+    WHITE_BISHOP,
+    WHITE_ROOK,
+    WHITE_QUEEN,
+    WHITE_KING,
+    BLACK_PAWN,
+    BLACK_KNIGHT,
+    BLACK_BISHOP,
+    BLACK_ROOK,
+    BLACK_QUEEN,
+    BLACK_KING,
+    NO_PIECE,
 };
 
+namespace Pieces {
+
+constexpr int VALUES_SIZE = 12;
+
+constexpr std::array<Piece, VALUES_SIZE> values = {
+        WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
+        BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING
+};
+
+constexpr int MASK = 0x1F;
+
+inline constexpr bool is_valid(Piece piece) {
+    switch (piece) {
+        case WHITE_PAWN:
+        case WHITE_KNIGHT:
+        case WHITE_BISHOP:
+        case WHITE_ROOK:
+        case WHITE_QUEEN:
+        case WHITE_KING:
+        case BLACK_PAWN:
+        case BLACK_KNIGHT:
+        case BLACK_BISHOP:
+        case BLACK_ROOK:
+        case BLACK_QUEEN:
+        case BLACK_KING:
+            return true;
+        default:
+            return false;
+    }
+}
+
+inline constexpr Piece value_of(Color color, PieceType piecetype) {
+    switch (color) {
+        case Color::WHITE:
+            switch (piecetype) {
+                case PieceType::PAWN:
+                    return WHITE_PAWN;
+                case PieceType::KNIGHT:
+                    return WHITE_KNIGHT;
+                case PieceType::BISHOP:
+                    return WHITE_BISHOP;
+                case PieceType::ROOK:
+                    return WHITE_ROOK;
+                case PieceType::QUEEN:
+                    return WHITE_QUEEN;
+                case PieceType::KING:
+                    return WHITE_KING;
+                default:
+                    throw std::invalid_argument("Bad piecetype");
+            }
+        case Color::BLACK:
+            switch (piecetype) {
+                case PieceType::PAWN:
+                    return BLACK_PAWN;
+                case PieceType::KNIGHT:
+                    return BLACK_KNIGHT;
+                case PieceType::BISHOP:
+                    return BLACK_BISHOP;
+                case PieceType::ROOK:
+                    return BLACK_ROOK;
+                case PieceType::QUEEN:
+                    return BLACK_QUEEN;
+                case PieceType::KING:
+                    return BLACK_KING;
+                default:
+                    throw std::invalid_argument("Bad piecetype");
+            }
+        default:
+            throw std::invalid_argument("Bad color");
+    }
+}
+
+inline constexpr PieceType get_type(Piece piece) {
+    switch (piece) {
+        case WHITE_PAWN:
+        case BLACK_PAWN:
+            return PieceType::PAWN;
+        case WHITE_KNIGHT:
+        case BLACK_KNIGHT:
+            return PieceType::KNIGHT;
+        case WHITE_BISHOP:
+        case BLACK_BISHOP:
+            return PieceType::BISHOP;
+        case WHITE_ROOK:
+        case BLACK_ROOK:
+            return PieceType::ROOK;
+        case WHITE_QUEEN:
+        case BLACK_QUEEN:
+            return PieceType::QUEEN;
+        case WHITE_KING:
+        case BLACK_KING:
+            return PieceType::KING;
+        default:
+            throw std::invalid_argument("Bad piece");
+    }
+}
+
+inline constexpr Color get_color(Piece piece) {
+    switch (piece) {
+        case WHITE_PAWN:
+        case WHITE_KNIGHT:
+        case WHITE_BISHOP:
+        case WHITE_ROOK:
+        case WHITE_QUEEN:
+        case WHITE_KING:
+            return Color::WHITE;
+        case BLACK_PAWN:
+        case BLACK_KNIGHT:
+        case BLACK_BISHOP:
+        case BLACK_ROOK:
+        case BLACK_QUEEN:
+        case BLACK_KING:
+            return Color::BLACK;
+        default:
+            throw std::invalid_argument("Bad piece");
+    }
+}
+
+}
 }

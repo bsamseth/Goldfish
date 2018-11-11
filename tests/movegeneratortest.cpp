@@ -1,10 +1,3 @@
-/*
- * Copyright (C) 2013-2016 Phokham Nonava
- *
- * Use of this source code is governed by the MIT license that can be
- * found in the LICENSE file.
- */
-
 #include "movegenerator.hpp"
 #include "notation.hpp"
 
@@ -12,23 +5,21 @@
 
 using namespace goldfish;
 
-class E {
-public:
-    int depth;
+struct E {
+    Depth depth;
     uint64_t nodes;
 
-    E(int depth, uint64_t nodes) : depth(depth), nodes(nodes) {}
+    E(int depth, uint64_t nodes) : depth(Depth(depth)), nodes(nodes) {}
 };
 
-class P {
-public:
+struct P {
     std::string fen;
     std::vector <E> perft_entries;
 
     P(std::string fen, std::initializer_list <E> perft_entries) : fen(fen), perft_entries(perft_entries) {}
 };
 
-static const std::vector <P> perft_positions = {
+const std::vector <P> perft_positions = {
         P("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
           {E(1, 20), E(2, 400), E(3, 8902), E(4, 197281), E(5, 4865609), E(6, 119060324)}),
         P("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
@@ -201,10 +192,10 @@ static const std::vector <P> perft_positions = {
         P("1k6/8/8/5pP1/4K1P1/8/8/8 w - f6 0 1", {E(1, 10), E(2, 63), E(3, 533), E(4, 3508), E(5, 30821)})
 };
 
-static const int MAX_DEPTH = 6;
-static std::array <MoveGenerator, MAX_DEPTH> move_generators;
+constexpr Depth MAX_DEPTH = Depth(6);
+std::array <MoveGenerator, MAX_DEPTH> move_generators;
 
-uint64_t mini_max(int depth, Position &position, int ply) {
+uint64_t mini_max(Depth depth, Position &position, int ply) {
     if (depth <= 0) {
         return 1;
     }
@@ -215,10 +206,10 @@ uint64_t mini_max(int depth, Position &position, int ply) {
     MoveList <MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
 
     for (int i = 0; i < moves.size; i++) {
-        int move = moves.entries[i]->move;
+        Move move = moves.entries[i]->move;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             total_nodes += mini_max(depth - 1, position, ply + 1);
         }
         position.undo_move(move);
@@ -227,34 +218,21 @@ uint64_t mini_max(int depth, Position &position, int ply) {
     return total_nodes;
 }
 
-TEST(movegeneratortest, test_perft
-) {
-for (
-unsigned int i = 0;
-i < 4; i++) {
-for (
-const auto &p
-: perft_positions) {
-if (p.perft_entries.
+TEST(movegeneratortest, test_perft) {
+    for ( unsigned int i = 0; i < 4; i++) {
+        for ( const auto &p : perft_positions) {
+            if (p.perft_entries.  size() > i) {
+                Depth depth = p.perft_entries[i].depth;
+                uint64_t nodes = p.perft_entries[i].nodes;
 
-size()
+                Position position(Notation::to_position(p.fen));
 
-> i) {
-int depth = p.perft_entries[i].depth;
-uint64_t nodes = p.perft_entries[i].nodes;
-
-Position position(Notation::to_position(p.fen));
-
-uint64_t result = mini_max(depth, position, 0);
-EXPECT_EQ(nodes, result
-)
-<<
-Notation::from_position(position)
-<< ", depth " << i
-<< ": expected " << nodes
-<< ", actual " <<
-result;
-}
-}
-}
+                uint64_t result = mini_max(depth, position, 0);
+                EXPECT_EQ(nodes, result) << Notation::from_position(position)
+                    << ", depth " << i
+                    << ": expected " << nodes
+                    << ", actual " << result;
+            }
+        }
+    }
 }

@@ -1,15 +1,20 @@
 #pragma once
 
-#include <cstdint>
+#include "operations.hpp"
 
 namespace goldfish {
 
-using Depth = uint16_t;
+enum Depth : int {
+    DEPTH_ZERO = 0,
+    DEPTH_MAX = 64,
+    MAX_PLY = 256,
+};
 
-namespace Depths {
+ENABLE_FULL_OPERATORS_ON(Depth)
 
-constexpr Depth MAX_PLY = 256;
-constexpr Depth MAX_DEPTH = 64;
+constexpr Depth operator+(Depth v, int i) { return Depth(int(v) + i); }
+constexpr Depth operator-(Depth v, int i) { return Depth(int(v) - i); }
+inline Depth& operator+=(Depth& v, int i) { return v = v + i; }
+inline Depth& operator-=(Depth& v, int i) { return v = v - i; }
 
-}
 }

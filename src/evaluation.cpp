@@ -1,15 +1,13 @@
 #include "evaluation.hpp"
 
-namespace goldfish {
+namespace goldfish::Evaluation {
 
-int Evaluation::material_weight = 100;
-int Evaluation::mobility_weight = 80;
 
-Value Evaluation::evaluate(Position &position) {
+Value evaluate(const Position &position) {
     // Initialize
-    int my_color = position.active_color;
-    int opposite_color = Color::swap_color(my_color);
-    Value value = 0;
+    Color my_color = position.active_color;
+    Color opposite_color = ~my_color;
+    Value value = Value::ZERO;
 
     // Evaluate material
     Value material_score = (evaluate_material(my_color, position) - evaluate_material(opposite_color, position))
@@ -22,12 +20,12 @@ Value Evaluation::evaluate(Position &position) {
     value += mobility_score;
 
     // Add Tempo
-    value += TEMPO;
+    value += Value::TEMPO;
 
     return value;
 }
 
-Value Evaluation::evaluate_material(int color, Position &position) {
+Value evaluate_material(Color color, const Position& position) {
     Value material = position.material[color];
 
     // Add bonus for bishop pair
@@ -38,49 +36,49 @@ Value Evaluation::evaluate_material(int color, Position &position) {
     return material;
 }
 
-Value Evaluation::evaluate_mobility(int color, Position &position) {
+Value evaluate_mobility(Color color, const Position& position) {
     int knight_mobility = 0;
     for (auto squares = position.pieces[color][PieceType::KNIGHT];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
-        knight_mobility += evaluate_mobility(color, position, square, Square::knight_directions);
+        Square square = Square(Bitboard::next(squares));
+        knight_mobility += evaluate_mobility(position, square, Squares::knight_directions);
     }
 
     int bishop_mobility = 0;
     for (auto squares = position.pieces[color][PieceType::BISHOP];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
-        bishop_mobility += evaluate_mobility(color, position, square, Square::bishop_directions);
+        Square square = Square(Bitboard::next(squares));
+        bishop_mobility += evaluate_mobility(position, square, Squares::bishop_directions);
     }
 
     int rook_mobility = 0;
     for (auto squares = position.pieces[color][PieceType::ROOK];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
-        rook_mobility += evaluate_mobility(color, position, square, Square::rook_directions);
+        Square square = Square(Bitboard::next(squares));
+        rook_mobility += evaluate_mobility(position, square, Squares::rook_directions);
     }
 
     int queen_mobility = 0;
     for (auto squares = position.pieces[color][PieceType::QUEEN];
          squares != 0; squares = Bitboard::remainder(squares)) {
-        int square = Bitboard::next(squares);
-        queen_mobility += evaluate_mobility(color, position, square, Square::queen_directions);
+        Square square = Square(Bitboard::next(squares));
+        queen_mobility += evaluate_mobility(position, square, Squares::queen_directions);
     }
 
-    return knight_mobility * 4
-           + bishop_mobility * 5
-           + rook_mobility * 2
-           + queen_mobility;
+    return Value(knight_mobility * 4
+               + bishop_mobility * 5
+               + rook_mobility * 2
+               + queen_mobility);
 }
 
-Value Evaluation::evaluate_mobility(int color, Position &position, int square, const std::vector<int> &directions) {
+Value evaluate_mobility(const Position &position, Square square, const std::vector<Direction> &directions) {
     int mobility = 0;
-    bool sliding = PieceType::is_sliding(Piece::get_type(position.board[square]));
+    bool sliding = PieceTypes::is_sliding(Pieces::get_type(position.board[square]));
 
     for (auto direction : directions) {
-        int target_square = square + direction;
+        Square target_square = square + direction;
 
-        while (Square::is_valid(target_square)) {
+        while (Squares::is_valid(target_square)) {
             mobility++;
 
             if (sliding && position.board[target_square] == Piece::NO_PIECE) {
@@ -91,7 +89,7 @@ Value Evaluation::evaluate_mobility(int color, Position &position, int square, c
         }
     }
 
-    return mobility;
+    return Value(mobility);
 }
 
 }

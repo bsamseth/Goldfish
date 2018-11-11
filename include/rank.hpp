@@ -1,32 +1,29 @@
 #pragma once
 
 #include <array>
+#include "operations.hpp"
 
 namespace goldfish {
 
-class Rank {
-public:
-    static const int R1 = 0;
-    static const int R2 = 1;
-    static const int R3 = 2;
-    static const int R4 = 3;
-    static const int R5 = 4;
-    static const int R6 = 5;
-    static const int R7 = 6;
-    static const int R8 = 7;
-
-    static const int NO_RANK = 8;
-
-    static const int VALUES_SIZE = 8;
-    static const std::array<int, VALUES_SIZE> values;
-
-    static bool is_valid(int rank);
-
-    Rank() = delete;
-
-    ~Rank() = delete;
+enum Rank {
+    RANK_1 = 0, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, NO_RANK
 };
 
+
+ENABLE_INCR_OPERATORS_ON(Rank)
+
+namespace Ranks {
+
+constexpr int VALUES_SIZE = 8;
+constexpr std::array<Rank, VALUES_SIZE> values = {
+    RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
+};
+
+inline constexpr bool is_valid(Rank rank) {
+    return rank != Rank::NO_RANK;
+}
+
+}
 }
 
 

@@ -121,7 +121,7 @@ void Goldfish::receive_position(std::istringstream &input) {
         MoveList<MoveEntry> &moves = move_generator.get_legal_moves(*current_position, 1, current_position->is_check());
         bool found = false;
         for (int i = 0; i < moves.size; i++) {
-            int move = moves.entries[i]->move;
+            Move move = moves.entries[i]->move;
             if (from_move(move) == token) {
                 current_position->make_move(move);
                 found = true;
@@ -147,7 +147,7 @@ void Goldfish::receive_go(std::istringstream &input) {
     if (token == "depth") {
         int search_depth;
         if (input >> search_depth) {
-            search->new_depth_search(*current_position, search_depth);
+            search->new_depth_search(*current_position, Depth(search_depth));
         } else {
             throw std::exception();
         }
@@ -258,7 +258,7 @@ void Goldfish::receive_bench() {
               << "\nNodes/second    : " << 1000*total_nodes/time << std::endl;
 }
 
-void Goldfish::send_best_move(int best_move, int ponder_move) {
+void Goldfish::send_best_move(Move best_move, Move ponder_move) {
     std::cout << "bestmove ";
 
     if (best_move != Move::NO_MOVE) {
@@ -275,7 +275,7 @@ void Goldfish::send_best_move(int best_move, int ponder_move) {
 }
 
 void Goldfish::send_status(
-        int current_depth, int current_max_depth, uint64_t total_nodes, int current_move, int current_move_number) {
+        int current_depth, int current_max_depth, uint64_t total_nodes, Move current_move, int current_move_number) {
     if (std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now() - status_start_time).count() >= 1000) {
         send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
@@ -283,7 +283,7 @@ void Goldfish::send_status(
 }
 
 void Goldfish::send_status(
-        bool force, int current_depth, int current_max_depth, uint64_t total_nodes, int current_move,
+        bool force, int current_depth, int current_max_depth, uint64_t total_nodes, Move current_move,
         int current_move_number) {
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now() - start_time);
@@ -318,9 +318,9 @@ void Goldfish::send_move(RootEntry entry, int current_depth, int current_max_dep
     std::cout << " time " << time_delta.count();
     std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
 
-    if (std::abs(entry.value) >= Values::CHECKMATE_THRESHOLD) {
+    if (std::abs(entry.value) >= Value::CHECKMATE_THRESHOLD) {
         // Calculate mate distance
-        int mate_depth = Values::CHECKMATE - std::abs(entry.value);
+        int mate_depth = Value::CHECKMATE - std::abs(entry.value);
         std::cout << " score mate " << ((entry.value > 0) - (entry.value < 0)) * (mate_depth + 1) / 2;
     } else {
         std::cout << " score cp " << entry.value;
@@ -338,13 +338,13 @@ void Goldfish::send_move(RootEntry entry, int current_depth, int current_max_dep
     status_start_time = std::chrono::system_clock::now();
 }
 
-std::string Goldfish::from_move(int move) {
+std::string Goldfish::from_move(Move move) {
     std::string notation;
 
-    notation += Notation::from_square(Move::get_origin_square(move));
-    notation += Notation::from_square(Move::get_target_square(move));
+    notation += Notation::from_square(Moves::get_origin_square(move));
+    notation += Notation::from_square(Moves::get_target_square(move));
 
-    int promotion = Move::get_promotion(move);
+    PieceType promotion = Moves::get_promotion(move);
     if (promotion != PieceType::NO_PIECE_TYPE) {
         notation += (char) std::tolower(Notation::from_piece_type(promotion));
     }

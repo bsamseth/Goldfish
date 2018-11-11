@@ -35,7 +35,7 @@ include(Colors)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 # Things to always include as flags. Change as needed.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")  
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wfatal-errors")  
 
 # Build-type specific flags. Change as needed.
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
@@ -88,23 +88,14 @@ set(HEADERS
 set(SOURCES
         src/benchmark.cpp
         src/bitboard.cpp
-        src/castling.cpp
-        src/castlingtype.cpp
-        src/color.cpp
         src/evaluation.cpp
-        src/file.cpp
         src/goldfish.cpp
-        src/move.cpp
         src/movegenerator.cpp
         src/movelist.cpp
         src/notation.cpp
         src/perft.cpp
-        src/piece.cpp
-        src/piecetype.cpp
         src/position.cpp
-        src/rank.cpp
         src/search.cpp
-        src/square.cpp
         )
 set(TESTFILES
         tests/bitboardtest.cpp

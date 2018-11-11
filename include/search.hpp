@@ -22,7 +22,7 @@ class Search {
 public:
     explicit Search(Protocol &protocol);
 
-    void new_depth_search(Position &position, int search_depth);
+    void new_depth_search(Position &position, Depth search_depth);
 
     void new_nodes_search(Position &position, uint64_t search_nodes);
 
@@ -60,7 +60,7 @@ private:
      */
     class Timer {
     public:
-        Timer(bool &timer_stopped, bool &do_time_management, int &current_depth, const int &initial_depth, bool &abort);
+        Timer(bool &timer_stopped, bool &do_time_management, Depth &current_depth, const Depth &initial_depth, bool &abort);
 
         void start(uint64_t search_time);
 
@@ -73,8 +73,8 @@ private:
 
         bool &timer_stopped;
         bool &do_time_management;
-        int &current_depth;
-        const int &initial_depth;
+        Depth &current_depth;
+        const Depth &initial_depth;
 
         bool &abort;
 
@@ -108,14 +108,13 @@ private:
     bool shutdown = false;
 
     Position position;
-    Evaluation evaluation;
 
     // We will store a MoveGenerator for each ply so we don't have to create them
     // in search. (which is expensive)
-    std::array<MoveGenerator, Depths::MAX_PLY> move_generators;
+    std::array<MoveGenerator, Depth::MAX_PLY> move_generators;
 
     // Depths search
-    int search_depth;
+    Depth search_depth;
 
     // Nodes search
     uint64_t search_nodes;
@@ -131,24 +130,24 @@ private:
     MoveList<RootEntry> root_moves;
     bool abort;
     uint64_t total_nodes;
-    const int initial_depth = 1;
-    int current_depth;
-    int current_max_depth;
-    int current_move;
+    const Depth initial_depth = Depth(1);
+    Depth current_depth;
+    Depth current_max_depth;
+    Move current_move;
     int current_move_number;
-    std::array<MoveVariation, Depths::MAX_PLY + 1> pv;
+    std::array<MoveVariation, Depth::MAX_PLY + 1> pv;
 
     void check_stop_conditions();
 
     void update_search(int ply);
 
-    void search_root(int depth, int alpha, int beta);
+    void search_root(Depth depth, int alpha, int beta);
 
-    int search(int depth, int alpha, int beta, int ply);
+    int search(Depth depth, int alpha, int beta, int ply);
 
-    int quiescent(int depth, int alpha, int beta, int ply);
+    int quiescent(Depth depth, int alpha, int beta, int ply);
 
-    void save_pv(int move, MoveVariation &src, MoveVariation &dest);
+    void save_pv(Move move, MoveVariation &src, MoveVariation &dest);
 };
 
 }

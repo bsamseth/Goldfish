@@ -14,37 +14,37 @@ public:
 
     static std::string from_position(const Position &position);
 
-    static int to_color(char notation);
+    static Color to_color(char notation);
 
-    static char from_color(int color);
+    static char from_color(Color color);
 
-    static int to_piece_type(char notation);
+    static PieceType to_piece_type(char notation);
 
-    static char from_piece_type(int piecetype);
+    static char from_piece_type(PieceType piecetype);
 
-    static int to_piece(char notation);
+    static Piece to_piece(char notation);
 
-    static char from_piece(int piece);
+    static char from_piece(Piece piece);
 
-    static int to_castling_type(char notation);
+    static CastlingType to_castling_type(char notation);
 
-    static char from_castling_type(int castlingtype);
+    static char from_castling_type(CastlingType castlingtype);
 
-    static int to_castling(char notation);
+    static Castling to_castling(char notation);
 
-    static char from_castling(int castling);
+    static char from_castling(Castling castling);
 
-    static int to_file(char notation);
+    static File to_file(char notation);
 
-    static char from_file(int file);
+    static char from_file(File file);
 
-    static int to_rank(char notation);
+    static Rank to_rank(char notation);
 
-    static char from_rank(int rank);
+    static char from_rank(Rank rank);
 
-    static int to_square(const std::string &notation);
+    static Square to_square(const std::string &notation);
 
-    static std::string from_square(int square);
+    static std::string from_square(Square square);
 
     Notation() = delete;
 
@@ -82,9 +82,9 @@ private:
     static const char R7_NOTATION = '7';
     static const char R8_NOTATION = '8';
 
-    static int color_of(char notation);
+    static Color color_of(char notation);
 
-    static char transform(char notation, int color);
+    static char transform(char notation, Color color);
 };
 
 }

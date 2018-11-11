@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 #include "bitboard.hpp"
 #include "color.hpp"
 #include "castling.hpp"
@@ -8,22 +10,22 @@
 #include "piecetype.hpp"
 #include "depth.hpp"
 #include "value.hpp"
+#include "move.hpp"
 
-#include <random>
 
 namespace goldfish {
 
 class Position {
 public:
-    std::array<int, Square::VALUES_LENGTH> board;
+    std::array<Piece, Squares::VALUES_LENGTH> board;
 
-    std::array<std::array<uint64_t, PieceType::VALUES_SIZE>, Color::VALUES_SIZE> pieces = {};
+    std::array<std::array<uint64_t, PieceTypes::VALUES_SIZE>, Colors::VALUES_SIZE> pieces = {};
 
-    std::array<Value, Color::VALUES_SIZE> material = {};
+    std::array<Value, Colors::VALUES_SIZE> material = {};
 
-    int castling_rights = Castling::NO_CASTLING;
-    int enpassant_square = Square::NO_SQUARE;
-    int active_color = Color::WHITE;
+    Castling castling_rights = Castling::NO_CASTLING;
+    Square enpassant_square = Square::NO_SQUARE;
+    Color active_color = Color::WHITE;
     int halfmove_clock = 0;
 
     uint64_t zobrist_key = 0;
@@ -38,11 +40,11 @@ public:
 
     bool operator!=(const Position &position) const;
 
-    void set_active_color(int active_color);
+    void set_active_color(Color active_color);
 
-    void set_castling_right(int castling);
+    void set_castling_right(Castling castling);
 
-    void set_enpassant_square(int enpassant_square);
+    void set_enpassant_square(Square enpassant_square);
 
     void set_halfmove_clock(int halfmove_clock);
 
@@ -54,30 +56,30 @@ public:
 
     bool has_insufficient_material();
 
-    void put(int piece, int square);
+    void put(Piece piece, Square square);
 
-    int remove(int square);
+    Piece remove(Square square);
 
-    void make_move(int move);
+    void make_move(Move move);
 
     void make_null_move();
 
     void undo_null_move();
 
-    void undo_move(int move);
+    void undo_move(Move move);
 
     bool is_check();
 
-    bool is_check(int color);
+    bool is_check(Color color);
 
-    bool is_attacked(int target_square, int attacker_color);
+    bool is_attacked(Square target_square, Color attacker_color);
 
 private:
     class Zobrist {
     public:
-        std::array<std::array<uint64_t, Square::VALUES_LENGTH>, Piece::VALUES_SIZE> board;
-        std::array<uint64_t, Castling::VALUES_LENGTH> castling_rights;
-        std::array<uint64_t, Square::VALUES_LENGTH> enpassant_square;
+        std::array<std::array<uint64_t, Squares::VALUES_LENGTH>, Pieces::VALUES_SIZE> board;
+        std::array<uint64_t, Castlings::VALUES_LENGTH> castling_rights;
+        std::array<uint64_t, Squares::VALUES_LENGTH> enpassant_square;
         uint64_t active_color;
 
         static Zobrist &instance();
@@ -93,12 +95,12 @@ private:
     class State {
     public:
         uint64_t zobrist_key = 0;
-        int castling_rights = Castling::NO_CASTLING;
-        int enpassant_square = Square::NO_SQUARE;
+        Castling castling_rights = Castling::NO_CASTLING;
+        Square enpassant_square = Square::NO_SQUARE;
         int halfmove_clock = 0;
     };
 
-    static const int MAX_MOVES = Depths::MAX_PLY + 1024;
+    static const int MAX_MOVES = Depth::MAX_PLY + 1024;
 
     int halfmove_number = 2;
 
@@ -109,11 +111,11 @@ private:
 
     Zobrist &zobrist;
 
-    void clear_castling(int square);
+    void clear_castling(Square square);
 
-    bool is_attacked(int target_square, int attacker_piece, const std::vector<int> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, const std::vector<Direction> &directions);
 
-    bool is_attacked(int target_square, int attacker_piece, int queen_piece, const std::vector<int> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Direction> &directions);
 };
 
 }

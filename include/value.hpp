@@ -1,25 +1,43 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdlib>
+#include <cmath>
 #include "depth.hpp"
+#include "operations.hpp"
 
 namespace goldfish {
 
-using Value = int32_t;
+enum Value : int {
+    ZERO = 0,
+    DRAW = 0,
+    CHECKMATE = 100000,
+    CHECKMATE_THRESHOLD = 100000 - Depth::MAX_PLY,
+    INFINITE = 2 * CHECKMATE,
+    NO_VALUE = 3 * CHECKMATE,
+
+
+    // Piece values as defined by Larry Kaufman
+    PAWN_VALUE = 100,
+    KNIGHT_VALUE = 325,
+    BISHOP_VALUE = 325,
+    ROOK_VALUE = 500,
+    QUEEN_VALUE = 975,
+    KING_VALUE = 20000,
+
+    TEMPO = 1,
+};
+
+ENABLE_FULL_OPERATORS_ON(Value)
+
+constexpr Value operator+(Value v, int i) { return Value(int(v) + i); }
+constexpr Value operator-(Value v, int i) { return Value(int(v) - i); }
+inline Value& operator+=(Value& v, int i) { return v = v + i; }
+inline Value& operator-=(Value& v, int i) { return v = v - i; }
 
 namespace Values {
 
-constexpr Value INFINITE = 200000;
-constexpr Value CHECKMATE = 100000;
-constexpr Value CHECKMATE_THRESHOLD = CHECKMATE - Depths::MAX_PLY;
-constexpr Value DRAW = 0;
-constexpr Value NOVALUE = 300000;
-
-inline constexpr bool is_checkmate(Value value) {
-    Value absvalue = std::abs(value);
+constexpr bool is_checkmate(Value value) {
+    Value absvalue = Value(std::abs(value));
     return absvalue >= CHECKMATE_THRESHOLD && absvalue <= CHECKMATE;
 }
-
 }
 }

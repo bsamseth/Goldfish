@@ -4,7 +4,7 @@
 
 namespace goldfish {
 
-Search::Timer::Timer(bool &timer_stopped, bool &do_time_management, int &current_depth, const int &initial_depth,
+Search::Timer::Timer(bool &timer_stopped, bool &do_time_management, Depth &current_depth, const Depth &initial_depth,
                      bool &abort)
         : timer_stopped(timer_stopped), do_time_management(do_time_management),
           current_depth(current_depth), initial_depth(initial_depth), abort(abort) {
@@ -55,8 +55,8 @@ void Search::Semaphore::drain_permits() {
     permits = 0;
 }
 
-void Search::new_depth_search(Position &position, int search_depth) {
-    if (search_depth < 1 || search_depth > Depths::MAX_DEPTH) throw std::exception();
+void Search::new_depth_search(Position &position, Depth search_depth) {
+    if (search_depth < 1 || search_depth > Depth::DEPTH_MAX) throw std::exception();
     if (running) throw std::exception();
 
     reset();
@@ -108,9 +108,7 @@ void Search::new_ponder_search(Position &position,
                                uint64_t white_time_left, uint64_t white_time_increment, uint64_t black_time_left,
                                uint64_t black_time_increment, int moves_to_go) {
     if (white_time_left < 1) throw std::exception();
-    if (white_time_increment < 0) throw std::exception();
     if (black_time_left < 1) throw std::exception();
-    if (black_time_increment < 0) throw std::exception();
     if (moves_to_go < 0) throw std::exception();
     if (running) throw std::exception();
 
@@ -148,9 +146,9 @@ void Search::new_ponder_search(Position &position,
 }
 
 Search::Search(Protocol &protocol)
-        : protocol(protocol),
-          timer(timer_stopped, do_time_management, current_depth, initial_depth, abort),
-          wakeup_signal(0), run_signal(0), stop_signal(0), finished_signal(0) {
+        : wakeup_signal(0), run_signal(0), stop_signal(0), finished_signal(0),
+          protocol(protocol),
+          timer(timer_stopped, do_time_management, current_depth, initial_depth, abort) {
 
     reset();
 
@@ -158,7 +156,7 @@ Search::Search(Protocol &protocol)
 }
 
 void Search::reset() {
-    search_depth = Depths::MAX_DEPTH;
+    search_depth = Depth::DEPTH_MAX;
     search_nodes = std::numeric_limits<uint64_t>::max();
     search_time = 0;
     run_timer = false;
@@ -168,7 +166,7 @@ void Search::reset() {
     abort = false;
     total_nodes = 0;
     current_depth = initial_depth;
-    current_max_depth = 0;
+    current_max_depth = Depth::DEPTH_ZERO;
     current_move = Move::NO_MOVE;
     current_move_number = 0;
 }
@@ -244,7 +242,7 @@ void Search::run() {
         // Populate root move list
         MoveList<MoveEntry> &moves = move_generators[0].get_legal_moves(position, 1, position.is_check());
         for (int i = 0; i < moves.size; i++) {
-            int move = moves.entries[i]->move;
+            Move move = moves.entries[i]->move;
             root_moves.entries[root_moves.size]->move = move;
             root_moves.entries[root_moves.size]->pv.moves[0] = move;
             root_moves.entries[root_moves.size]->pv.size = 1;
@@ -258,13 +256,13 @@ void Search::run() {
         run_signal.release();
 
         //### BEGIN Iterative Deepening
-        for (int depth = initial_depth; depth <= search_depth; depth++) {
+        for (Depth depth = initial_depth; depth <= search_depth; ++depth) {
             current_depth = depth;
-            current_max_depth = 0;
+            current_max_depth = Depth::DEPTH_ZERO;
             protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
                                  current_move_number);
 
-            search_root(current_depth, -Values::INFINITE, Values::INFINITE);
+            search_root(current_depth, -Value::INFINITE, Value::INFINITE);
 
             // Sort the root move list, so that the next iteration begins with the
             // best move first.
@@ -286,8 +284,8 @@ void Search::run() {
         protocol.send_status(true, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 
         // Send the best move and ponder move
-        int best_move = Move::NO_MOVE;
-        int ponder_move = Move::NO_MOVE;
+        Move best_move = Move::NO_MOVE;
+        Move ponder_move = Move::NO_MOVE;
         if (root_moves.size > 0) {
             best_move = root_moves.entries[0]->move;
             if (root_moves.entries[0]->pv.size >= 2) {
@@ -318,7 +316,7 @@ void Search::check_stop_conditions() {
 
                 // Check if we have a checkmate
             if (Values::is_checkmate(root_moves.entries[0]->value)
-                && current_depth >= (Values::CHECKMATE - std::abs(root_moves.entries[0]->value))) {
+                && current_depth >= Depth(Value::CHECKMATE - std::abs(root_moves.entries[0]->value))) {
                 abort = true;
             }
         }
@@ -329,7 +327,7 @@ void Search::update_search(int ply) {
     total_nodes++;
 
     if (ply > current_max_depth) {
-        current_max_depth = ply;
+        current_max_depth = Depth(ply);
     }
 
     if (search_nodes <= total_nodes) {
@@ -342,7 +340,7 @@ void Search::update_search(int ply) {
     protocol.send_status(current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 }
 
-void Search::search_root(int depth, int alpha, int beta) {
+void Search::search_root(Depth depth, int alpha, int beta) {
     int ply = 0;
 
     update_search(ply);
@@ -354,12 +352,12 @@ void Search::search_root(int depth, int alpha, int beta) {
 
     // Reset all values, so the best move is pushed to the front
     for (int i = 0; i < root_moves.size; i++) {
-        root_moves.entries[i]->value = -Values::INFINITE;
+        root_moves.entries[i]->value = -Value::INFINITE;
     }
 
 
     for (int i = 0; i < root_moves.size; i++) {
-        int move = root_moves.entries[i]->move;
+        Move move = root_moves.entries[i]->move;
 
         current_move = move;
         current_move_number = i + 1;
@@ -378,7 +376,7 @@ void Search::search_root(int depth, int alpha, int beta) {
             alpha = value;
 
             // We found a new best move
-            root_moves.entries[i]->value = value;
+            root_moves.entries[i]->value = Value(value);
             save_pv(move, pv[ply + 1], root_moves.entries[i]->pv);
 
             protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes);
@@ -392,30 +390,30 @@ void Search::search_root(int depth, int alpha, int beta) {
     }
 }
 
-int Search::search(int depth, int alpha, int beta, int ply) {
+int Search::search(Depth depth, int alpha, int beta, int ply) {
     // We are at a leaf/horizon. So calculate that value.
     if (depth <= 0) {
         // Descend into quiescent
-        return quiescent(0, alpha, beta, ply);
+        return quiescent(Depth::DEPTH_ZERO, alpha, beta, ply);
     }
 
     update_search(ply);
 
     // Abort conditions
-    if (abort || ply == Depths::MAX_PLY) {
-        return evaluation.evaluate(position);
+    if (abort || ply == Depth::MAX_PLY) {
+        return Evaluation::evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
     if (position.is_repetition() || position.has_insufficient_material() || position.halfmove_clock >= 100) {
-        return Values::DRAW;
+        return Value::DRAW;
     }
 
     if (position.is_check())
         depth += 1;
 
     // Initialize
-    int best_value = -Values::INFINITE;
+    int best_value = -Value::INFINITE;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -453,11 +451,11 @@ int Search::search(int depth, int alpha, int beta, int ply) {
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
-        int move = moves.entries[i]->move;
+        Move move = moves.entries[i]->move;
         int value = best_value;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             searched_moves++;
             value = -search(depth - 1, -beta, -alpha, ply + 1);
         }
@@ -489,37 +487,37 @@ int Search::search(int depth, int alpha, int beta, int ply) {
     if (searched_moves == 0) {
         if (is_check) {
             // We have a check mate. This is bad for us, so return a -CHECKMATE.
-            return -Values::CHECKMATE + ply;
+            return -Value::CHECKMATE + ply;
         } else {
             // We have a stale mate. Return the draw value.
-            return Values::DRAW;
+            return Value::DRAW;
         }
     }
 
     return best_value;
 }
 
-int Search::quiescent(int depth, int alpha, int beta, int ply) {
+int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
     update_search(ply);
 
     // Abort conditions
-    if (abort || ply == Depths::MAX_PLY) {
-        return evaluation.evaluate(position);
+    if (abort || ply == Depth::MAX_PLY) {
+        return Evaluation::evaluate(position);
     }
 
     // Check insufficient material, repetition and fifty move rule
     if (position.is_repetition() || position.has_insufficient_material() || position.halfmove_clock >= 100) {
-        return Values::DRAW;
+        return Value::DRAW;
     }
 
     // Initialize
-    int best_value = -Values::INFINITE;
+    int best_value = -Value::INFINITE;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
     //### BEGIN Stand pat
     if (!is_check) {
-        best_value = evaluation.evaluate(position);
+        best_value = Evaluation::evaluate(position);
 
         // Do we have a better value?
         if (best_value > alpha) {
@@ -536,11 +534,11 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
-        int move = moves.entries[i]->move;
+        Move move = moves.entries[i]->move;
         int value = best_value;
 
         position.make_move(move);
-        if (!position.is_check(Color::swap_color(position.active_color))) {
+        if (!position.is_check(~position.active_color)) {
             searched_moves++;
             value = -quiescent(depth - 1, -beta, -alpha, ply + 1);
         }
@@ -571,13 +569,13 @@ int Search::quiescent(int depth, int alpha, int beta, int ply) {
     // If we cannot move, check for checkmate.
     if (searched_moves == 0 && is_check) {
         // We have a check mate. This is bad for us, so return a -CHECKMATE.
-        return -Values::CHECKMATE + ply;
+        return -Value::CHECKMATE + ply;
     }
 
     return best_value;
 }
 
-void Search::save_pv(int move, MoveVariation &src, MoveVariation &dest) {
+void Search::save_pv(Move move, MoveVariation &src, MoveVariation &dest) {
     dest.moves[0] = move;
     for (int i = 0; i < src.size; i++) {
         dest.moves[i + 1] = src.moves[i];

@@ -17,11 +17,11 @@ private:
     void add_moves(MoveList<MoveEntry> &list, Position &position);
 
     void
-    add_moves(MoveList<MoveEntry> &list, int origin_square, const std::vector<int> &directions, Position &position);
+    add_moves(MoveList<MoveEntry> &list, Square origin_square, const std::vector<Direction> &directions, Position &position);
 
-    void add_pawn_moves(MoveList<MoveEntry> &list, int pawn_square, Position &position);
+    void add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square, Position &position);
 
-    void add_castling_moves(MoveList<MoveEntry> &list, int king_square, Position &position);
+    void add_castling_moves(MoveList<MoveEntry> &list, Square king_square, Position &position);
 };
 
 }

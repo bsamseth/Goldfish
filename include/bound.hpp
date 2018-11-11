@@ -5,7 +5,7 @@
 namespace goldfish {
 
 enum class Bound : uint8_t {
-    LOWER, UPPER, EXACT
+    NONE, LOWER, UPPER, EXACT = LOWER | UPPER
 };
 
 }
