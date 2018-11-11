@@ -9,7 +9,7 @@ namespace goldfish {
 enum Value : int {
     ZERO = 0,
     DRAW = 0,
-    CHECKMATE = 100000,
+    CHECKMATE = 30000,
     CHECKMATE_THRESHOLD = 100000 - Depth::MAX_PLY,
     INFINITE = 2 * CHECKMATE,
     NO_VALUE = 3 * CHECKMATE,
