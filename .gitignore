@@ -40,3 +40,4 @@ xcode.build/*
 cmake-build*
 .idea
 .env
+compile_commands.json
