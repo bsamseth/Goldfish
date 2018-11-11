@@ -17,7 +17,7 @@ enable_language(CXX)
 # by including "projectmeta.hpp" in the source. 
 # See projectmeta.hpp.in for some more details.
 set(PROJECT_VERSION_MAJOR 1)
-set(PROJECT_VERSION_MINOR 2)
+set(PROJECT_VERSION_MINOR 4)
 
 
 # Include stuff. No change needed.
