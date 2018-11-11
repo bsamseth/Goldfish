@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+ordo -p match-history.pgn -a 2000 -A "Goldfish v1.0" -W -D -j headtoheadresults > outputsummary
+
+cat headtoheadresults outputsummary
+
+rm headtoheadresults outputsummary
