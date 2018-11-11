@@ -96,6 +96,7 @@ set(SOURCES
         src/perft.cpp
         src/position.cpp
         src/search.cpp
+        src/tt.cpp
         )
 set(TESTFILES
         tests/bitboardtest.cpp
@@ -112,7 +113,8 @@ set(TESTFILES
         tests/piecetypetest.cpp
         tests/positiontest.cpp
         tests/ranktest.cpp
-        tests/squaretest.cpp)
+        tests/squaretest.cpp
+        tests/tt.cpp)
 set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you wish).
 
 
