@@ -391,6 +391,31 @@ void Search::search_root(Depth depth, int alpha, int beta) {
 }
 
 int Search::search(Depth depth, int alpha, int beta, int ply) {
+    // Check TTable before anything else is done.
+    auto entry = ttable.probe(position.zobrist_key);
+    if (entry != nullptr) {
+        if (entry->depth() >= depth) {
+            switch (entry->bound()) {
+                case Bound::EXACT:
+                    ++total_nodes;
+                    return entry->value();
+                case Bound::LOWER:
+                    alpha = entry->value();
+                    break;
+                case Bound::UPPER:
+                    beta = entry->value();
+                    break;
+                default:
+                    throw std::exception();
+            }
+            // Check for zero-size search window.
+            if (alpha >= beta) {
+                ++total_nodes;
+                return beta;
+            }
+        }
+    }
+
     // We are at a leaf/horizon. So calculate that value.
     if (depth <= 0) {
         // Descend into quiescent
@@ -414,6 +439,8 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
 
     // Initialize
     int best_value = -Value::INFINITE;
+    Move best_move = Move::NO_MOVE;
+    Bound best_value_bound = Bound::UPPER;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -441,11 +468,12 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         // New best move?
         if (value > alpha) {
             alpha = value;
-
+            best_value_bound = Bound::EXACT;
             // Beta cutoff?
-            if (value >= beta)
+            if (value >= beta) {
+                ttable.store(position.zobrist_key, Value(value), Bound::LOWER, depth, Move::NO_MOVE);
                 return best_value;
-
+            }
         }
     }
 
@@ -468,14 +496,17 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         // Pruning
         if (value > best_value) {
             best_value = value;
+            best_move = move;
 
             // Do we have a better value?
             if (value > alpha) {
+                best_value_bound = Bound::EXACT;
                 alpha = value;
                 save_pv(move, pv[ply + 1], pv[ply]);
 
                 // Is the value higher than beta?
                 if (value >= beta) {
+                    best_value_bound = Bound::LOWER;
                     // Cut-off
                     break;
                 }
@@ -485,15 +516,15 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
 
     // If we cannot move, check for checkmate and stalemate.
     if (searched_moves == 0) {
-        if (is_check) {
-            // We have a check mate. This is bad for us, so return a -CHECKMATE.
-            return -Value::CHECKMATE + ply;
-        } else {
-            // We have a stale mate. Return the draw value.
-            return Value::DRAW;
-        }
+        Value return_value = is_check ? -Value::CHECKMATE + ply
+                                      : Value::DRAW;
+        ttable.store(position.zobrist_key, return_value, Bound::EXACT,
+                     Depth::DEPTH_MAX, Move::NO_MOVE);
+        return return_value;
     }
 
+    ttable.store(position.zobrist_key, Value(best_value), best_value_bound,
+                 depth, best_move);
     return best_value;
 }
 
