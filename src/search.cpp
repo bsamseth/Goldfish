@@ -411,7 +411,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
             // Check for zero-size search window.
             if (alpha >= beta) {
                 update_search(ply);
-                return alpha;
+                return beta;
             }
         }
     }
