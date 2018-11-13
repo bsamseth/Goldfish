@@ -397,7 +397,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         if (entry->depth() >= depth) {
             switch (entry->bound()) {
                 case Bound::EXACT:
-                    ++total_nodes;
+                    update_search(ply);
                     return entry->value();
                 case Bound::LOWER:
                     alpha = entry->value();
@@ -410,8 +410,8 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
             }
             // Check for zero-size search window.
             if (alpha >= beta) {
-                ++total_nodes;
-                return beta;
+                update_search(ply);
+                return alpha;
             }
         }
     }
