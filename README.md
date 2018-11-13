@@ -46,7 +46,7 @@ limited to:
 - [X] Making the engine playable on [lichess.org](lichess.org)
 - [X] Complete refactoring of base types
 - [X] Null move pruning
-- [ ] Transposition table
+- [X] Transposition table
 - [X] Check extensions
 - [ ] Passed pawn
 - [ ] Staged move generation
