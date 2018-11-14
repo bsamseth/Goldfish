@@ -38,6 +38,7 @@ script:
   - make
   - make gtest
   - make coverage
+  - printf "bench\nquit\n" | ./goldfish.x
 
 after_success:
   - cd $PARENTDIR/build
