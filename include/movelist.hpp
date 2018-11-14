@@ -26,6 +26,8 @@ public:
     void sort();
 
     void rate_from_Mvvlva();
+
+    void add_killer(Move m);
 };
 
 class MoveVariation {
