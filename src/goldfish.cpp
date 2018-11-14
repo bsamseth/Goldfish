@@ -60,7 +60,7 @@ void Goldfish::receive_initialize() {
     // program.
 
     // We must send an initialization answer back!
-    std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << '\n';
+    std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH << '\n';
     std::cout << "id author Bendik Samseth" << '\n';
     std::cout << "uciok" << std::endl;
 }

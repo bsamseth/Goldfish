@@ -10,14 +10,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set project name here.
-project(Goldfish)
-enable_language(CXX)
-
-# Set version number (change as needed). These definitions are available
-# by including "projectmeta.hpp" in the source. 
-# See projectmeta.hpp.in for some more details.
-set(PROJECT_VERSION_MAJOR 1)
-set(PROJECT_VERSION_MINOR 5)
+project(Goldfish VERSION 1.5.0 LANGUAGES CXX)
 
 
 # Include stuff. No change needed.
