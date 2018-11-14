@@ -395,23 +395,45 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr) {
         if (entry->depth() >= depth) {
+
             switch (entry->bound()) {
+
                 case Bound::EXACT:
+                    // In the case of exact scores, we can always return
+                    // right away. Just update best move if we exceed alpha.
+                    if (entry->value() > alpha)
+                        save_pv(entry->move(), pv[ply + 1], pv[ply]);
                     update_search(ply);
                     return entry->value();
+
                 case Bound::LOWER:
-                    alpha = entry->value();
+                    // With a lower bound we check if we should update alpha.
+                    // After all this we
+                    if (entry->value() > alpha) {
+                        save_pv(entry->move(), pv[ply + 1], pv[ply]);
+                        alpha = entry->value();
+
+                        // Check for zero-size search window.
+                        if (entry->value() >= beta) {
+                            update_search(ply);
+                            return entry->value();
+                        }
+                    }
                     break;
+
                 case Bound::UPPER:
-                    beta = entry->value();
+                    // For upper bounds, we can stop if the bound
+                    // is leq than alpha because no move will improve alpha.
+                    // If alpha < bound we have no usefull info, as the
+                    // exact value could still be less than alpha, so we
+                    // cannot update alpha and pv yet.
+                    if (entry->value() <= alpha) {
+                        update_search(ply);
+                        return entry->value();
+                    }
                     break;
                 default:
                     throw std::exception();
-            }
-            // Check for zero-size search window.
-            if (alpha >= beta) {
-                update_search(ply);
-                return beta;
             }
         }
     }
