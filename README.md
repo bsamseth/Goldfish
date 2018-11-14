@@ -59,47 +59,60 @@ versions. In this rating system, v1.0 is held at 2000 rating points, and the
 others are adjusted accordingly. This gives an impression of the relative
 improvements of the engine over time.
 
-```text
-   # PLAYER           :  RATING  POINTS  PLAYED   (%)
-   1 Goldfish v1.4    :  2132.1    55.0     100    55
-   2 Goldfish v1.3    :  2110.6    95.5     180    53
-   3 Goldfish v1.2    :  2082.6    74.5     160    47
-   4 Goldfish v1.1    :  2055.7    53.5     112    48
-   5 Goldfish v1.0    :  2000.0    13.5      32    42
+   |# |PLAYER     |       RATING | POINTS | PLAYED |  (%)|
+   |:---:|---|:---:|:---:|:---:|:---:|
+   |1 |Goldfish v1.5    |  2154.2   |295.0     |575    |51|
+   |2 |Goldfish v1.4    |  2147.1   |331.0     |650    |51|
+   |3 |Goldfish v1.3    |  2131.2   |133.0     |255    |52|
+   |4 |Goldfish v1.2    |  2097.7    |74.5     |160    |47|
+   |5 |Goldfish v1.1    |  2055.3    |70.0     |162    |43|
+   |6 |Goldfish v1.0    |  2000.0    |13.5      |32    |42|
 
+```text
 Head to head statistics:
 
-1) Goldfish v1.4 2132.1 :    100 (+26,=58,-16),  55.0 %
-
-   vs.                  :  games (  +,  =,  -),   (%) :    Diff
-   Goldfish v1.3        :     50 ( 11, 30,  9),  52.0 :   +21.5
-   Goldfish v1.2        :     50 ( 15, 28,  7),  58.0 :   +49.5
-
-2) Goldfish v1.3 2110.6 :    180 (+38,=115,-27),  53.1 %
+1) Goldfish v1.5 2154.2 :    575 (+97,=396,-82),  51.3 %
 
    vs.                  :  games (  +,   =,  -),   (%) :    Diff
-   Goldfish v1.4        :     50 (  9,  30, 11),  48.0 :   -21.5
-   Goldfish v1.2        :     80 ( 16,  55,  9),  54.4 :   +28.0
-   Goldfish v1.1        :     50 ( 13,  30,  7),  56.0 :   +55.0
+   Goldfish v1.4        :    500 ( 85, 345, 70),  51.5 :    +7.1
+   Goldfish v1.3        :     75 ( 12,  51, 12),  50.0 :   +23.0
 
-3) Goldfish v1.2 2082.6 :    160 (+24,=101,-35),  46.6 %
+2) Goldfish v1.4 2147.1 :    650 (+115,=432,-103),  50.9 %
+
+   vs.                  :  games (   +,   =,   -),   (%) :    Diff
+   Goldfish v1.5        :    500 (  70, 345,  85),  48.5 :    -7.1
+   Goldfish v1.3        :     50 (  11,  30,   9),  52.0 :   +16.0
+   Goldfish v1.2        :     50 (  15,  28,   7),  58.0 :   +49.5
+   Goldfish v1.1        :     50 (  19,  29,   2),  67.0 :   +91.8
+
+3) Goldfish v1.3 2131.2 :    255 (+50,=166,-39),  52.2 %
+
+   vs.                  :  games (  +,   =,  -),   (%) :    Diff
+   Goldfish v1.5        :     75 ( 12,  51, 12),  50.0 :   -23.0
+   Goldfish v1.4        :     50 (  9,  30, 11),  48.0 :   -16.0
+   Goldfish v1.2        :     80 ( 16,  55,  9),  54.4 :   +33.5
+   Goldfish v1.1        :     50 ( 13,  30,  7),  56.0 :   +75.8
+
+4) Goldfish v1.2 2097.7 :    160 (+24,=101,-35),  46.6 %
 
    vs.                  :  games (  +,   =,  -),   (%) :    Diff
    Goldfish v1.4        :     50 (  7,  28, 15),  42.0 :   -49.5
-   Goldfish v1.3        :     80 (  9,  55, 16),  45.6 :   -28.0
-   Goldfish v1.1        :     30 (  8,  18,  4),  56.7 :   +27.0
+   Goldfish v1.3        :     80 (  9,  55, 16),  45.6 :   -33.5
+   Goldfish v1.1        :     30 (  8,  18,  4),  56.7 :   +42.3
 
-4) Goldfish v1.1 2055.7 :    112 (+18,=71,-23),  47.8 %
+5) Goldfish v1.1 2055.3 :    162 (+20,=100,-42),  43.2 %
 
-   vs.                  :  games (  +,  =,  -),   (%) :    Diff
-   Goldfish v1.3        :     50 (  7, 30, 13),  44.0 :   -55.0
-   Goldfish v1.2        :     30 (  4, 18,  8),  43.3 :   -27.0
-   Goldfish v1.0        :     32 (  7, 23,  2),  57.8 :   +55.7
+   vs.                  :  games (  +,   =,  -),   (%) :    Diff
+   Goldfish v1.4        :     50 (  2,  29, 19),  33.0 :   -91.8
+   Goldfish v1.3        :     50 (  7,  30, 13),  44.0 :   -75.8
+   Goldfish v1.2        :     30 (  4,  18,  8),  43.3 :   -42.3
+   Goldfish v1.0        :     32 (  7,  23,  2),  57.8 :   +55.3
 
-5) Goldfish v1.0 2000.0 :     32 (+2,=23,-7),  42.2 %
+6) Goldfish v1.0 2000.0 :     32 (+2,=23,-7),  42.2 %
 
    vs.                  :  games ( +,  =, -),   (%) :    Diff
-   Goldfish v1.1        :     32 ( 2, 23, 7),  42.2 :   -55.7
+   Goldfish v1.1        :     32 ( 2, 23, 7),  42.2 :   -55.3
+
 ```
 
 This is meant as a project to work on as practice/just for the fun of it.
