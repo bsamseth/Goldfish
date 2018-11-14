@@ -48,6 +48,7 @@ limited to:
 - [X] Null move pruning
 - [X] Transposition table
 - [X] Check extensions
+- [X] Killer move heuristic
 - [ ] Passed pawn
 - [ ] Staged move generation
 - [ ] Better search algorithms, such as MTD-bi
