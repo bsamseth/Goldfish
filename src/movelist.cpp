@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cassert>
 #include "movelist.hpp"
 
 namespace goldfish {
@@ -25,6 +27,23 @@ void MoveList<T>::sort() {
 
         entries[j] = entry;
     }
+}
+
+/**
+ * Move the given move to the front of the array, keeping
+ * all others in the same order.
+ */
+template<class T>
+void MoveList<T>::add_killer(Move m) {
+    for (auto killer = entries.rbegin(); killer != entries.rend(); ++killer) {
+        if ((*killer)->move == m) {
+            // Right shift the subarray [begin, entry] by one shift.
+            std::rotate(killer, killer + 1, entries.rend());
+            return;
+        }
+    }
+    // The move should always be in the list.
+    assert(false);
 }
 
 /**
