@@ -32,6 +32,9 @@ original author for his great work. Starting with this project meant a stable
 starting point, with all the rules sorted out, basic search in place and a test
 suite to make sure it all works as expected.
 
+At this point, the newest version of Goldfish has been substantially revamped and improved 
+in most aspects (see [Road map](#road-map)).  
+
 ## Why Goldfish?
 
 For some reason, several top chess engines have names of different fish, e.g.
@@ -40,8 +43,9 @@ and so it seemed only fitting for my somewhat limited program to be named this.
 
 ## Road map
 
-The current plan for the project is to improve the strength, including, but not
-limited to:
+The current plan for the project is to improve the strength. The following is a
+non-exhaustive list of possibilities for future additions, including all features that have
+been added so far. The list is inspired in large part by [this writeup](http://www.frayn.net/beowulf/theory.html).
 
 - [X] Making the engine playable on [lichess.org](lichess.org)
 - [X] Complete refactoring of base types
@@ -49,16 +53,26 @@ limited to:
 - [X] Transposition table
 - [X] Check extensions
 - [X] Killer move heuristic
-- [ ] Passed pawn
+- [X] Principal variation search
+- [ ] Internal iterative deepening
+- [ ] Aspiration window search
+- [ ] Futility pruning
 - [ ] Staged move generation
-- [ ] Better search algorithms, such as MTD-bi
+- [ ] Better search algorithms, such as MTD-bi (?)
 - [ ] More sophisticated static evaluation
+  + [ ] Extra considerations for passed pawns
+  + [ ] Piece square tables
+  + [ ] King safety
+  + [ ] Center control
+  + [ ] Rooks on the 7th rank
+  + [ ] Bishops on main diagonals
+
 
 Each significant change will result in a new version of the engine (see
-releases). In the following you see a relative rating between the current
-versions. In this rating system, v1.0 is held at 2000 rating points, and the
-others are adjusted accordingly. This gives an impression of the relative
-improvements of the engine over time.
+[releases](https://github.com/bsamseth/Goldfish/releases)). In the following
+you see a relative rating between the current versions. In this rating system,
+v1.0 is held at 2000 rating points, and the others are adjusted accordingly.
+This gives an impression of the relative improvements of the engine over time.
 
    |# |PLAYER     |       RATING | POINTS | PLAYED |  (%)|
    |:---:|---|:---:|:---:|:---:|:---:|
