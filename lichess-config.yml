@@ -2,11 +2,11 @@ token: "vOh4qrHRxXUUfBZZ"    # lichess OAuth2 Token
 url: "https://lichess.org/"  # lichess base URL
 
 engine:                      # engine settings
-  dir: "./build-release/"          # dir containing engines, relative to this project
-  name: "goldfish.x"        # binary name of the engine to use
+  dir: "./all-versions/"     # dir containing engines, relative to this project
+  name: "goldfish-v1.4"      # binary name of the engine to use
   protocol: "uci"            # "uci" or "xboard"
   polyglot:
-    enabled: true           # activate polyglot book
+    enabled: true            # activate polyglot book
     book:
       standard: "openingbooks/gm2001.bin" # book file path of standard chess
 #      atomic: "atomic book path"
