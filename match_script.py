@@ -12,6 +12,10 @@ if __name__ == "__main__":
             help='Path to first contestant engine.')
     parser.add_argument('-scp', action=FullPath, required=True,
             help='Path to second contestant engine.')
+    parser.add_argument('--fcp-stdin', default='',
+            help='String to send to first contestant on startup.')
+    parser.add_argument('--scp-stdin', default='',
+            help='String to send to second contestant on startup.')
     parser.add_argument('-tc', default='40/60',
             help='Time control to use for the match.')
     parser.add_argument('-games', type=int, default=1,
@@ -26,7 +30,7 @@ if __name__ == "__main__":
             help='Resign games where eval exceeds some limit for some number of moves.')
     parser.add_argument('--draw', type=int, nargs=2, default=(30, 5),
             help='Draw games where eval is below some limit after a given number of moves (moves, limit).')
-    parser.add_argument('--auto-run', type=bool, action='store_true', default=False)
+    parser.add_argument('--auto-run', action='store_true', default=False)
 
     args = parser.parse_args()
 
@@ -37,10 +41,10 @@ if __name__ == "__main__":
     bookdepth = 4
 
 
-    fcp = 'cmd={}'.format(args.fcp)
-    scp = 'cmd={}'.format(args.scp)
+    fcp = 'cmd={} initstr={}'.format(args.fcp, args.fcp_stdin)
+    scp = 'cmd={} initstr={}'.format(args.scp, args.scp_stdin)
     both = 'proto=uci book={bookfile} bookdepth={bookdepth} tc={tc}'.format(bookfile=args.bookfile, bookdepth=args.book_depth, tc=args.tc)
-    general = '-games {games} -repeat -pgnout {pgnout} -resign {} {} -draw {} {}'.format(args.games, args.output_file, args.resign[0], args.resign[1], args.draw[0], args.draw[1])
+    general = '-games {} -repeat -pgnout {} -resign {} {} -draw {} {}'.format(args.games, args.output_file, args.resign[0], args.resign[1], args.draw[0], args.draw[1])
 
     command = 'cutechess-cli -fcp {fcp} -scp {scp} -both {both} {general}'.format(fcp=fcp, scp=scp, both=both, general=general)
 
