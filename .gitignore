@@ -41,3 +41,6 @@ cmake-build*
 .idea
 .env
 compile_commands.json
+__pycache__
+reboot-bot.sh
+all-versions
