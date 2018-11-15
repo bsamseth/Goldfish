@@ -364,7 +364,34 @@ void Search::search_root(Depth depth, int alpha, int beta) {
         protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 
         position.make_move(move);
-        int value = -search(depth - 1, -beta, -alpha, ply + 1);
+        int value;
+        //
+        // Principal Variation Search
+        //
+        // Search first move fully, then just check for moves that will
+        // improve alpha using a 1-point search window. If first move was
+        // best, then we will save lots of time as bounding is much faster than
+        // finding exact scores. Given a good ordering (which we have due to
+        // iterative deepening) the first move will be very good, and lots of
+        // cutoffs can be made.
+        //
+        // If we find a later move that actually improves alpha, we must search this
+        // properly to find its value. The idea is that this drawback is smaller than
+        // the improvements gained.
+        //
+        if (depth > 2 and i > 0) {
+
+            value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
+
+            if (value >= alpha) {
+                // PV search failed high, need to do a full search.
+                value = -search(depth - 1, -beta, -alpha, ply + 1);
+            }
+        }
+        // First move, or to shallow for PV search - search fully.
+        else {
+            value = -search(depth - 1, -beta, -alpha, ply + 1);
+        }
         position.undo_move(move);
 
         if (abort) {
@@ -513,7 +540,21 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
-            value = -search(depth - 1, -beta, -alpha, ply + 1);
+            //
+            // Principal Variation Search (see search_root for details).
+            //
+            if (depth > 1 and i > 0) {
+
+                value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
+
+                if (value >= alpha) {
+                    // PV search failed high, need to do a full search.
+                    value = -search(depth - 1, -beta, -alpha, ply + 1);
+                }
+            } else {
+                // First move or to shallow - do full search.
+                value = -search(depth - 1, -beta, -alpha, ply + 1);
+            }
         }
         position.undo_move(move);
 
