@@ -26,6 +26,8 @@ if __name__ == "__main__":
             help='Resign games where eval exceeds some limit for some number of moves.')
     parser.add_argument('--draw', type=int, nargs=2, default=(30, 5),
             help='Draw games where eval is below some limit after a given number of moves (moves, limit).')
+    parser.add_argument('--auto-run', type=bool, action='store_true', default=False)
+
     args = parser.parse_args()
 
 
@@ -43,6 +45,9 @@ if __name__ == "__main__":
     command = 'cutechess-cli -fcp {fcp} -scp {scp} -both {both} {general}'.format(fcp=fcp, scp=scp, both=both, general=general)
 
     print(command)
-    start = input('\nDoes the command look right? (y/n) ')
-    if start.lower().startswith('y'):
+    if args.auto_run:
         os.system(command)
+    else:
+        start = input('\nDoes the command look right? (y/n) ')
+        if start.lower().startswith('y'):
+            os.system(command)
