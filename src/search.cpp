@@ -366,7 +366,7 @@ void Search::search_root(Depth depth, int alpha, int beta) {
         position.make_move(move);
         int value;
         //
-        // Principal Variation Search
+        // Principal Variation Search (or really NegaScout)
         //
         // Search first move fully, then just check for moves that will
         // improve alpha using a 1-point search window. If first move was
@@ -379,16 +379,17 @@ void Search::search_root(Depth depth, int alpha, int beta) {
         // properly to find its value. The idea is that this drawback is smaller than
         // the improvements gained.
         //
-        if (depth > 2 and i > 0) {
+        if (i > 0) {
 
             value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
-            if (value >= alpha) {
-                // PV search failed high, need to do a full search.
-                value = -search(depth - 1, -beta, -alpha, ply + 1);
+            if (value > alpha and value < beta and depth > 1) {
+                // PV search failed high, need to do a research.
+                int value2 = -search(depth - 1, -beta, -value, ply + 1);
+                value = std::max(value, value2);
             }
         }
-        // First move, or to shallow for PV search - search fully.
+        // First move - search fully.
         else {
             value = -search(depth - 1, -beta, -alpha, ply + 1);
         }
@@ -541,18 +542,19 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
             //
-            // Principal Variation Search (see search_root for details).
+            // NegaScout Search (see search_root for details).
             //
-            if (depth > 1 and i > 0) {
+            if (i > 0) {
 
                 value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
-                if (value >= alpha) {
-                    // PV search failed high, need to do a full search.
-                    value = -search(depth - 1, -beta, -alpha, ply + 1);
+                if (value > alpha and value < beta and depth > 1) {
+                    // PV search failed high, need to do a research.
+                    int value2 = -search(depth - 1, -beta, -value, ply + 1);
+                    value = std::max(value, value2);
                 }
             } else {
-                // First move or to shallow - do full search.
+                // First move - do full search.
                 value = -search(depth - 1, -beta, -alpha, ply + 1);
             }
         }
