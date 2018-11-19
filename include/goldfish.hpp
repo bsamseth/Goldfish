@@ -47,6 +47,7 @@ private:
 
     void receive_stop();
 
+public:
     void receive_quit();
 
     void receive_bench();
