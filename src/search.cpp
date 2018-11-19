@@ -379,11 +379,11 @@ void Search::search_root(Depth depth, int alpha, int beta) {
         // properly to find its value. The idea is that this drawback is smaller than
         // the improvements gained.
         //
-        if (i > 0) {
+        if (depth > 2 and i > 0) {
 
             value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
-            if (value > alpha and value < beta and depth > 1) {
+            if (value > alpha and value < beta) {
                 // PV search failed high, need to do a research.
                 int value2 = -search(depth - 1, -beta, -value, ply + 1);
                 value = std::max(value, value2);
@@ -544,11 +544,11 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
             //
             // NegaScout Search (see search_root for details).
             //
-            if (i > 0) {
+            if (depth > 1 and i > 0) {
 
                 value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
-                if (value > alpha and value < beta and depth > 1) {
+                if (value > alpha and value < beta) {
                     // PV search failed high, need to do a research.
                     int value2 = -search(depth - 1, -beta, -value, ply + 1);
                     value = std::max(value, value2);
