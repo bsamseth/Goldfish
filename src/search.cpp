@@ -340,7 +340,7 @@ void Search::update_search(int ply) {
     protocol.send_status(current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 }
 
-void Search::search_root(Depth depth, int alpha, int beta) {
+void Search::search_root(Depth depth, Value alpha, Value beta) {
     int ply = 0;
 
     update_search(ply);
@@ -364,7 +364,7 @@ void Search::search_root(Depth depth, int alpha, int beta) {
         protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 
         position.make_move(move);
-        int value;
+        Value value;
         //
         // Principal Variation Search (or really NegaScout)
         //
@@ -404,7 +404,7 @@ void Search::search_root(Depth depth, int alpha, int beta) {
             alpha = value;
 
             // We found a new best move
-            root_moves.entries[i]->value = Value(value);
+            root_moves.entries[i]->value = value;
             save_pv(move, pv[ply + 1], root_moves.entries[i]->pv);
 
             protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes);
@@ -418,7 +418,7 @@ void Search::search_root(Depth depth, int alpha, int beta) {
     }
 }
 
-int Search::search(Depth depth, int alpha, int beta, int ply) {
+Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // Check TTable before anything else is done.
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
@@ -485,7 +485,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         depth += 1;
 
     // Initialize
-    int best_value = -Value::INFINITE;
+    Value best_value = -Value::INFINITE;
     Move best_move = Move::NO_MOVE;
     Bound best_value_bound = Bound::UPPER;
     int searched_moves = 0;
@@ -505,7 +505,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
 
         // We do recursive null move, with depth reduction factor 3.
         // Why 3? Because this is common, for instance in sunfish.
-        int value = -search(depth - 3, -beta, -alpha, ply + 1);
+        Value value = -search(depth - 3, -beta, -alpha, ply + 1);
 
         position.undo_null_move();
 
@@ -518,7 +518,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
             best_value_bound = Bound::EXACT;
             // Beta cutoff?
             if (value >= beta) {
-                ttable.store(position.zobrist_key, Value(value), Bound::LOWER, depth, Move::NO_MOVE);
+                ttable.store(position.zobrist_key, value, Bound::LOWER, depth, Move::NO_MOVE);
                 return best_value;
             }
         }
@@ -536,7 +536,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
 
     for (int i = 0; i < moves.size; i++) {
         Move move = moves.entries[i]->move;
-        int value = best_value;
+        Value value = best_value;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
@@ -594,7 +594,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         return return_value;
     }
 
-    ttable.store(position.zobrist_key, Value(best_value), best_value_bound,
+    ttable.store(position.zobrist_key, best_value, best_value_bound,
                  depth, best_move);
     return best_value;
 }
@@ -613,7 +613,9 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
     }
 
     // Initialize
-    int best_value = -Value::INFINITE;
+    Value best_value = -Value::INFINITE;
+    Move best_move = Move::NO_MOVE;
+    Bound best_value_bound = Bound::UPPER;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -637,12 +639,12 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++) {
         Move move = moves.entries[i]->move;
-        int value = best_value;
+        Value value = best_value;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
-            value = -quiescent(depth - 1, -beta, -alpha, ply + 1);
+            value = -quiescent(-beta, -alpha, ply + 1);
         }
         position.undo_move(move);
 
