@@ -385,8 +385,8 @@ void Search::search_root(Depth depth, int alpha, int beta) {
 
             if (value > alpha and value < beta) {
                 // PV search failed high, need to do a research.
-                int value2 = -search(depth - 1, -beta, -value, ply + 1);
-                value = std::max(value, value2);
+                // Assuming no instability, and using the new limit.
+                value = -search(depth - 1, -beta, -value, ply + 1);
             }
         }
         // First move - search fully.
@@ -550,8 +550,8 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
 
                 if (value > alpha and value < beta) {
                     // PV search failed high, need to do a research.
-                    int value2 = -search(depth - 1, -beta, -value, ply + 1);
-                    value = std::max(value, value2);
+                    // Assuming no instability, and using the new limit.
+                    value = -search(depth - 1, -beta, -value, ply + 1);
                 }
             } else {
                 // First move - do full search.
