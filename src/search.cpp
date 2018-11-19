@@ -648,6 +648,9 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
+            // Note that we do not use PVS/NegaScout here, as we have no
+            // reason to believe move ordering works very well here, and
+            // we know we don't have a killer move from ttable.
             value = -quiescent(-beta, -alpha, ply + 1);
         }
         position.undo_move(move);
