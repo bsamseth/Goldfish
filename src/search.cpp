@@ -507,23 +507,21 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
         // We do recursive null move, with depth reduction factor 3.
         // Why 3? Because this is common, for instance in sunfish.
-        Value value = -search(depth - 3, -beta, -alpha, ply + 1);
+        Value value = -search(depth - 3, -beta, -beta + 1, ply + 1);
 
         position.undo_null_move();
 
-        // The value is at worst equal to best_value's initial value.
-        best_value = value;
-
-        // New best move?
         if (value > alpha) {
             alpha = value;
             best_value_bound = Bound::EXACT;
+
             // Beta cutoff?
             if (value >= beta) {
                 ttable.store(position.zobrist_key, value, Bound::LOWER, depth, Move::NO_MOVE);
-                return best_value;
+                return value;
             }
         }
+
     }
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
