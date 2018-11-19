@@ -466,7 +466,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // We are at a leaf/horizon. So calculate that value.
     if (depth <= 0) {
         // Descend into quiescent
-        return quiescent(Depth::DEPTH_ZERO, alpha, beta, ply);
+        return quiescent(alpha, beta, ply);
     }
 
     update_search(ply);
@@ -599,7 +599,10 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     return best_value;
 }
 
-int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
+Value Search::quiescent(Value alpha, Value beta, int ply) {
+    // No need to check the ttable, as we only decend to quiescense if there is
+    // no entry in the table.
+
     update_search(ply);
 
     // Abort conditions
@@ -630,13 +633,14 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
             // Is the value higher than beta?
             if (best_value >= beta) {
                 // Cut-off
+                ttable.store(position.zobrist_key, best_value, Bound::LOWER, Depth::DEPTH_ZERO, Move::NO_MOVE);
                 return best_value;
             }
         }
     }
     //### ENDOF Stand pat
 
-    MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
+    MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, Depth::DEPTH_ZERO, is_check);
     for (int i = 0; i < moves.size; i++) {
         Move move = moves.entries[i]->move;
         Value value = best_value;
@@ -655,15 +659,18 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
         // Pruning
         if (value > best_value) {
             best_value = value;
+            best_move = move;
 
             // Do we have a better value?
             if (value > alpha) {
+                best_value_bound = Bound::EXACT;
                 alpha = value;
                 save_pv(move, pv[ply + 1], pv[ply]);
 
                 // Is the value higher than beta?
                 if (value >= beta) {
                     // Cut-off
+                    best_value_bound = Bound::LOWER;
                     break;
                 }
             }
@@ -673,9 +680,12 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
     // If we cannot move, check for checkmate.
     if (searched_moves == 0 && is_check) {
         // We have a check mate. This is bad for us, so return a -CHECKMATE.
-        return -Value::CHECKMATE + ply;
+        Value return_value = -Value::CHECKMATE + ply;
+        ttable.store(position.zobrist_key, return_value, Bound::EXACT, Depth::DEPTH_MAX, Move::NO_MOVE);
+        return return_value;
     }
 
+    ttable.store(position.zobrist_key, best_value, best_value_bound, Depth::DEPTH_ZERO, best_move);
     return best_value;
 }
 

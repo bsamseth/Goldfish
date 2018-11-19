@@ -148,7 +148,7 @@ private:
 
     Value search(Depth depth, Value alpha, Value beta, int ply);
 
-    int quiescent(Depth depth, int alpha, int beta, int ply);
+    Value quiescent(Value alpha, Value beta, int ply);
 
     void save_pv(Move move, MoveVariation &src, MoveVariation &dest);
 };
