@@ -355,7 +355,6 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
         root_moves.entries[i]->value = -Value::INFINITE;
     }
 
-
     for (int i = 0; i < root_moves.size; i++) {
         Move move = root_moves.entries[i]->move;
 
@@ -408,6 +407,9 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
             save_pv(move, pv[ply + 1], root_moves.entries[i]->pv);
 
             protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes);
+
+            if (value >= beta)
+                return;
         }
     }
 
