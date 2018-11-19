@@ -122,6 +122,14 @@ add_executable(goldfish.x app/goldfish.cpp)
 add_dependencies(goldfish.x engine)
 target_link_libraries(goldfish.x engine pthread)
 
+add_executable(bench.x app/bench.cpp)
+add_dependencies(bench.x engine)
+target_link_libraries(bench.x engine pthread)
+
+add_executable(perft.x app/perft.cpp)
+add_dependencies(perft.x engine)
+target_link_libraries(perft.x engine pthread)
+
 
 # --------------------------------------------------------------------------------
 #                         Make Tests
@@ -134,6 +142,12 @@ target_link_libraries(${TEST_MAIN} googletest engine pthread)
 add_custom_target(gtest 
     COMMAND "${PROJECT_BINARY_DIR}/${TEST_MAIN}"
     DEPENDS engine ${TEST_MAIN})
+add_custom_target(bench 
+    COMMAND "${PROJECT_BINARY_DIR}/bench.x"
+    DEPENDS engine bench.x)
+add_custom_target(perft 
+    COMMAND "${PROJECT_BINARY_DIR}/perft.x"
+    DEPENDS engine perft.x)
 
 
 # Add a standard make target 'test' that runs the tests under CTest (only as an alt. to gtest).

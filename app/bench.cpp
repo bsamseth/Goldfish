@@ -3,5 +3,6 @@
 
 int main() {
     std::unique_ptr<goldfish::Goldfish> engine(new goldfish::Goldfish());
-    engine->run();
+    engine->receive_bench();
+    engine->receive_quit();
 }
