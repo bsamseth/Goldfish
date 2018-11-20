@@ -411,7 +411,7 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
         position.make_move(move);
         Value value;
         //
-        // Principal Variation Search (or really NegaScout)
+        // Principal Variation Search
         //
         // Search first move fully, then just check for moves that will
         // improve alpha using a 1-point search window. If first move was
@@ -430,9 +430,7 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
 
             if (value > alpha and value < beta) {
                 // PV search failed high, need to do a research.
-                // Assuming no instability, and using the new limit.
-                value = -search(depth - 1, -beta, -value, ply + 1);
-                assert(value > alpha);  // Assert search stability in debug mode.
+                value = -search(depth - 1, -beta, -alpha, ply + 1);
             }
         }
         // First move - search fully.
@@ -596,7 +594,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
             //
-            // NegaScout Search (see search_root for details).
+            // PV Search (see search_root for details).
             //
             if (depth > 1 and searched_moves > 1) {
 
@@ -604,9 +602,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
                 if (value > alpha and value < beta) {
                     // PV search failed high, need to do a research.
-                    // Assuming no instability, and using the new limit.
-                    value = -search(depth - 1, -beta, -value, ply + 1);
-                    assert(value > alpha);  // Assert search stability in debug mode.
+                    value = -search(depth - 1, -beta, -alpha, ply + 1);
                 }
             } else {
                 // First move - do full search.
@@ -702,7 +698,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
-            // Note that we do not use PVS/NegaScout here, as we have no
+            // Note that we do not use PVS here, as we have no
             // reason to believe move ordering works very well here, and
             // we know we don't have a killer move from ttable.
             value = -quiescent(-beta, -alpha, ply + 1);
