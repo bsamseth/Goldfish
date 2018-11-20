@@ -54,7 +54,7 @@ been added so far. The list is inspired in large part by [this writeup](http://w
 - [X] Check extensions
 - [X] Killer move heuristic
 - [X] Principal variation search
-- [ ] Internal iterative deepening
+- [X] Internal iterative deepening
 - [ ] Aspiration window search
 - [ ] Futility pruning
 - [ ] Staged move generation
