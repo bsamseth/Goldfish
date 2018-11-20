@@ -484,6 +484,18 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         return Value::DRAW;
     }
 
+    // Mate distance pruning:
+    // Even if we mate at the next move our score
+    // would be at best CHECKMATE - ply, but if alpha is already bigger because
+    // a shorter mate was found upward in the tree then there is no need to search
+    // because we will never beat the current alpha. Same logic but with reversed
+    // signs applies also in the opposite condition of being mated instead of giving
+    // mate. In this case return a fail-high score.
+    alpha = std::max(-Value::CHECKMATE + ply, alpha);
+    beta = std::min(Value::CHECKMATE - (ply + 1), beta);
+    if (alpha >= beta)
+        return alpha;
+
     if (position.is_check())
         depth += 1;
 
