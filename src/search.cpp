@@ -496,7 +496,8 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // Null move pruning.
     // Only use when not in check, and when at least one piece is present
     // on the board. This avoids most zugzwang cases.
-    if (!is_check && (
+    if (!is_check &&
+        beta <= Value::CHECKMATE && (
         position.pieces[position.active_color][PieceType::QUEEN] ||
         position.pieces[position.active_color][PieceType::ROOK]  ||
         position.pieces[position.active_color][PieceType::BISHOP] ||
@@ -543,7 +544,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             //
             // NegaScout Search (see search_root for details).
             //
-            if (depth > 1 and i > 0) {
+            if (depth > 1 and i > 0) { // TODO: change i to searched_moves
 
                 value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
@@ -592,7 +593,6 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
                      Depth::DEPTH_MAX, Move::NO_MOVE);
         return return_value;
     }
-
     ttable.store(position.zobrist_key, best_value, best_value_bound,
                  depth, best_move);
     return best_value;
