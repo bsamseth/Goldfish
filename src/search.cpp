@@ -527,6 +527,20 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
 
+
+    // Internal Iterative deepening:
+    // When we have no good guess for the best move, do a reduced search
+    // first to find a likely candidate. Only do this if a search would
+    // lead to a new entry in the ttable.
+    constexpr Depth iid_reduction = Depth(7);
+    if (     depth > iid_reduction
+        and (entry == nullptr
+         or (entry->move() == Move::NO_MOVE and entry->depth() < depth - iid_reduction))) {
+
+        search(depth - iid_reduction, alpha, beta, ply);
+        entry = ttable.probe(position.zobrist_key);
+    }
+
     // Killer Move Heuristic:
     // If lookup didn't cause a cutoff, including if we don't have the required depth to use
     // the table entry, lets use the stored move as a killer move,
