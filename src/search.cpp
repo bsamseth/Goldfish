@@ -386,6 +386,7 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
                 // PV search failed high, need to do a research.
                 // Assuming no instability, and using the new limit.
                 value = -search(depth - 1, -beta, -value, ply + 1);
+                assert(value > alpha);  // Assert search stability in debug mode.
             }
         }
         // First move - search fully.
@@ -496,7 +497,8 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // Null move pruning.
     // Only use when not in check, and when at least one piece is present
     // on the board. This avoids most zugzwang cases.
-    if (!is_check && (
+    if (!is_check &&
+        beta <= Value::CHECKMATE && (
         position.pieces[position.active_color][PieceType::QUEEN] ||
         position.pieces[position.active_color][PieceType::ROOK]  ||
         position.pieces[position.active_color][PieceType::BISHOP] ||
@@ -507,22 +509,19 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
         // We do recursive null move, with depth reduction factor 3.
         // Why 3? Because this is common, for instance in sunfish.
-        Value value = -search(depth - 3, -beta, -alpha, ply + 1);
+        constexpr Depth R = Depth(3);
+        Value value = -search(depth - R, -beta, -beta + 1, ply + 1);
 
         position.undo_null_move();
 
-        // The value is at worst equal to best_value's initial value.
-        best_value = value;
+        // Do not return unproven mate scores
+        if (value >= Value::CHECKMATE_THRESHOLD)
+            value = beta;
 
-        // New best move?
-        if (value > alpha) {
-            alpha = value;
-            best_value_bound = Bound::EXACT;
-            // Beta cutoff?
-            if (value >= beta) {
-                ttable.store(position.zobrist_key, value, Bound::LOWER, depth, Move::NO_MOVE);
-                return best_value;
-            }
+        // Beta cutoff?
+        if (value >= beta) {
+            ttable.store(position.zobrist_key, value, Bound::LOWER, depth - R, Move::NO_MOVE);
+            return value;
         }
     }
 
@@ -546,7 +545,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             //
             // NegaScout Search (see search_root for details).
             //
-            if (depth > 1 and i > 0) {
+            if (depth > 1 and searched_moves > 1) {
 
                 value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
@@ -554,6 +553,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
                     // PV search failed high, need to do a research.
                     // Assuming no instability, and using the new limit.
                     value = -search(depth - 1, -beta, -value, ply + 1);
+                    assert(value > alpha);  // Assert search stability in debug mode.
                 }
             } else {
                 // First move - do full search.
@@ -595,7 +595,6 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
                      Depth::DEPTH_MAX, Move::NO_MOVE);
         return return_value;
     }
-
     ttable.store(position.zobrist_key, best_value, best_value_bound,
                  depth, best_move);
     return best_value;

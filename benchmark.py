@@ -33,7 +33,7 @@ if __name__ == "__main__":
         print("No release build directory found. Please setup build-release.")
         sys.exit(1)
 
-    time, nodes = np.array([run_bench() for i in tqdm(range(10))]).T
+    time, nodes = [sorted(x)[1:-1] for x in np.array([run_bench() for i in tqdm(range(10))]).T]
     mtime, stdtime = np.mean(time), np.std(time)
     ci_time = mtime - 1.96 * stdtime, mtime + 1.96 * stdtime
     print("Times (ms):", time)
