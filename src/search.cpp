@@ -667,6 +667,16 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
     }
     //### ENDOF Stand pat
 
+    // Delta pruning:
+    // Test if alpha can be improved by greatest
+    // possible material swing. If not, then don't bother.
+    //
+    // Best possible single move is to capture a queen while promoting a pawn.
+    // Make sure we're not in check, as then the stand pat is -INFINITE.
+    Value delta = 2 * Value::QUEEN_VALUE - Value::PAWN_VALUE;
+    if (!is_check and best_value + delta < alpha)
+        return best_value;
+
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, Depth::DEPTH_ZERO, is_check);
     for (int i = 0; i < moves.size; i++) {
         Move move = moves.entries[i]->move;
