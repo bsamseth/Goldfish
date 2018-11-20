@@ -535,6 +535,18 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         return Value::DRAW;
     }
 
+    // Mate distance pruning:
+    // Even if we mate at the next move our score
+    // would be at best CHECKMATE - ply, but if alpha is already bigger because
+    // a shorter mate was found upward in the tree then there is no need to search
+    // because we will never beat the current alpha. Same logic but with reversed
+    // signs applies also in the opposite condition of being mated instead of giving
+    // mate. In this case return a fail-high score.
+    alpha = std::max(-Value::CHECKMATE + ply, alpha);
+    beta = std::min(Value::CHECKMATE - (ply + 1), beta);
+    if (alpha >= beta)
+        return alpha;
+
 
     // Initialize
     Value best_value = -Value::INFINITE;
@@ -579,6 +591,20 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     }
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
+
+
+    // Internal Iterative deepening:
+    // When we have no good guess for the best move, do a reduced search
+    // first to find a likely candidate. Only do this if a search would
+    // lead to a new entry in the ttable.
+    constexpr Depth iid_reduction = Depth(7);
+    if (     depth > iid_reduction
+        and (entry == nullptr
+         or (entry->move() == Move::NO_MOVE and entry->depth() < depth - iid_reduction))) {
+
+        search(depth - iid_reduction, alpha, beta, ply);
+        entry = ttable.probe(position.zobrist_key);
+    }
 
     // Killer Move Heuristic:
     // If lookup didn't cause a cutoff, including if we don't have the required depth to use
@@ -691,6 +717,16 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
         }
     }
     //### ENDOF Stand pat
+
+    // Delta pruning:
+    // Test if alpha can be improved by greatest
+    // possible material swing. If not, then don't bother.
+    //
+    // Best possible single move is to capture a queen while promoting a pawn.
+    // Make sure we're not in check, as then the stand pat is -INFINITE.
+    Value delta = 2 * Value::QUEEN_VALUE - Value::PAWN_VALUE;
+    if (!is_check and best_value + delta < alpha)
+        return best_value;
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, Depth::DEPTH_ZERO, is_check);
     for (int i = 0; i < moves.size; i++) {
