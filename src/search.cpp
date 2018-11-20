@@ -544,7 +544,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             //
             // NegaScout Search (see search_root for details).
             //
-            if (depth > 1 and i > 0) { // TODO: change i to searched_moves
+            if (depth > 1 and searched_moves > 1) {
 
                 value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
