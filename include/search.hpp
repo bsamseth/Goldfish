@@ -144,7 +144,7 @@ private:
 
     void update_search(int ply);
 
-    void search_root(Depth depth, Value alpha, Value beta);
+    Value search_root(Depth depth, Value alpha, Value beta);
 
     Value search(Depth depth, Value alpha, Value beta, int ply);
 
