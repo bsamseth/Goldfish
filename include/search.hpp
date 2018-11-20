@@ -144,11 +144,11 @@ private:
 
     void update_search(int ply);
 
-    void search_root(Depth depth, int alpha, int beta);
+    void search_root(Depth depth, Value alpha, Value beta);
 
-    int search(Depth depth, int alpha, int beta, int ply);
+    Value search(Depth depth, Value alpha, Value beta, int ply);
 
-    int quiescent(Depth depth, int alpha, int beta, int ply);
+    Value quiescent(Value alpha, Value beta, int ply);
 
     void save_pv(Move move, MoveVariation &src, MoveVariation &dest);
 };

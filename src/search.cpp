@@ -340,7 +340,7 @@ void Search::update_search(int ply) {
     protocol.send_status(current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 }
 
-void Search::search_root(Depth depth, int alpha, int beta) {
+void Search::search_root(Depth depth, Value alpha, Value beta) {
     int ply = 0;
 
     update_search(ply);
@@ -355,7 +355,6 @@ void Search::search_root(Depth depth, int alpha, int beta) {
         root_moves.entries[i]->value = -Value::INFINITE;
     }
 
-
     for (int i = 0; i < root_moves.size; i++) {
         Move move = root_moves.entries[i]->move;
 
@@ -364,9 +363,9 @@ void Search::search_root(Depth depth, int alpha, int beta) {
         protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 
         position.make_move(move);
-        int value;
+        Value value;
         //
-        // Principal Variation Search
+        // Principal Variation Search (or really NegaScout)
         //
         // Search first move fully, then just check for moves that will
         // improve alpha using a 1-point search window. If first move was
@@ -383,12 +382,13 @@ void Search::search_root(Depth depth, int alpha, int beta) {
 
             value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
-            if (value >= alpha) {
-                // PV search failed high, need to do a full search.
-                value = -search(depth - 1, -beta, -alpha, ply + 1);
+            if (value > alpha and value < beta) {
+                // PV search failed high, need to do a research.
+                // Assuming no instability, and using the new limit.
+                value = -search(depth - 1, -beta, -value, ply + 1);
             }
         }
-        // First move, or to shallow for PV search - search fully.
+        // First move - search fully.
         else {
             value = -search(depth - 1, -beta, -alpha, ply + 1);
         }
@@ -403,10 +403,13 @@ void Search::search_root(Depth depth, int alpha, int beta) {
             alpha = value;
 
             // We found a new best move
-            root_moves.entries[i]->value = Value(value);
+            root_moves.entries[i]->value = value;
             save_pv(move, pv[ply + 1], root_moves.entries[i]->pv);
 
             protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes);
+
+            if (value >= beta)
+                return;
         }
     }
 
@@ -417,7 +420,7 @@ void Search::search_root(Depth depth, int alpha, int beta) {
     }
 }
 
-int Search::search(Depth depth, int alpha, int beta, int ply) {
+Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // Check TTable before anything else is done.
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
@@ -465,7 +468,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
     // We are at a leaf/horizon. So calculate that value.
     if (depth <= 0) {
         // Descend into quiescent
-        return quiescent(Depth::DEPTH_ZERO, alpha, beta, ply);
+        return quiescent(alpha, beta, ply);
     }
 
     update_search(ply);
@@ -484,7 +487,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         depth += 1;
 
     // Initialize
-    int best_value = -Value::INFINITE;
+    Value best_value = -Value::INFINITE;
     Move best_move = Move::NO_MOVE;
     Bound best_value_bound = Bound::UPPER;
     int searched_moves = 0;
@@ -504,7 +507,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
 
         // We do recursive null move, with depth reduction factor 3.
         // Why 3? Because this is common, for instance in sunfish.
-        int value = -search(depth - 3, -beta, -alpha, ply + 1);
+        Value value = -search(depth - 3, -beta, -alpha, ply + 1);
 
         position.undo_null_move();
 
@@ -517,7 +520,7 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
             best_value_bound = Bound::EXACT;
             // Beta cutoff?
             if (value >= beta) {
-                ttable.store(position.zobrist_key, Value(value), Bound::LOWER, depth, Move::NO_MOVE);
+                ttable.store(position.zobrist_key, value, Bound::LOWER, depth, Move::NO_MOVE);
                 return best_value;
             }
         }
@@ -535,24 +538,25 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
 
     for (int i = 0; i < moves.size; i++) {
         Move move = moves.entries[i]->move;
-        int value = best_value;
+        Value value = best_value;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
             //
-            // Principal Variation Search (see search_root for details).
+            // NegaScout Search (see search_root for details).
             //
             if (depth > 1 and i > 0) {
 
                 value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
 
-                if (value >= alpha) {
-                    // PV search failed high, need to do a full search.
-                    value = -search(depth - 1, -beta, -alpha, ply + 1);
+                if (value > alpha and value < beta) {
+                    // PV search failed high, need to do a research.
+                    // Assuming no instability, and using the new limit.
+                    value = -search(depth - 1, -beta, -value, ply + 1);
                 }
             } else {
-                // First move or to shallow - do full search.
+                // First move - do full search.
                 value = -search(depth - 1, -beta, -alpha, ply + 1);
             }
         }
@@ -592,12 +596,15 @@ int Search::search(Depth depth, int alpha, int beta, int ply) {
         return return_value;
     }
 
-    ttable.store(position.zobrist_key, Value(best_value), best_value_bound,
+    ttable.store(position.zobrist_key, best_value, best_value_bound,
                  depth, best_move);
     return best_value;
 }
 
-int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
+Value Search::quiescent(Value alpha, Value beta, int ply) {
+    // No need to check the ttable, as we only decend to quiescense if there is
+    // no entry in the table.
+
     update_search(ply);
 
     // Abort conditions
@@ -611,7 +618,9 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
     }
 
     // Initialize
-    int best_value = -Value::INFINITE;
+    Value best_value = -Value::INFINITE;
+    Move best_move = Move::NO_MOVE;
+    Bound best_value_bound = Bound::UPPER;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -626,21 +635,25 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
             // Is the value higher than beta?
             if (best_value >= beta) {
                 // Cut-off
+                ttable.store(position.zobrist_key, best_value, Bound::LOWER, Depth::DEPTH_ZERO, Move::NO_MOVE);
                 return best_value;
             }
         }
     }
     //### ENDOF Stand pat
 
-    MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
+    MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, Depth::DEPTH_ZERO, is_check);
     for (int i = 0; i < moves.size; i++) {
         Move move = moves.entries[i]->move;
-        int value = best_value;
+        Value value = best_value;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
-            value = -quiescent(depth - 1, -beta, -alpha, ply + 1);
+            // Note that we do not use PVS/NegaScout here, as we have no
+            // reason to believe move ordering works very well here, and
+            // we know we don't have a killer move from ttable.
+            value = -quiescent(-beta, -alpha, ply + 1);
         }
         position.undo_move(move);
 
@@ -651,15 +664,18 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
         // Pruning
         if (value > best_value) {
             best_value = value;
+            best_move = move;
 
             // Do we have a better value?
             if (value > alpha) {
+                best_value_bound = Bound::EXACT;
                 alpha = value;
                 save_pv(move, pv[ply + 1], pv[ply]);
 
                 // Is the value higher than beta?
                 if (value >= beta) {
                     // Cut-off
+                    best_value_bound = Bound::LOWER;
                     break;
                 }
             }
@@ -669,9 +685,12 @@ int Search::quiescent(Depth depth, int alpha, int beta, int ply) {
     // If we cannot move, check for checkmate.
     if (searched_moves == 0 && is_check) {
         // We have a check mate. This is bad for us, so return a -CHECKMATE.
-        return -Value::CHECKMATE + ply;
+        Value return_value = -Value::CHECKMATE + ply;
+        ttable.store(position.zobrist_key, return_value, Bound::EXACT, Depth::DEPTH_MAX, Move::NO_MOVE);
+        return return_value;
     }
 
+    ttable.store(position.zobrist_key, best_value, best_value_bound, Depth::DEPTH_ZERO, best_move);
     return best_value;
 }
 
