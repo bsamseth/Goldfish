@@ -507,21 +507,20 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
         // We do recursive null move, with depth reduction factor 3.
         // Why 3? Because this is common, for instance in sunfish.
-        Value value = -search(depth - 3, -beta, -beta + 1, ply + 1);
+        constexpr Depth R = Depth(3);
+        Value value = -search(depth - R, -beta, -beta + 1, ply + 1);
 
         position.undo_null_move();
 
-        if (value > alpha) {
-            alpha = value;
-            best_value_bound = Bound::EXACT;
+        // Do not return unproven mate scores
+        if (value >= Value::CHECKMATE_THRESHOLD)
+            value = beta;
 
-            // Beta cutoff?
-            if (value >= beta) {
-                ttable.store(position.zobrist_key, value, Bound::LOWER, depth, Move::NO_MOVE);
-                return value;
-            }
+        // Beta cutoff?
+        if (value >= beta) {
+            ttable.store(position.zobrist_key, value, Bound::LOWER, depth - R, Move::NO_MOVE);
+            return value;
         }
-
     }
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
