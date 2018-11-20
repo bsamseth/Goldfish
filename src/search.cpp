@@ -256,22 +256,24 @@ void Search::run() {
         run_signal.release();
 
         //### BEGIN Iterative Deepening
+        Value alpha = -Value::INFINITE;
+        Value best_value = -Value::INFINITE;
+        Value beta = Value::INFINITE;
+        Value delta = Value::INFINITE;
         for (Depth depth = initial_depth; depth <= search_depth; ++depth) {
             current_depth = depth;
             current_max_depth = Depth::DEPTH_ZERO;
             protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
                                  current_move_number);
 
-            Value alpha = -Value::INFINITE;
-            Value best_value = -Value::INFINITE;
-            Value beta = Value::INFINITE;
-            Value delta = Value::INFINITE;
-
-            if (depth >= 3) {
-                Value prev_score = root_moves.entries[0]->value;
-                delta = Value(15);
-                alpha = std::max(prev_score - delta, -Value::INFINITE);
-                beta  = std::min(prev_score + delta,  Value::INFINITE);
+            if (depth < 4) {
+                best_value = alpha = -Value::INFINITE;
+                beta = delta = Value::INFINITE;
+            }
+            else {
+                delta = Value(1);
+                alpha = std::max(best_value - delta, -Value::INFINITE);
+                beta  = std::min(best_value + delta,  Value::INFINITE);
             }
 
             // Start with a small aspiration window and, in the case of a fail
