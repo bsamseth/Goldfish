@@ -386,6 +386,7 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
                 // PV search failed high, need to do a research.
                 // Assuming no instability, and using the new limit.
                 value = -search(depth - 1, -beta, -value, ply + 1);
+                assert(value > alpha);  // Assert search stability in debug mode.
             }
         }
         // First move - search fully.
@@ -552,6 +553,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
                     // PV search failed high, need to do a research.
                     // Assuming no instability, and using the new limit.
                     value = -search(depth - 1, -beta, -value, ply + 1);
+                    assert(value > alpha);  // Assert search stability in debug mode.
                 }
             } else {
                 // First move - do full search.
