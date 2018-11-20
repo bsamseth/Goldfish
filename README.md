@@ -55,7 +55,7 @@ been added so far. The list is inspired in large part by [this writeup](http://w
 - [X] Killer move heuristic
 - [X] Principal variation search
 - [ ] Internal iterative deepening
-- [ ] Aspiration window search
+- [X] Aspiration window search
 - [ ] Futility pruning
 - [ ] Staged move generation
 - [ ] Better search algorithms, such as MTD-bi (?)
