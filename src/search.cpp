@@ -256,17 +256,63 @@ void Search::run() {
         run_signal.release();
 
         //### BEGIN Iterative Deepening
+        Value alpha = -Value::INFINITE;
+        Value best_value = -Value::INFINITE;
+        Value beta = Value::INFINITE;
+        Value delta = Value::INFINITE;
         for (Depth depth = initial_depth; depth <= search_depth; ++depth) {
             current_depth = depth;
             current_max_depth = Depth::DEPTH_ZERO;
             protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
                                  current_move_number);
 
-            search_root(current_depth, -Value::INFINITE, Value::INFINITE);
+            if (depth < 4) {
+                best_value = alpha = -Value::INFINITE;
+                beta = delta = Value::INFINITE;
+            }
+            else {
+                delta = Value(1);
+                alpha = std::max(best_value - delta, -Value::INFINITE);
+                beta  = std::min(best_value + delta,  Value::INFINITE);
+            }
 
-            // Sort the root move list, so that the next iteration begins with the
-            // best move first.
-            root_moves.sort();
+            // Start with a small aspiration window and, in the case of a fail
+            // high/low, re-search with a bigger window until we don't fail
+            // high/low anymore.
+            int failedHighCnt = 0;
+            while (true) {
+                Depth adjustedDepth = std::max(Depth(1), current_depth - failedHighCnt);
+
+                best_value = search_root(adjustedDepth, alpha, beta);
+
+                // Sort the root move list, so that the next iteration begins with the
+                // best move first.
+                root_moves.sort();
+
+                if (abort)
+                    break;
+
+                // In case of failing low/high increase aspiration window and
+                // re-search, otherwise exit the loop.
+                if (best_value <= alpha) {
+                    beta = (alpha + beta) / 2;
+                    alpha = std::max(best_value - delta, -Value::INFINITE);
+
+                    failedHighCnt = 0;
+                }
+                else if (best_value >= beta)
+                {
+                    beta = std::min(best_value + delta, Value::INFINITE);
+                    ++failedHighCnt;
+                }
+                else
+                    break;
+
+                delta += delta / 4 + 5;
+
+                assert(alpha >= -Value::INFINITE && beta <= Value::INFINITE);
+
+            }
 
             check_stop_conditions();
 
@@ -340,14 +386,16 @@ void Search::update_search(int ply) {
     protocol.send_status(current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 }
 
-void Search::search_root(Depth depth, Value alpha, Value beta) {
+Value Search::search_root(Depth depth, Value alpha, Value beta) {
     int ply = 0;
 
     update_search(ply);
 
+    Value best_value = -Value::INFINITE;
+
     // Abort conditions
     if (abort) {
-        return;
+        return best_value;
     }
 
     // Reset all values, so the best move is pushed to the front
@@ -365,7 +413,7 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
         position.make_move(move);
         Value value;
         //
-        // Principal Variation Search (or really NegaScout)
+        // Principal Variation Search
         //
         // Search first move fully, then just check for moves that will
         // improve alpha using a 1-point search window. If first move was
@@ -384,9 +432,7 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
 
             if (value > alpha and value < beta) {
                 // PV search failed high, need to do a research.
-                // Assuming no instability, and using the new limit.
-                value = -search(depth - 1, -beta, -value, ply + 1);
-                assert(value > alpha);  // Assert search stability in debug mode.
+                value = -search(depth - 1, -beta, -alpha, ply + 1);
             }
         }
         // First move - search fully.
@@ -396,8 +442,10 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
         position.undo_move(move);
 
         if (abort) {
-            return;
+            return best_value;
         }
+
+        best_value = std::max(best_value, value);
 
         // Do we have a better value?
         if (value > alpha) {
@@ -410,7 +458,7 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
             protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes);
 
             if (value >= beta)
-                return;
+                return value;
         }
     }
 
@@ -418,7 +466,10 @@ void Search::search_root(Depth depth, Value alpha, Value beta) {
         // The root position is a checkmate or stalemate. We cannot search
         // further. Abort!
         abort = true;
+        return position.is_check() ? -Value::CHECKMATE + ply
+                                   :  Value::DRAW;
     }
+    return best_value;
 }
 
 Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
@@ -484,8 +535,18 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         return Value::DRAW;
     }
 
-    if (position.is_check())
-        depth += 1;
+    // Mate distance pruning:
+    // Even if we mate at the next move our score
+    // would be at best CHECKMATE - ply, but if alpha is already bigger because
+    // a shorter mate was found upward in the tree then there is no need to search
+    // because we will never beat the current alpha. Same logic but with reversed
+    // signs applies also in the opposite condition of being mated instead of giving
+    // mate. In this case return a fail-high score.
+    alpha = std::max(-Value::CHECKMATE + ply, alpha);
+    beta = std::min(Value::CHECKMATE - (ply + 1), beta);
+    if (alpha >= beta)
+        return alpha;
+
 
     // Initialize
     Value best_value = -Value::INFINITE;
@@ -493,6 +554,10 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     Bound best_value_bound = Bound::UPPER;
     int searched_moves = 0;
     bool is_check = position.is_check();
+
+
+    if (is_check)
+        depth += 1;
 
     // Null move pruning.
     // Only use when not in check, and when at least one piece is present
@@ -557,7 +622,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
             //
-            // NegaScout Search (see search_root for details).
+            // PV Search (see search_root for details).
             //
             if (depth > 1 and searched_moves > 1) {
 
@@ -565,9 +630,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
                 if (value > alpha and value < beta) {
                     // PV search failed high, need to do a research.
-                    // Assuming no instability, and using the new limit.
-                    value = -search(depth - 1, -beta, -value, ply + 1);
-                    assert(value > alpha);  // Assert search stability in debug mode.
+                    value = -search(depth - 1, -beta, -alpha, ply + 1);
                 }
             } else {
                 // First move - do full search.
@@ -655,6 +718,16 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
     }
     //### ENDOF Stand pat
 
+    // Delta pruning:
+    // Test if alpha can be improved by greatest
+    // possible material swing. If not, then don't bother.
+    //
+    // Best possible single move is to capture a queen while promoting a pawn.
+    // Make sure we're not in check, as then the stand pat is -INFINITE.
+    Value delta = 2 * Value::QUEEN_VALUE - Value::PAWN_VALUE;
+    if (!is_check and best_value + delta < alpha)
+        return best_value;
+
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, Depth::DEPTH_ZERO, is_check);
     for (int i = 0; i < moves.size; i++) {
         Move move = moves.entries[i]->move;
@@ -663,7 +736,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
             searched_moves++;
-            // Note that we do not use PVS/NegaScout here, as we have no
+            // Note that we do not use PVS here, as we have no
             // reason to believe move ordering works very well here, and
             // we know we don't have a killer move from ttable.
             value = -quiescent(-beta, -alpha, ply + 1);

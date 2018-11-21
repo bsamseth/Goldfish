@@ -55,8 +55,11 @@ been added so far. The list is inspired in large part by [this writeup](http://w
 - [X] Killer move heuristic
 - [X] Principal variation search
 - [X] Internal iterative deepening
-- [ ] Aspiration window search
+- [X] Aspiration window search
 - [ ] Futility pruning
+- [ ] Delta pruning in quiescence search.
+  + [X] Prune when _no_ move can improve enough
+  + [ ] Prune captures that are insufficient to improve
 - [ ] Staged move generation
 - [ ] Better search algorithms, such as MTD-bi (?)
 - [ ] More sophisticated static evaluation
