@@ -6,7 +6,7 @@
 [![Play link](https://img.shields.io/badge/Play%20Goldfish-lichess-green.svg)](https://lichess.org/@/Goldfish-Engine)
 
 # Goldfish
-###### Stockfish's very distant and not so bright cousin
+> Stockfish's very distant and not so bright cousin
 
 ### [Play Goldfish here](https://lichess.org/@/Goldfish-Engine)
 
@@ -48,29 +48,28 @@ The current plan for the project is to improve the strength. The following is a
 non-exhaustive list of possibilities for future additions, including all features that have
 been added so far. The list is inspired in large part by [this writeup](http://www.frayn.net/beowulf/theory.html).
 
-- [X] Making the engine playable on [lichess.org](lichess.org)
-- [X] Complete refactoring of base types
-- [X] Null move pruning
-- [X] Transposition table
-- [X] Check extensions
-- [X] Killer move heuristic
-- [X] Principal variation search
-- [X] Internal iterative deepening
-- [X] Aspiration window search
-- [ ] Futility pruning
-- [ ] Delta pruning in quiescence search.
-  + [X] Prune when _no_ move can improve enough
-  + [ ] Prune captures that are insufficient to improve
-- [ ] Staged move generation
-- [ ] Better search algorithms, such as MTD-bi (?)
-- [ ] More sophisticated static evaluation
-  + [ ] Extra considerations for passed pawns
-  + [ ] Piece square tables
-  + [ ] King safety
-  + [ ] Center control
-  + [ ] Rooks on the 7th rank
-  + [ ] Bishops on main diagonals
-
+-   [X] Making the engine playable on [lichess.org](lichess.org)
+-   [X] Complete refactoring of base types
+-   [X] Null move pruning
+-   [X] Transposition table
+-   [X] Check extensions
+-   [X] Killer move heuristic
+-   [X] Principal variation search
+-   [X] Internal iterative deepening
+-   [X] Aspiration window search
+-   [ ] Futility pruning
+-   [ ] Delta pruning in quiescence search.
+    +   [X] Prune when _no_ move can improve enough
+    +   [ ] Prune captures that are insufficient to improve
+-   [ ] Staged move generation
+-   [ ] Better search algorithms, such as MTD-bi (?)
+-   [ ] More sophisticated static evaluation
+    +   [ ] Extra considerations for passed pawns
+    +   [ ] Piece square tables
+    +   [ ] King safety
+    +   [ ] Center control
+    +   [ ] Rooks on the 7th rank
+    + [ ] Bishops on main diagonals
 
 Each significant change will result in a new version of the engine (see
 [releases](https://github.com/bsamseth/Goldfish/releases)). In the following
