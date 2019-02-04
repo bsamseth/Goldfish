@@ -314,6 +314,12 @@ void Search::run() {
 
             }
 
+            // If the position is a mate in depth plies, then searching deeper cannot possibly
+            // give a better mating sequence. Therefore we can safely stop the search if this
+            // is the case:
+            if (Values::is_checkmate_in(best_value, depth))
+                break;
+
             check_stop_conditions();
 
             if (abort) {
