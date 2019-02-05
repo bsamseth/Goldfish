@@ -21,7 +21,7 @@ public:
             bool force, int current_depth, int current_max_depth, uint64_t total_nodes, Move current_move,
             int current_move_number) final;
 
-    void send_move(RootEntry entry, int current_depth, int current_max_depth, uint64_t total_nodes) final;
+    void send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes) final;
 
     static std::string from_move(Move move);
 

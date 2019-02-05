@@ -307,7 +307,7 @@ void Goldfish::send_status(
     }
 }
 
-void Goldfish::send_move(RootEntry entry, int current_depth, int current_max_depth, uint64_t total_nodes) {
+void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes) {
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now() - start_time);
 
