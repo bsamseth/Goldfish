@@ -26,9 +26,9 @@ if __name__ == "__main__":
             help='Path to opening book to use.')
     parser.add_argument('--book-depth', type=int, default=4,
             help='Number moves to play from opening book.')
-    parser.add_argument('--resign', type=int, nargs=2, default=(3, 700),
+    parser.add_argument('--resign', type=int, nargs=2, default=(100, 700),
             help='Resign games where eval exceeds some limit for some number of moves.')
-    parser.add_argument('--draw', type=int, nargs=2, default=(30, 5),
+    parser.add_argument('--draw', type=int, nargs=2, default=(80, 5),
             help='Draw games where eval is below some limit after a given number of moves (moves, limit).')
     parser.add_argument('--auto-run', action='store_true', default=False)
 
