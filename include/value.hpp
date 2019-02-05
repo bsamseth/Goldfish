@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstdlib>
 #include "depth.hpp"
 #include "operations.hpp"
 
