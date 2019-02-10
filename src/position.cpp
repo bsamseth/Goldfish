@@ -200,6 +200,8 @@ void Position::make_null_move() {
 
     states_size++;
 
+    moves[move_count++] = Move::NO_MOVE;
+
     // Remove enpassant if set.
     if (enpassant_square != Square::NO_SQUARE) {
         zobrist_key ^= zobrist.enpassant_square[enpassant_square];
@@ -228,6 +230,8 @@ void Position::undo_null_move() {
 
     halfmove_clock--;
     halfmove_number--;
+
+    move_count--;
 }
 
 void Position::make_move(Move move) {
@@ -239,6 +243,8 @@ void Position::make_move(Move move) {
     entry.halfmove_clock = halfmove_clock;
 
     states_size++;
+
+    moves[move_count++] = move;
 
     // Get variables
     MoveType type = Moves::get_type(move);
@@ -385,11 +391,17 @@ void Position::undo_move(Move move) {
     // Restore state
     states_size--;
 
+    move_count--;
+
     State &entry = states[states_size];
     halfmove_clock = entry.halfmove_clock;
     enpassant_square = entry.enpassant_square;
     castling_rights = entry.castling_rights;
     zobrist_key = entry.zobrist_key;
+}
+
+bool Position::last_move_was_null_move() {
+    return moves[move_count - 1] == Move::NO_MOVE;
 }
 
 void Position::clear_castling(Square square) {
