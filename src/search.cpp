@@ -566,10 +566,18 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         depth += 1;
 
     // Null move pruning.
-    // Only use when not in check, and when at least one piece is present
-    // on the board. This avoids most zugzwang cases.
+    // Only used when the following is _NOT_ true:
+    //
+    //  1. We are in check
+    //  2. The last move made was a null move
+    //  3. A beta-cutoff must be by finding a mate score
+    //  4. We are in zugzwang
+    //
+    // Number 4 is hard to guarantee (but possible with verification search, see SF).
+    // But by not using null move when we only have K and P we escape most cases.
     if (!is_check &&
-        beta <= Value::CHECKMATE && (
+        beta < Value::CHECKMATE_THRESHOLD &&
+        !position.last_move_was_null_move() && (
         position.pieces[position.active_color][PieceType::QUEEN] ||
         position.pieces[position.active_color][PieceType::ROOK]  ||
         position.pieces[position.active_color][PieceType::BISHOP] ||
@@ -577,6 +585,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
 
         position.make_null_move();
+        assert(position.last_move_was_null_move());
 
         // We do recursive null move, with depth reduction factor 3.
         // Why 3? Because this is common, for instance in sunfish.
@@ -584,13 +593,16 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         Value value = -search(depth - R, -beta, -beta + 1, ply + 1);
 
         position.undo_null_move();
+        assert(!position.last_move_was_null_move());
 
-        // Do not return unproven mate scores
-        if (value >= Value::CHECKMATE_THRESHOLD)
-            value = beta;
 
         // Beta cutoff?
         if (value >= beta) {
+
+            // Do not return unproven mate scores
+            if (value >= Value::CHECKMATE_THRESHOLD)
+                value = beta;
+
             ttable.store(position.zobrist_key, value, Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R), Move::NO_MOVE);
             return value;
         }
@@ -701,7 +713,6 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
 
     // Initialize
     Value best_value = -Value::INFINITE;
-    Move best_move = Move::NO_MOVE;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -754,7 +765,6 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
         // Pruning
         if (value > best_value) {
             best_value = value;
-            best_move = move;
 
             // Do we have a better value?
             if (value > alpha) {
