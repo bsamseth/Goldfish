@@ -256,7 +256,7 @@ void Search::run() {
         run_signal.release();
 
         //### BEGIN Iterative Deepening
-        for (Depth depth = initial_depth; depth <= search_depth; ++depth) {
+        for (Depth depth = initial_depth; !abort and depth <= search_depth; ++depth) {
             current_depth = depth;
             current_max_depth = Depth::DEPTH_ZERO;
             protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
@@ -269,10 +269,6 @@ void Search::run() {
             root_moves.sort();
 
             check_stop_conditions();
-
-            if (abort)
-                break;
-
         }
         //### ENDOF Iterative Deepening
 

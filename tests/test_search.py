@@ -1,3 +1,26 @@
+"""
+Search Verification
+
+This set of tests will ensure that Goldfish is able to complete a series of
+puzzles, meant to act as a safety net for catching critical bugs introduced
+into the search algorithm. It will also catch cases where Goldfish takes to
+long (in terms of depth) to find certain variations, if agressive pruning is
+applied. Some of these tests might be expected to break with larger changes,
+but this will then have to be explicitly addressed.
+
+Puzzles given in EPD format, see https://www.chessprogramming.org/Extended_Position_Description
+Types of puzzles:
+  1. Single line mate (dm && pv)
+      Must find correct mate distance and play out each move.
+  2. Multi-variation mate (dm)
+      Must checkmate against stockfish in given number of moves, but can choose
+      line (i.e. more than one winning line).
+  3. Single line tactic (pv)
+      Must find the _one_ strong line and play out each move.
+
+TODO: Add more test positions once these pass.
+"""
+
 import os
 import chess
 import chess.engine
@@ -13,17 +36,6 @@ if not os.path.exists(build_path):
 
 goldfish_path = os.path.join(build_path, "goldfish.x")
 
-
-# Puzzles given in EPD format, see https://www.chessprogramming.org/Extended_Position_Description
-# Types of puzzles:
-#   1. Single line mate (dm && pv)
-#       Must find correct mate distance and play out each move.
-#   2. Multi-variation mate (dm)
-#       Must checkmate against stockfish in given number of moves, but can choose line (i.e. more than one winning line).
-#   3. Single line tactic (pv)
-#       Must find the _one_ strong line and play out each move.
-#
-# TODO: Add more test positions once these pass.
 
 test_cases = """
 1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b - - dm -3; pv "d6d1 c1d1 d7g4 d1e1 d8d1"; id "Bratko-Kopec.01";
@@ -87,7 +99,7 @@ class TestSearch(unittest.TestCase):
                         self.assertEqual(
                             chess.Move.from_uci(move),
                             output.move,
-                            f"Incorrect move at puzzle {case['id']}",
+                            f"Incorrect move at puzzle {case['id']} at this pos:\n\n{board}\n",
                         )
 
                         # Play our move and any follow-up from the opponent.
