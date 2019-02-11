@@ -4,8 +4,13 @@ import chess.engine
 import unittest
 
 build_path = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.dirname(__file__)), "build-release")
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "build")
 )
+if not os.path.exists(build_path):
+    build_type = os.environ.get("CMAKE_BUILD_TYPE", "Release")
+    os.mkdir(build_path)
+    os.system(f"cd {build_path} && cmake .. -DCMAKE_BUILD_TYPE={build_type}")
+
 goldfish_path = os.path.join(build_path, "goldfish.x")
 
 
@@ -30,9 +35,7 @@ test_cases = """
 class TestSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        os.system(
-            f"cd {build_path} && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j5 goldfish.x"
-        )
+        os.system(f"cd {build_path} && make -j5 goldfish.x")
 
     def setUp(self):
         self.goldfish = chess.engine.SimpleEngine.popen_uci(goldfish_path)
