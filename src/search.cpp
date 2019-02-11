@@ -642,7 +642,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         Value return_value = is_check ? -Value::CHECKMATE + ply
                                       : Value::DRAW;
         ttable.store(position.zobrist_key, return_value, Bound::EXACT,
-                     Depth::DEPTH_MAX, Move::NO_MOVE);
+                     depth, Move::NO_MOVE);
         return return_value;
     }
     ttable.store(position.zobrist_key, best_value, best_value_bound,
