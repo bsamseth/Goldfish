@@ -515,12 +515,17 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         depth += 1;
 
     // Null move pruning.
+    //
+    // Idea is that if we have a position that is so strong that even if we
+    // don't move (i.e. pass), we still exceed beta. Only started if we have reason
+    // to belive that NMP will be useful, which here is check by eval >= beta.
+    //
     // Only used when the following is _NOT_ true:
     //
-    //  1. We are in check
-    //  2. The last move made was a null move
-    //  3. A beta-cutoff must be by finding a mate score
-    //  4. We are in zugzwang
+    //  1. We are in check (NM would be illegal)
+    //  2. The last move made was a null move (double null move has no effect other than reduced depth)
+    //  3. A beta-cutoff must be by finding a mate score (mates with NM is not proven)
+    //  4. We are in zugzwang (not moving is better than any other move)
     //
     // Number 4 is hard to guarantee (but possible with verification search, see SF).
     // But by not using null move when we only have K and P we escape most cases.
@@ -530,7 +535,8 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         position.pieces[position.active_color][PieceType::QUEEN] ||
         position.pieces[position.active_color][PieceType::ROOK]  ||
         position.pieces[position.active_color][PieceType::BISHOP] ||
-        position.pieces[position.active_color][PieceType::KNIGHT])) {
+        position.pieces[position.active_color][PieceType::KNIGHT]) &&
+        Evaluation::evaluate(position) >= beta) {
 
 
         position.make_null_move();
