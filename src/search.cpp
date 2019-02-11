@@ -256,14 +256,13 @@ void Search::run() {
         run_signal.release();
 
         //### BEGIN Iterative Deepening
-        Value best_value;
         for (Depth depth = initial_depth; depth <= search_depth; ++depth) {
             current_depth = depth;
             current_max_depth = Depth::DEPTH_ZERO;
             protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
                                  current_move_number);
 
-            best_value = search_root(depth, -Value::INFINITE, Value::INFINITE);
+            search_root(depth, -Value::INFINITE, Value::INFINITE);
 
             // Sort the root move list, so that the next iteration begins with the
             // best move first.
