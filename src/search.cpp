@@ -256,75 +256,24 @@ void Search::run() {
         run_signal.release();
 
         //### BEGIN Iterative Deepening
-        Value alpha = -Value::INFINITE;
-        Value best_value = -Value::INFINITE;
-        Value beta = Value::INFINITE;
-        Value delta = Value::INFINITE;
+        Value best_value;
         for (Depth depth = initial_depth; depth <= search_depth; ++depth) {
             current_depth = depth;
             current_max_depth = Depth::DEPTH_ZERO;
             protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
                                  current_move_number);
 
-            if (depth < 4) {
-                best_value = alpha = -Value::INFINITE;
-                beta = delta = Value::INFINITE;
-            }
-            else {
-                delta = Value(1);
-                alpha = std::max(best_value - delta, -Value::INFINITE);
-                beta  = std::min(best_value + delta,  Value::INFINITE);
-            }
+            best_value = search_root(depth, -Value::INFINITE, Value::INFINITE);
 
-            // Start with a small aspiration window and, in the case of a fail
-            // high/low, re-search with a bigger window until we don't fail
-            // high/low anymore.
-            int failedHighCnt = 0;
-            while (true) {
-                Depth adjustedDepth = std::max(Depth(1), current_depth - failedHighCnt);
-
-                best_value = search_root(adjustedDepth, alpha, beta);
-
-                // Sort the root move list, so that the next iteration begins with the
-                // best move first.
-                root_moves.sort();
-
-                if (abort)
-                    break;
-
-                // In case of failing low/high increase aspiration window and
-                // re-search, otherwise exit the loop.
-                if (best_value <= alpha) {
-                    beta = (alpha + beta) / 2;
-                    alpha = std::max(best_value - delta, -Value::INFINITE);
-
-                    failedHighCnt = 0;
-                }
-                else if (best_value >= beta)
-                {
-                    beta = std::min(best_value + delta, Value::INFINITE);
-                    ++failedHighCnt;
-                }
-                else
-                    break;
-
-                delta += delta / 4 + 5;
-
-                assert(alpha >= -Value::INFINITE && beta <= Value::INFINITE);
-
-            }
-
-            // If the position is a mate in depth plies, then searching deeper cannot possibly
-            // give a better mating sequence. Therefore we can safely stop the search if this
-            // is the case:
-            if (Values::is_checkmate_in(best_value, depth))
-                break;
+            // Sort the root move list, so that the next iteration begins with the
+            // best move first.
+            root_moves.sort();
 
             check_stop_conditions();
 
-            if (abort) {
+            if (abort)
                 break;
-            }
+
         }
         //### ENDOF Iterative Deepening
 
