@@ -428,6 +428,8 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
 }
 
 Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
+    Value alpha_orig = alpha;
+
     // Check TTable before anything else is done.
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
@@ -503,16 +505,8 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         return alpha;
 
 
-    // Initialize
-    Value best_value = -Value::INFINITE;
-    Move best_move = Move::NO_MOVE;
-    Bound best_value_bound = Bound::UPPER;
-    int searched_moves = 0;
     bool is_check = position.is_check();
 
-
-    if (is_check)
-        depth += 1;
 
     // Null move pruning.
     //
@@ -562,6 +556,14 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             return value;
         }
     }
+
+    // Initialize
+    Value best_value = -Value::INFINITE;
+    Move best_move = Move::NO_MOVE;
+    int searched_moves = 0;
+
+    if (is_check)
+        depth += 1;
 
     MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
 
@@ -623,13 +625,11 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
             // Do we have a better value?
             if (value > alpha) {
-                best_value_bound = Bound::EXACT;
                 alpha = value;
                 save_pv(move, pv[ply + 1], pv[ply]);
 
                 // Is the value higher than beta?
                 if (value >= beta) {
-                    best_value_bound = Bound::LOWER;
                     // Cut-off
                     break;
                 }
@@ -638,13 +638,18 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     }
 
     // If we cannot move, check for checkmate and stalemate.
-    if (searched_moves == 0) {
-        Value return_value = is_check ? -Value::CHECKMATE + ply
-                                      : Value::DRAW;
-        ttable.store(position.zobrist_key, return_value, Bound::EXACT,
-                     depth, Move::NO_MOVE);
-        return return_value;
-    }
+    if (searched_moves == 0)
+        best_value = is_check ? -Value::CHECKMATE + ply : Value::DRAW;
+
+    // Determine bound type.
+    Bound best_value_bound;
+    if (best_value <= alpha_orig)
+        best_value_bound = Bound::UPPER;
+    else if (alpha_orig < best_value and best_value < beta)
+        best_value_bound = Bound::EXACT;
+    else
+        best_value_bound = Bound::LOWER;
+
     ttable.store(position.zobrist_key, best_value, best_value_bound,
                  depth, best_move);
     return best_value;
