@@ -425,47 +425,22 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
 Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     Value alpha_orig = alpha;
 
-
     // Check TTable before anything else is done.
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
-        switch (entry->bound()) {
-            case Bound::EXACT:
-                // In the case of exact scores, we can always return
-                // right away. Just update best move if we exceed alpha.
-                if (entry->value() > alpha)
-                    save_pv(entry->move(), pv[ply + 1], pv[ply]);
-                update_search(ply);
-                return entry->value();
-
-            case Bound::LOWER:
-                // With a lower bound we check if we should update alpha.
-                // If we do so, check if we also exceed beta.
-                if (entry->value() > alpha) {
-                    save_pv(entry->move(), pv[ply + 1], pv[ply]);
-                    alpha = entry->value();
-
-                    // Check for zero-size search window.
-                    if (entry->value() >= beta) {
-                        update_search(ply);
-                        return entry->value();
-                    }
-                }
-                break;
-
-            case Bound::UPPER:
-                // For upper bounds, we can stop if the bound
-                // is leq than alpha because no move will improve alpha.
-                // If alpha < bound we have no usefull info, as the
-                // exact value could still be less than alpha, so we
-                // cannot update alpha and pv yet.
-                if (entry->value() <= alpha) {
-                    update_search(ply);
-                    return entry->value();
-                }
-                break;
-            default:
-                throw std::exception();
+        if (entry->bound() & Bound::LOWER) {
+            if (entry->value() > alpha) {
+                save_pv(entry->move(), pv[ply + 1], pv[ply]);
+                alpha = entry->value();
+            }
+        }
+        if (entry->bound() & Bound::UPPER) {
+            if (entry->value() < beta)
+                beta = entry->value();
+        }
+        if (alpha >= beta) {
+            update_search(ply);
+            return entry->value();
         }
     }
 
