@@ -632,18 +632,17 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         }
     }
 
-    // If we cannot move, check for checkmate and stalemate.
-    if (searched_moves == 0)
-        best_value = is_check ? -Value::CHECKMATE + ply : Value::DRAW;
 
     // Determine bound type.
-    Bound best_value_bound;
-    if (best_value <= alpha_orig)
-        best_value_bound = Bound::UPPER;
-    else if (alpha_orig < best_value and best_value < beta)
+    Bound best_value_bound = best_value <= alpha_orig ? Bound::UPPER :
+                                best_value >= beta ? Bound::LOWER :
+                                                     Bound::EXACT;
+
+    // If we cannot move, check for checkmate and stalemate.
+    if (searched_moves == 0) {
+        best_value = is_check ? -Value::CHECKMATE + ply : Value::DRAW;
         best_value_bound = Bound::EXACT;
-    else
-        best_value_bound = Bound::LOWER;
+    }
 
     ttable.store(position.zobrist_key, best_value, best_value_bound,
                  depth, best_move);
