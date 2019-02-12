@@ -22,12 +22,15 @@ TODO: Add more test positions once these pass.
 """
 
 import os
-import chess
-import chess.engine
 import unittest
 import random
 import math
 import logging
+import chess
+import chess.engine
+from chester.match import play_match
+from chester.timecontrol import TimeControl
+
 
 # Enable debug logging.
 # logging.basicConfig(level=logging.DEBUG)
@@ -68,19 +71,27 @@ class TestSearch(unittest.TestCase):
         self.stockfish.quit()
 
     def test_timed_search(self):
+        """Search a limited amount of milliseconds."""
         info = self.goldfish.analyse(
             chess.Board(), chess.engine.Limit(time=0.1), info=chess.engine.Info.ALL
         )
         self.assertLessEqual(0.100, info["time"])
 
     def test_node_limited_search(self):
+        """Search a limited number of nodes."""
         nodes = random.randrange(10000, 99999)
         info = self.goldfish.analyse(
             chess.Board(), chess.engine.Limit(nodes=nodes), info=chess.engine.Info.ALL
         )
         self.assertAlmostEqual(1.00, info["nodes"] / nodes, 3)
 
+    def test_play_with_clock(self):
+        """Play a timed game to completion without error (losing is fine)."""
+        game = play_match(goldfish_path, "stockfish", TimeControl(1, increment=0.0))
+        self.assertNotEqual('*', game.headers['Result'])  # Just demand _a_ result.
+
     def test_puzzles(self):
+        """Solve each of the following puzzles: \n{test_cases}."""
         for epd in test_cases:
             board = chess.Board()
             case = board.set_epd(epd)
@@ -118,7 +129,7 @@ class TestSearch(unittest.TestCase):
                     pv_us, pv_them = pv[::2], pv[1::2]
 
                     for i, move in enumerate(pv_us):
-                        output = self.goldfish.play(board, search_limit)
+                        output = self.goldfish.play(board, search_limit, ponder=True)
 
                         self.assertEqual(
                             chess.Move.from_uci(move),
