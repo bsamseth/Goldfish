@@ -425,17 +425,17 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
 Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     Value alpha_orig = alpha;
 
+    update_search(ply);
+
     // Check TTable before anything else is done.
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
         switch (entry->bound()) {
-
             case Bound::EXACT:
                 // In the case of exact scores, we can always return
                 // right away. Just update best move if we exceed alpha.
                 if (entry->value() > alpha)
                     save_pv(entry->move(), pv[ply + 1], pv[ply]);
-                update_search(ply);
                 return entry->value();
 
             case Bound::LOWER:
@@ -447,7 +447,6 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
                     // Check for zero-size search window.
                     if (entry->value() >= beta) {
-                        update_search(ply);
                         return entry->value();
                     }
                 }
@@ -460,7 +459,6 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
                 // exact value could still be less than alpha, so we
                 // cannot update alpha and pv yet.
                 if (entry->value() <= alpha) {
-                    update_search(ply);
                     return entry->value();
                 }
                 break;
@@ -472,10 +470,8 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // We are at a leaf/horizon. So calculate that value.
     if (depth <= 0) {
         // Descend into quiescent
-        return quiescent(alpha, beta, ply);
+        return quiescent<false>(alpha, beta, ply);
     }
-
-    update_search(ply);
 
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY) {
@@ -650,11 +646,13 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     return best_value;
 }
 
+template<bool Update = true>
 Value Search::quiescent(Value alpha, Value beta, int ply) {
     // No need to check the ttable, as we only decend to quiescense if there is
     // no entry in the table.
 
-    update_search(ply);
+    if constexpr (Update)
+        update_search(ply);
 
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY) {

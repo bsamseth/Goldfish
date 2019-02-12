@@ -148,6 +148,7 @@ private:
 
     Value search(Depth depth, Value alpha, Value beta, int ply);
 
+    template<bool Update = true>
     Value quiescent(Value alpha, Value beta, int ply);
 
     void save_pv(Move move, MoveVariation &src, MoveVariation &dest);
