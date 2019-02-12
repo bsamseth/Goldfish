@@ -61,7 +61,7 @@ script:
   - make gtest
   - cd ..; python3 tests/test_search.py && cd -
   - make coverage
-  - printf "bench\nquit\n" | ./goldfish.x
+  - make bench
 
 after_success:
   - cd $PARENTDIR/build
