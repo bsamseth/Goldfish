@@ -25,6 +25,8 @@ import os
 import chess
 import chess.engine
 import unittest
+import random
+import math
 import logging
 
 # Enable debug logging.
@@ -64,6 +66,19 @@ class TestSearch(unittest.TestCase):
     def tearDown(self):
         self.goldfish.quit()
         self.stockfish.quit()
+
+    def test_timed_search(self):
+        info = self.goldfish.analyse(
+            chess.Board(), chess.engine.Limit(time=0.1), info=chess.engine.Info.ALL
+        )
+        self.assertLessEqual(0.100, info["time"])
+
+    def test_node_limited_search(self):
+        nodes = random.randrange(10000, 99999)
+        info = self.goldfish.analyse(
+            chess.Board(), chess.engine.Limit(nodes=nodes), info=chess.engine.Info.ALL
+        )
+        self.assertAlmostEqual(1.00, info["nodes"] / nodes, 3)
 
     def test_puzzles(self):
         for epd in test_cases:
