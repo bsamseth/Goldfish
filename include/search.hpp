@@ -144,13 +144,15 @@ private:
 
     void update_search(int ply);
 
+    void save_pv(const Move move, const MoveVariation &src, MoveVariation &dest);
+
+    Value pv_search(Depth depth, Value alpha, Value beta, int ply, int move_number);
+
     Value search_root(Depth depth, Value alpha, Value beta);
 
     Value search(Depth depth, Value alpha, Value beta, int ply);
 
     Value quiescent(Value alpha, Value beta, int ply);
-
-    void save_pv(const Move move, const MoveVariation &src, MoveVariation &dest);
 };
 
 inline uint64_t Search::get_total_nodes() {
