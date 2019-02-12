@@ -1,6 +1,7 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![Build Status](https://travis-ci.org/bsamseth/Goldfish.svg?branch=master)](https://travis-ci.org/bsamseth/Goldfish)
 [![Coverage Status](https://coveralls.io/repos/github/bsamseth/Goldfish/badge.svg?branch=master)](https://coveralls.io/github/bsamseth/Goldfish?branch=master)
+[![codecov](https://codecov.io/gh/bsamseth/Goldfish/branch/master/graph/badge.svg)](https://codecov.io/gh/bsamseth/Goldfish)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7f53976fd4bb42b4bfb2f53bd67fce65)](https://www.codacy.com/app/bsamseth/Goldfish?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=bsamseth/Goldfish&amp;utm_campaign=Badge_Grade)
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/bsamseth/Goldfish.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bsamseth/Goldfish/context:cpp)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/bsamseth/Goldfish.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bsamseth/Goldfish/context:python)
