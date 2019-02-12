@@ -19,9 +19,7 @@ before_install:
 
 install: 
   - pyenv global $(pyenv whence 2to3)  # activate all python versions
-  - python3 --version
-  - pip3 --version
-  - pip3 install python-chess
+  - pip install pipenv
 
   # C++17
   - sudo apt-get install -qq g++-7 gcc-7
@@ -54,7 +52,8 @@ before_script:
   - PARENTDIR=$(pwd)
 
 script:
-  - CMAKE_BUILD_TYPE=Coverage python3 tests/test_search.py
+  - pipenv install
+  - CMAKE_BUILD_TYPE=Coverage pipenv run python tests/test_search.py
   - cd $PARENTDIR/build
   - make bench  
   - make coverage
