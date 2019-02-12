@@ -45,6 +45,8 @@ test_cases = """
 1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b - - dm -3; pv "d6d1 c1d1 d7g4 d1e1 d8d1"; id "Bratko-Kopec.01";
 1r6/5p1k/7p/2pBp3/p1P1P3/8/1PK1Rq2/1R6 b - - dm -3; pv "f2e2 c2c1 b8g8 b2b4 g8g1"; id "https://lichess.org/wkc61nls/black#103";
 6KQ/8/8/8/1kn5/8/4B3/8 w - - dm 6; id "https://lichess.org/7ghS4Sop/white#148";
+5k2/5p2/6p1/p1p3Q1/1p4K1/1P1r4/2q5/5R2 b - - dm -3; pv "c2e2 g4h4 e2h2 h4g4 h2g3"; id "https://lichess.org/ROTrEoyB/black#87";
+8/2pp1k2/4p3/4P1p1/7p/3n1P1P/1r6/6K1 b - - dm -6; id "https://lichess.org/hEQgRWnK/black#107";
 """.strip().splitlines()
 
 
@@ -118,20 +120,21 @@ class TestSearch(unittest.TestCase):
                 elif "dm" in case:
                     # We have a mate, but more than one possible line. In this case Goldfish should beat Stockfish
                     # in the exact number of moves given by the mate distance.
-
+                    winning_side = board.turn
                     for move_count in range(abs(case["dm"])):
-                        output = self.goldfish.play(board, search_limit)
-                        board.push(output.move)
-                        # print(board, end="\n\n")
-
-                        # Let stockfish find a move to play.
-                        if not board.is_game_over(claim_draw=True):
-                            output = self.stockfish.play(board, search_limit)
+                        for engine in (self.goldfish, self.stockfish):
+                            if board.is_game_over(claim_draw=True):
+                                break
+                            output = engine.play(board, search_limit)
                             board.push(output.move)
                             # print(board, end="\n\n")
 
+                        if board.is_game_over(claim_draw=True):
+                            break
+
                     self.assertTrue(
-                        board.is_checkmate(), f"Failed to mate in puzzle {case['id']}"
+                        board.is_checkmate() and board.turn != winning_side,
+                        f"Failed to mate in puzzle {case['id']}",
                     )
 
 
