@@ -66,9 +66,9 @@ class TestSearch(unittest.TestCase):
 
                 # Set search limits based on puzzle type. 2x meant to give ample time to find.
                 if "dm" in case:
-                    search_limit = chess.engine.Limit(depth=4 * abs(case["dm"]))
+                    search_limit = chess.engine.Limit(depth=2 * abs(case["dm"]))
                 elif "pv" in case:
-                    search_limit = chess.engine.Limit(depth=4 * len(case["pv"].split()))
+                    search_limit = chess.engine.Limit(depth=2 * len(case["pv"].split()))
 
                 if "dm" in case:
                     # Check that the correct mate distance is found.
