@@ -47,6 +47,8 @@ test_cases = """
 6KQ/8/8/8/1kn5/8/4B3/8 w - - dm 6; id "https://lichess.org/7ghS4Sop/white#148";
 5k2/5p2/6p1/p1p3Q1/1p4K1/1P1r4/2q5/5R2 b - - dm -3; pv "c2e2 g4h4 e2h2 h4g4 h2g3"; id "https://lichess.org/ROTrEoyB/black#87";
 8/2pp1k2/4p3/4P1p1/7p/3n1P1P/1r6/6K1 b - - dm -6; id "https://lichess.org/hEQgRWnK/black#107";
+1rbq1rk1/p1b1nppp/1p2p3/8/1B1pN3/P2B4/1P3PPP/2RQ1R1K w - - pv "e4f6"; acd 10; id "Kaufman.01";
+3r2k1/p2r1p1p/1p2p1p1/q4n2/3P4/PQ5P/1P1RNPP1/3R2K1 b - - pv "f5d4"; acd 10; id "Kaufman.02";
 """.strip().splitlines()
 
 
@@ -73,8 +75,9 @@ class TestSearch(unittest.TestCase):
                 # Set search limits based on puzzle type. 2x meant to give ample time to find.
                 if "dm" in case:
                     search_limit = chess.engine.Limit(depth=2 * abs(case["dm"]))
-                elif "pv" in case:
-                    search_limit = chess.engine.Limit(depth=2 * len(case["pv"].split()))
+                else:
+                    assert "acd" in case, "Non-mate puzzles must have a depth limit"
+                    search_limit = chess.engine.Limit(depth=case["acd"])
 
                 if "dm" in case:
                     # Check that the correct mate distance is found.
