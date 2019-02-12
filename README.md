@@ -60,7 +60,7 @@ been added so far. The list is inspired in large part by [this writeup](http://w
 -   [X] Killer move heuristic
 -   [X] Principal variation search
 -   [X] Internal iterative deepening
--   [X] Aspiration window search
+-   [X] Aspiration window search (repealed by PR #27, needs tuning before reapplying)
 -   [ ] Futility pruning
 -   [ ] Delta pruning in quiescence search.
     +   [X] Prune when _no_ move can improve enough
