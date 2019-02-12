@@ -142,16 +142,17 @@ private:
 
     void check_stop_conditions();
 
+    template<bool CountNode = true>
     void update_search(int ply);
 
     Value search_root(Depth depth, Value alpha, Value beta);
 
     Value search(Depth depth, Value alpha, Value beta, int ply);
 
-    template<bool Update = true>
+    template<bool CountNode = true>
     Value quiescent(Value alpha, Value beta, int ply);
 
-    void save_pv(Move move, MoveVariation &src, MoveVariation &dest);
+    void save_pv(const Move move, const MoveVariation &src, MoveVariation &dest);
 };
 
 }

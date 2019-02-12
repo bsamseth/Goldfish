@@ -319,8 +319,10 @@ void Search::check_stop_conditions() {
     }
 }
 
+template<bool CountNode = true>
 void Search::update_search(int ply) {
-    total_nodes++;
+    if constexpr (CountNode)
+        total_nodes++;
 
     if (ply > current_max_depth) {
         current_max_depth = Depth(ply);
@@ -646,13 +648,12 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     return best_value;
 }
 
-template<bool Update = true>
+template<bool CountNode = true>
 Value Search::quiescent(Value alpha, Value beta, int ply) {
     // No need to check the ttable, as we only decend to quiescense if there is
     // no entry in the table.
 
-    if constexpr (Update)
-        update_search(ply);
+    update_search<CountNode>(ply);
 
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY) {
@@ -742,7 +743,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
     return best_value;
 }
 
-void Search::save_pv(Move move, MoveVariation &src, MoveVariation &dest) {
+void Search::save_pv(const Move move, const MoveVariation &src, MoveVariation &dest) {
     dest.moves[0] = move;
     for (int i = 0; i < src.size; i++) {
         dest.moves[i + 1] = src.moves[i];
