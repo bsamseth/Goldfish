@@ -59,10 +59,9 @@ script:
   - cmake -DCMAKE_BUILD_TYPE=Coverage $PARENTDIR
   - make
   - make gtest
+  - cd ..; python3 tests/test_search.py && cd -
   - make coverage
   - printf "bench\nquit\n" | ./goldfish.x
-  - cd ..
-  - python3 tests/test_search.py
 
 after_success:
   - cd $PARENTDIR/build
