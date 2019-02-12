@@ -118,11 +118,13 @@ class TestSearch(unittest.TestCase):
                     for move_count in range(abs(case["dm"])):
                         output = self.goldfish.play(board, search_limit)
                         board.push(output.move)
+                        # print(board, end="\n\n")
 
                         # Let stockfish find a move to play.
-                        output = self.stockfish.play(board, search_limit)
-                        board.push(output.move)
-                        # print(board)
+                        if not board.is_game_over(claim_draw=True):
+                            output = self.stockfish.play(board, search_limit)
+                            board.push(output.move)
+                            # print(board, end="\n\n")
 
                     self.assertTrue(
                         board.is_checkmate(), f"Failed to mate in puzzle {case['id']}"
