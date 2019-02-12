@@ -428,19 +428,20 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // Check TTable before anything else is done.
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
+        const Value tt_value = tt::value_from_tt(entry->value(), ply);
         if (entry->bound() & Bound::LOWER) {
-            if (entry->value() > alpha) {
+            if (tt_value > alpha) {
                 save_pv(entry->move(), pv[ply + 1], pv[ply]);
-                alpha = entry->value();
+                alpha = tt_value;
             }
         }
         if (entry->bound() & Bound::UPPER) {
-            if (entry->value() < beta)
-                beta = entry->value();
+            if (tt_value < beta)
+                beta = tt_value;
         }
         if (alpha >= beta) {
             update_search(ply);
-            return entry->value();
+            return tt_value;
         }
     }
 
@@ -522,7 +523,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             if (value >= Value::CHECKMATE_THRESHOLD)
                 value = beta;
 
-            ttable.store(position.zobrist_key, value, Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R + 1), Move::NO_MOVE);
+            ttable.store(position.zobrist_key, tt::value_to_tt(value, ply), Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R + 1), Move::NO_MOVE);
             return value;
         }
     }
@@ -619,7 +620,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         best_value_bound = Bound::EXACT;
     }
 
-    ttable.store(position.zobrist_key, best_value, best_value_bound,
+    ttable.store(position.zobrist_key, tt::value_to_tt(best_value, ply), best_value_bound,
                  depth, best_move);
     return best_value;
 }
