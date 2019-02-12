@@ -25,6 +25,10 @@ import os
 import chess
 import chess.engine
 import unittest
+import logging
+
+# Enable debug logging.
+# logging.basicConfig(level=logging.DEBUG)
 
 build_path = os.path.abspath(
     os.path.join(os.path.dirname(os.path.dirname(__file__)), "build")
