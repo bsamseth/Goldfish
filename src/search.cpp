@@ -543,7 +543,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             if (value >= Value::CHECKMATE_THRESHOLD)
                 value = beta;
 
-            ttable.store(position.zobrist_key, value, Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R), Move::NO_MOVE);
+            ttable.store(position.zobrist_key, value, Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R + 1), Move::NO_MOVE);
             return value;
         }
     }
