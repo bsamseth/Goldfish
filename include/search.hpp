@@ -153,4 +153,16 @@ private:
     void save_pv(const Move move, const MoveVariation &src, MoveVariation &dest);
 };
 
+inline uint64_t Search::get_total_nodes() {
+    return total_nodes;
+}
+
+inline void Search::save_pv(const Move move, const MoveVariation &src, MoveVariation &dest) {
+    dest.moves[0] = move;
+    for (int i = 0; i < src.size; i++) {
+        dest.moves[i + 1] = src.moves[i];
+    }
+    dest.size = src.size + 1;
+}
+
 }
