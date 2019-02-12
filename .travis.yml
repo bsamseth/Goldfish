@@ -52,16 +52,12 @@ before_script:
   - gcov --version
   - g++ --version
   - PARENTDIR=$(pwd)
-  - mkdir $PARENTDIR/build && cd $PARENTDIR/build
 
 script:
+  - CMAKE_BUILD_TYPE=Coverage python3 tests/test_search.py
   - cd $PARENTDIR/build
-  - cmake -DCMAKE_BUILD_TYPE=Coverage $PARENTDIR
-  - make
-  - make gtest
-  - cd ..; python3 tests/test_search.py && cd -
   - make coverage
-  - make bench
+  - make bench  # Bench not part of test suite, but provides signature.
 
 after_success:
   - cd $PARENTDIR/build
