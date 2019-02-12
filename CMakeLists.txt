@@ -88,6 +88,9 @@ set(SOURCES
         src/perft.cpp
         src/position.cpp
         src/search.cpp
+        src/searchmanagement.cpp
+        src/semaphore.cpp
+        src/timer.cpp
         src/tt.cpp
         )
 set(TESTFILES
