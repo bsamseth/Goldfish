@@ -24,7 +24,6 @@ TODO: Add more test positions once these pass.
 import os
 import unittest
 import random
-import math
 import logging
 import chess
 import chess.engine
