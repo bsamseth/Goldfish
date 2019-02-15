@@ -57,17 +57,7 @@ Position::Position()
 
 Position::Position(const Position &position)
         : Position() {
-    this->board = position.board;
-    this->pieces = position.pieces;
-    this->material = position.material;
-    this->castling_rights = position.castling_rights;
-    this->enpassant_square = position.enpassant_square;
-    this->active_color = position.active_color;
-    this->halfmove_clock = position.halfmove_clock;
-    this->zobrist_key = position.zobrist_key;
-    this->halfmove_number = position.halfmove_number;
-    this->states_size = 0;
-    this->move_count = 0;
+    *this = position;
 }
 
 Position &Position::operator=(const Position &position) {
