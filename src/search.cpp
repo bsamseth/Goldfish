@@ -4,356 +4,6 @@
 
 namespace goldfish {
 
-Search::Timer::Timer(bool &timer_stopped, bool &do_time_management, Depth &current_depth, const Depth &initial_depth,
-                     bool &abort)
-        : timer_stopped(timer_stopped), do_time_management(do_time_management),
-          current_depth(current_depth), initial_depth(initial_depth), abort(abort) {
-}
-
-void Search::Timer::run(uint64_t search_time) {
-    std::unique_lock<std::mutex> lock(mutex);
-    if (condition.wait_for(lock, std::chrono::milliseconds(search_time)) == std::cv_status::timeout) {
-        timer_stopped = true;
-
-        // If we finished the first iteration, we should have a result.
-        // In this case abort the search.
-        if (!do_time_management || current_depth > initial_depth) {
-            abort = true;
-        }
-    }
-}
-
-void Search::Timer::start(uint64_t search_time) {
-    thread = std::thread(&Search::Timer::run, this, search_time);
-}
-
-void Search::Timer::stop() {
-    condition.notify_all();
-    thread.join();
-}
-
-Search::Semaphore::Semaphore(int permits)
-        : permits(permits) {
-}
-
-void Search::Semaphore::acquire() {
-    std::unique_lock<std::mutex> lock(mutex);
-    while (permits == 0) {
-        condition.wait(lock);
-    }
-    permits--;
-}
-
-void Search::Semaphore::release() {
-    std::unique_lock<std::mutex> lock(mutex);
-    permits++;
-    condition.notify_one();
-}
-
-void Search::Semaphore::drain_permits() {
-    std::unique_lock<std::mutex> lock(mutex);
-    permits = 0;
-}
-
-void Search::new_depth_search(Position &position, Depth search_depth) {
-    if (search_depth < 1 || search_depth > Depth::DEPTH_MAX) throw std::exception();
-    if (running) throw std::exception();
-
-    reset();
-
-    this->position = position;
-    this->search_depth = search_depth;
-}
-
-void Search::new_nodes_search(Position &position, uint64_t search_nodes) {
-    if (search_nodes < 1) throw std::exception();
-    if (running) throw std::exception();
-
-    reset();
-
-    this->position = position;
-    this->search_nodes = search_nodes;
-}
-
-void Search::new_time_search(Position &position, uint64_t search_time) {
-    if (search_time < 1) throw std::exception();
-    if (running) throw std::exception();
-
-    reset();
-
-    this->position = position;
-    this->search_time = search_time;
-    this->run_timer = true;
-}
-
-void Search::new_infinite_search(Position &position) {
-    if (running) throw std::exception();
-
-    reset();
-
-    this->position = position;
-}
-
-void Search::new_clock_search(Position &position,
-                              uint64_t white_time_left, uint64_t white_time_increment, uint64_t black_time_left,
-                              uint64_t black_time_increment, int moves_to_go) {
-    new_ponder_search(position,
-                      white_time_left, white_time_increment, black_time_left, black_time_increment, moves_to_go
-    );
-
-    this->run_timer = true;
-}
-
-void Search::new_ponder_search(Position &position,
-                               uint64_t white_time_left, uint64_t white_time_increment, uint64_t black_time_left,
-                               uint64_t black_time_increment, int moves_to_go) {
-    if (white_time_left < 1) throw std::exception();
-    if (black_time_left < 1) throw std::exception();
-    if (moves_to_go < 0) throw std::exception();
-    if (running) throw std::exception();
-
-    reset();
-
-    this->position = position;
-
-    uint64_t time_left;
-    uint64_t time_increment;
-    if (position.active_color == Color::WHITE) {
-        time_left = white_time_left;
-        time_increment = white_time_increment;
-    } else {
-        time_left = black_time_left;
-        time_increment = black_time_increment;
-    }
-
-    // Don't use all of our time. Search only for 95%. Always leave 1 second as
-    // buffer time.
-    uint64_t max_search_time = (uint64_t) (time_left * 0.95) - 1000L;
-    if (max_search_time < 1) {
-        // We don't have enough time left. Search only for 1 millisecond, meaning
-        // get a result as fast as we can.
-        max_search_time = 1;
-    }
-
-    // Assume that we still have to do moves_to_go number of moves. For every next
-    // move (moves_to_go - 1) we will receive a time increment.
-    this->search_time = (max_search_time + (moves_to_go - 1) * time_increment) / moves_to_go;
-    if (this->search_time > max_search_time) {
-        this->search_time = max_search_time;
-    }
-
-    this->do_time_management = true;
-}
-
-Search::Search(Protocol &protocol)
-        : wakeup_signal(0), run_signal(0), stop_signal(0), finished_signal(0),
-          protocol(protocol),
-          timer(timer_stopped, do_time_management, current_depth, initial_depth, abort) {
-
-    reset();
-
-    thread = std::thread(&Search::run, this);
-}
-
-void Search::reset() {
-    search_depth = Depth::DEPTH_MAX;
-    search_nodes = std::numeric_limits<uint64_t>::max();
-    search_time = 0;
-    run_timer = false;
-    timer_stopped = false;
-    do_time_management = false;
-    root_moves.size = 0;
-    abort = false;
-    total_nodes = 0;
-    current_depth = initial_depth;
-    current_max_depth = Depth::DEPTH_ZERO;
-    current_move = Move::NO_MOVE;
-    current_move_number = 0;
-}
-
-void Search::start() {
-    std::unique_lock<std::recursive_mutex> lock(sync);
-
-    if (!running) {
-        wakeup_signal.release();
-        run_signal.acquire();
-    }
-}
-
-void Search::stop() {
-    std::unique_lock<std::recursive_mutex> lock(sync);
-
-    if (running) {
-        // Signal the search thread that we want to stop it
-        abort = true;
-
-        stop_signal.acquire();
-    }
-}
-
-void Search::ponderhit() {
-    std::unique_lock<std::recursive_mutex> lock(sync);
-
-    if (running) {
-        // Enable time management
-        run_timer = true;
-        timer.start(search_time);
-
-        // If we finished the first iteration, we should have a result.
-        // In this case check the stop conditions.
-        if (current_depth > initial_depth) {
-            check_stop_conditions();
-        }
-    }
-}
-
-void Search::quit() {
-    std::unique_lock<std::recursive_mutex> lock(sync);
-
-    stop();
-
-    shutdown = true;
-    wakeup_signal.release();
-
-    thread.join();
-}
-
-void Search::wait_for_finished() {
-    // Finished signal only available after run is finished.
-    finished_signal.acquire();
-
-    // Don't release again - a later call should not
-    // acquire before run has drained and released again.
-}
-
-void Search::run() {
-    while (true) {
-        wakeup_signal.acquire();
-
-        if (shutdown) {
-            break;
-        }
-
-        // Do all initialization before releasing the main thread to JCPI
-        if (run_timer) {
-            timer.start(search_time);
-        }
-
-        // Populate root move list
-        MoveList<MoveEntry> &moves = move_generators[0].get_legal_moves(position, 1, position.is_check());
-        for (int i = 0; i < moves.size; i++) {
-            Move move = moves.entries[i]->move;
-            root_moves.entries[root_moves.size]->move = move;
-            root_moves.entries[root_moves.size]->pv.moves[0] = move;
-            root_moves.entries[root_moves.size]->pv.size = 1;
-            root_moves.size++;
-        }
-
-        // Go...
-        finished_signal.drain_permits();
-        stop_signal.drain_permits();
-        running = true;
-        run_signal.release();
-
-        //### BEGIN Iterative Deepening
-        Value alpha = -Value::INFINITE;
-        Value best_value = -Value::INFINITE;
-        Value beta = Value::INFINITE;
-        Value delta = Value::INFINITE;
-        for (Depth depth = initial_depth; depth <= search_depth; ++depth) {
-            current_depth = depth;
-            current_max_depth = Depth::DEPTH_ZERO;
-            protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
-                                 current_move_number);
-
-            if (depth < 4) {
-                best_value = alpha = -Value::INFINITE;
-                beta = delta = Value::INFINITE;
-            }
-            else {
-                delta = Value(1);
-                alpha = std::max(best_value - delta, -Value::INFINITE);
-                beta  = std::min(best_value + delta,  Value::INFINITE);
-            }
-
-            // Start with a small aspiration window and, in the case of a fail
-            // high/low, re-search with a bigger window until we don't fail
-            // high/low anymore.
-            int failedHighCnt = 0;
-            while (true) {
-                Depth adjustedDepth = std::max(Depth(1), current_depth - failedHighCnt);
-
-                best_value = search_root(adjustedDepth, alpha, beta);
-
-                // Sort the root move list, so that the next iteration begins with the
-                // best move first.
-                root_moves.sort();
-
-                if (abort)
-                    break;
-
-                // In case of failing low/high increase aspiration window and
-                // re-search, otherwise exit the loop.
-                if (best_value <= alpha) {
-                    beta = (alpha + beta) / 2;
-                    alpha = std::max(best_value - delta, -Value::INFINITE);
-
-                    failedHighCnt = 0;
-                }
-                else if (best_value >= beta)
-                {
-                    beta = std::min(best_value + delta, Value::INFINITE);
-                    ++failedHighCnt;
-                }
-                else
-                    break;
-
-                delta += delta / 4 + 5;
-
-                assert(alpha >= -Value::INFINITE && beta <= Value::INFINITE);
-
-            }
-
-            // If the position is a mate in depth plies, then searching deeper cannot possibly
-            // give a better mating sequence. Therefore we can safely stop the search if this
-            // is the case:
-            if (Values::is_checkmate_in(best_value, depth))
-                break;
-
-            check_stop_conditions();
-
-            if (abort) {
-                break;
-            }
-        }
-        //### ENDOF Iterative Deepening
-
-        if (run_timer) {
-            timer.stop();
-        }
-
-        // Update all stats
-        protocol.send_status(true, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
-
-        // Send the best move and ponder move
-        Move best_move = Move::NO_MOVE;
-        Move ponder_move = Move::NO_MOVE;
-        if (root_moves.size > 0) {
-            best_move = root_moves.entries[0]->move;
-            if (root_moves.entries[0]->pv.size >= 2) {
-                ponder_move = root_moves.entries[0]->pv.moves[1];
-            }
-        }
-
-        // Send the best move to the GUI
-        protocol.send_best_move(best_move, ponder_move);
-
-        running = false;
-        stop_signal.release();
-        finished_signal.release();
-    }
-}
-
 void Search::check_stop_conditions() {
     // We will check the stop conditions only if we are using time management,
     // that is if our timer != null.
@@ -392,6 +42,105 @@ void Search::update_search(int ply) {
     protocol.send_status(current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 }
 
+void Search::run() {
+    while (true) {
+        wakeup_signal.acquire();
+
+        if (shutdown) {
+            break;
+        }
+
+        // Do all initialization before releasing the main thread to JCPI
+        if (run_timer) {
+            timer.start(search_time);
+        }
+
+        // Populate root move list
+        MoveList<MoveEntry> &moves = move_generators[0].get_legal_moves(position, 1, position.is_check());
+        for (int i = 0; i < moves.size; i++) {
+            Move move = moves.entries[i]->move;
+            root_moves.entries[root_moves.size]->move = move;
+            root_moves.entries[root_moves.size]->pv.moves[0] = move;
+            root_moves.entries[root_moves.size]->pv.size = 1;
+            root_moves.size++;
+        }
+
+        // Go...
+        finished_signal.drain_permits();
+        stop_signal.drain_permits();
+        running = true;
+        run_signal.release();
+
+        //### BEGIN Iterative Deepening
+        for (Depth depth = initial_depth; !abort and depth <= search_depth; ++depth) {
+            current_depth = depth;
+            current_max_depth = Depth::DEPTH_ZERO;
+            protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
+                                 current_move_number);
+
+            search_root(depth, -Value::INFINITE, Value::INFINITE);
+
+            // Sort the root move list, so that the next iteration begins with the
+            // best move first.
+            root_moves.sort();
+
+            check_stop_conditions();
+        }
+        //### ENDOF Iterative Deepening
+
+        if (run_timer) {
+            timer.stop();
+        }
+
+        // Update all stats
+        protocol.send_status(true, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+
+        // Send the best move and ponder move
+        Move best_move = Move::NO_MOVE;
+        Move ponder_move = Move::NO_MOVE;
+        if (root_moves.size > 0) {
+            best_move = root_moves.entries[0]->move;
+            if (root_moves.entries[0]->pv.size >= 2) {
+                ponder_move = root_moves.entries[0]->pv.moves[1];
+            }
+        }
+
+        // Send the best move to the GUI
+        protocol.send_best_move(best_move, ponder_move);
+
+        running = false;
+        stop_signal.release();
+        finished_signal.release();
+    }
+}
+
+/*
+ Principal Variation Search
+
+ Search first move fully, then just check for moves that will
+ improve alpha using a 1-point search window. If first move was
+ best, then we will save lots of time as bounding is much faster than
+ finding exact scores. Given a good ordering (which we have due to
+ iterative deepening) the first move will be very good, and lots of
+ cutoffs can be made.
+
+ If we find a later move that actually improves alpha, we must search this
+ properly to find its value. The idea is that this drawback is smaller than
+ the improvements gained.
+*/
+Value Search::pv_search(Depth depth, Value alpha, Value beta, int ply, int move_number) {
+    if (depth > 1 and move_number > 0) {
+
+        Value value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
+
+        if (value <= alpha)
+            return value;
+    }
+
+    return -search(depth - 1, -beta, -alpha, ply + 1);
+}
+
+
 Value Search::search_root(Depth depth, Value alpha, Value beta) {
     int ply = 0;
 
@@ -402,6 +151,14 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
     // Abort conditions
     if (abort) {
         return best_value;
+    }
+
+    if (root_moves.size == 0) {
+        // The root position is a checkmate or stalemate. We cannot search
+        // further. Abort!
+        abort = true;
+        return position.is_check() ? -Value::CHECKMATE + ply
+                                   :  Value::DRAW;
     }
 
     // Reset all values, so the best move is pushed to the front
@@ -417,34 +174,9 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
         protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
 
         position.make_move(move);
-        Value value;
-        //
-        // Principal Variation Search
-        //
-        // Search first move fully, then just check for moves that will
-        // improve alpha using a 1-point search window. If first move was
-        // best, then we will save lots of time as bounding is much faster than
-        // finding exact scores. Given a good ordering (which we have due to
-        // iterative deepening) the first move will be very good, and lots of
-        // cutoffs can be made.
-        //
-        // If we find a later move that actually improves alpha, we must search this
-        // properly to find its value. The idea is that this drawback is smaller than
-        // the improvements gained.
-        //
-        if (depth > 2 and i > 0) {
 
-            value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
+        Value value = pv_search(depth, alpha, beta, ply, i);
 
-            if (value > alpha and value < beta) {
-                // PV search failed high, need to do a research.
-                value = -search(depth - 1, -beta, -alpha, ply + 1);
-            }
-        }
-        // First move - search fully.
-        else {
-            value = -search(depth - 1, -beta, -alpha, ply + 1);
-        }
         position.undo_move(move);
 
         if (abort) {
@@ -468,58 +200,30 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
         }
     }
 
-    if (root_moves.size == 0) {
-        // The root position is a checkmate or stalemate. We cannot search
-        // further. Abort!
-        abort = true;
-        return position.is_check() ? -Value::CHECKMATE + ply
-                                   :  Value::DRAW;
-    }
+    assert(best_value > -Value::INFINITE);
     return best_value;
 }
 
 Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
+    Value alpha_orig = alpha;
+
     // Check TTable before anything else is done.
     auto entry = ttable.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
-        switch (entry->bound()) {
-
-            case Bound::EXACT:
-                // In the case of exact scores, we can always return
-                // right away. Just update best move if we exceed alpha.
-                if (entry->value() > alpha)
-                    save_pv(entry->move(), pv[ply + 1], pv[ply]);
-                update_search(ply);
-                return entry->value();
-
-            case Bound::LOWER:
-                // With a lower bound we check if we should update alpha.
-                // If we do so, check if we also exceed beta.
-                if (entry->value() > alpha) {
-                    save_pv(entry->move(), pv[ply + 1], pv[ply]);
-                    alpha = entry->value();
-
-                    // Check for zero-size search window.
-                    if (entry->value() >= beta) {
-                        update_search(ply);
-                        return entry->value();
-                    }
-                }
-                break;
-
-            case Bound::UPPER:
-                // For upper bounds, we can stop if the bound
-                // is leq than alpha because no move will improve alpha.
-                // If alpha < bound we have no usefull info, as the
-                // exact value could still be less than alpha, so we
-                // cannot update alpha and pv yet.
-                if (entry->value() <= alpha) {
-                    update_search(ply);
-                    return entry->value();
-                }
-                break;
-            default:
-                throw std::exception();
+        const Value tt_value = tt::value_from_tt(entry->value(), ply);
+        if (entry->bound() & Bound::LOWER) {
+            if (tt_value > alpha) {
+                save_pv(entry->move(), pv[ply + 1], pv[ply]);
+                alpha = tt_value;
+            }
+        }
+        if (entry->bound() & Bound::UPPER) {
+            if (tt_value < beta)
+                beta = tt_value;
+        }
+        if (alpha >= beta) {
+            update_search(ply);
+            return tt_value;
         }
     }
 
@@ -553,30 +257,36 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     if (alpha >= beta)
         return alpha;
 
-
-    // Initialize
-    Value best_value = -Value::INFINITE;
-    Move best_move = Move::NO_MOVE;
-    Bound best_value_bound = Bound::UPPER;
-    int searched_moves = 0;
     bool is_check = position.is_check();
 
 
-    if (is_check)
-        depth += 1;
-
     // Null move pruning.
-    // Only use when not in check, and when at least one piece is present
-    // on the board. This avoids most zugzwang cases.
+    //
+    // Idea is that if we have a position that is so strong that even if we
+    // don't move (i.e. pass), we still exceed beta. Only started if we have reason
+    // to belive that NMP will be useful, which here is check by eval >= beta.
+    //
+    // Only used when the following is _NOT_ true:
+    //
+    //  1. We are in check (NM would be illegal)
+    //  2. The last move made was a null move (double null move has no effect other than reduced depth)
+    //  3. A beta-cutoff must be by finding a mate score (mates with NM is not proven)
+    //  4. We are in zugzwang (not moving is better than any other move)
+    //
+    // Number 4 is hard to guarantee (but possible with verification search, see SF).
+    // But by not using null move when we only have K and P we escape most cases.
     if (!is_check &&
-        beta <= Value::CHECKMATE && (
+        beta < Value::CHECKMATE_THRESHOLD &&
+        !position.last_move_was_null_move() && (
         position.pieces[position.active_color][PieceType::QUEEN] ||
         position.pieces[position.active_color][PieceType::ROOK]  ||
         position.pieces[position.active_color][PieceType::BISHOP] ||
-        position.pieces[position.active_color][PieceType::KNIGHT])) {
+        position.pieces[position.active_color][PieceType::KNIGHT]) &&
+        Evaluation::evaluate(position) >= beta) {
 
 
         position.make_null_move();
+        assert(position.last_move_was_null_move());
 
         // We do recursive null move, with depth reduction factor 3.
         // Why 3? Because this is common, for instance in sunfish.
@@ -584,20 +294,30 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         Value value = -search(depth - R, -beta, -beta + 1, ply + 1);
 
         position.undo_null_move();
+        assert(!position.last_move_was_null_move());
 
-        // Do not return unproven mate scores
-        if (value >= Value::CHECKMATE_THRESHOLD)
-            value = beta;
 
         // Beta cutoff?
         if (value >= beta) {
-            ttable.store(position.zobrist_key, value, Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R), Move::NO_MOVE);
+
+            // Do not return unproven mate scores
+            if (value >= Value::CHECKMATE_THRESHOLD)
+                value = beta;
+
+            ttable.store(position.zobrist_key, tt::value_to_tt(value, ply), Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R + 1), Move::NO_MOVE);
             return value;
         }
     }
 
-    MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
+    // Initialize
+    Value best_value = -Value::INFINITE;
+    Move best_move = Move::NO_MOVE;
+    int searched_moves = 0;
 
+    if (is_check)
+        depth += 1;
+
+    MoveList<MoveEntry> &moves = move_generators[ply].get_moves(position, depth, is_check);
 
     // Internal Iterative deepening:
     // When we have no good guess for the best move, do a reduced search
@@ -626,22 +346,10 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
         position.make_move(move);
         if (!position.is_check(~position.active_color)) {
+
+            value = pv_search(depth, alpha, beta, ply, searched_moves);
+
             searched_moves++;
-            //
-            // PV Search (see search_root for details).
-            //
-            if (depth > 1 and searched_moves > 1) {
-
-                value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
-
-                if (value > alpha and value < beta) {
-                    // PV search failed high, need to do a research.
-                    value = -search(depth - 1, -beta, -alpha, ply + 1);
-                }
-            } else {
-                // First move - do full search.
-                value = -search(depth - 1, -beta, -alpha, ply + 1);
-            }
         }
         position.undo_move(move);
 
@@ -656,13 +364,11 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
             // Do we have a better value?
             if (value > alpha) {
-                best_value_bound = Bound::EXACT;
                 alpha = value;
                 save_pv(move, pv[ply + 1], pv[ply]);
 
                 // Is the value higher than beta?
                 if (value >= beta) {
-                    best_value_bound = Bound::LOWER;
                     // Cut-off
                     break;
                 }
@@ -670,15 +376,19 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         }
     }
 
+
+    // Determine bound type.
+    Bound best_value_bound = best_value <= alpha_orig ? Bound::UPPER :
+                                best_value >= beta ? Bound::LOWER :
+                                                     Bound::EXACT;
+
     // If we cannot move, check for checkmate and stalemate.
     if (searched_moves == 0) {
-        Value return_value = is_check ? -Value::CHECKMATE + ply
-                                      : Value::DRAW;
-        ttable.store(position.zobrist_key, return_value, Bound::EXACT,
-                     Depth::DEPTH_MAX, Move::NO_MOVE);
-        return return_value;
+        best_value = is_check ? -Value::CHECKMATE + ply : Value::DRAW;
+        best_value_bound = Bound::EXACT;
     }
-    ttable.store(position.zobrist_key, best_value, best_value_bound,
+
+    ttable.store(position.zobrist_key, tt::value_to_tt(best_value, ply), best_value_bound,
                  depth, best_move);
     return best_value;
 }
@@ -701,7 +411,6 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
 
     // Initialize
     Value best_value = -Value::INFINITE;
-    Move best_move = Move::NO_MOVE;
     int searched_moves = 0;
     bool is_check = position.is_check();
 
@@ -754,7 +463,6 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
         // Pruning
         if (value > best_value) {
             best_value = value;
-            best_move = move;
 
             // Do we have a better value?
             if (value > alpha) {
@@ -779,15 +487,5 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
     return best_value;
 }
 
-void Search::save_pv(Move move, MoveVariation &src, MoveVariation &dest) {
-    dest.moves[0] = move;
-    for (int i = 0; i < src.size; i++) {
-        dest.moves[i + 1] = src.moves[i];
-    }
-    dest.size = src.size + 1;
-}
-uint64_t Search::get_total_nodes() {
-    return total_nodes;
-}
 
 }

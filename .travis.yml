@@ -1,8 +1,16 @@
 language: cpp
 compiler: gcc
-dist: trusty
+dist: xenial
+
 notifications:
   email: false
+
+addons:
+  apt:
+    sources:
+    - deadsnakes
+    packages:
+    - python3.7-dev
 
 before_install:
   # C++17
@@ -10,6 +18,9 @@ before_install:
   - sudo apt-get update -qq
 
 install: 
+  - pyenv global $(pyenv whence 2to3)  # activate all python versions
+  - pip install pipenv
+
   # C++17
   - sudo apt-get install -qq g++-7 gcc-7
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
@@ -21,6 +32,15 @@ install:
   - tar xf lcov_1.11.orig.tar.gz
   - sudo make -C lcov-1.11/ install  
   - which lcov 
+    
+  # Install stockfish (used in search verification). Script from https://github.com/niklasf/python-chess/blob/master/.travis.yml
+  - wget https://stockfish.s3.amazonaws.com/stockfish-10-linux.zip
+  - unzip stockfish-10-linux.zip
+  - mkdir -p bin
+  - cp stockfish-10-linux/Linux/stockfish_10_x64_modern bin/stockfish
+  - chmod +x bin/stockfish
+  - export PATH="`pwd`/bin:${PATH}"
+  - which stockfish || (echo $PATH && false)
 
   # Install coverals gem for uploading coverage to coveralls.
   - gem install coveralls-lcov
@@ -30,18 +50,17 @@ before_script:
   - gcov --version
   - g++ --version
   - PARENTDIR=$(pwd)
-  - mkdir $PARENTDIR/build && cd $PARENTDIR/build
 
 script:
+  - pipenv install
+  - CMAKE_BUILD_TYPE=Coverage pipenv run python tests/test_search.py
   - cd $PARENTDIR/build
-  - cmake -DCMAKE_BUILD_TYPE=Coverage $PARENTDIR
-  - make
-  - make gtest
+  - make bench  
   - make coverage
-  - printf "bench\nquit\n" | ./goldfish.x
 
 after_success:
   - cd $PARENTDIR/build
   - lcov --list coverage_out.info.cleaned  # Show test report in travis log.
   - coveralls-lcov coverage_out.info.cleaned  # uploads to coveralls
+  - bash <(curl -s https://codecov.io/bash) -f coverage_out.info.cleaned || echo "Codecov did not collect coverage reports"
 

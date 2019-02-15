@@ -60,4 +60,22 @@ void TranspositionTable<Mb_Size>::store(const uint64_t key, Value value, Bound b
     tte->save(key, value, bound, depth, move);
 }
 
+// value_to_tt() adjusts a mate score from "plies to mate from the root" to
+// "plies to mate from the current position". Non-mate scores are unchanged.
+// The function is called before storing a value in the transposition table.
+constexpr Value value_to_tt(Value v, int ply) {
+    assert(v != Value::NO_VALUE);
+    return  v >= Value::CHECKMATE_THRESHOLD ? v + ply
+        : v <= Value::CHECKMATE_THRESHOLD ? v - ply : v;
+}
+
+// value_from_tt() is the inverse of value_to_tt(): It adjusts a mate score
+// from the transposition table (which refers to the plies to mate/be mated
+// from current position) to "plies to mate/be mated from the root".
+constexpr Value value_from_tt(Value v, int ply) {
+    return  v == Value::NO_VALUE ? Value::NO_VALUE
+        : v >= Value::CHECKMATE_THRESHOLD ? v - ply
+        : v <= Value::CHECKMATE_THRESHOLD ? v + ply : v;
+}
+
 }

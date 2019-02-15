@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set project name here.
-project(Goldfish VERSION 1.8.2 LANGUAGES CXX)
+project(Goldfish VERSION 1.9.0 LANGUAGES CXX)
 
 # Include stuff. No change needed.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -31,7 +31,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wfatal-errors")
 
 # Build-type specific flags. Change as needed.
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 message(STATUS "Building with the following extra flags: ${CMAKE_CXX_FLAGS}")
 
@@ -88,6 +88,9 @@ set(SOURCES
         src/perft.cpp
         src/position.cpp
         src/search.cpp
+        src/searchmanagement.cpp
+        src/semaphore.cpp
+        src/timer.cpp
         src/tt.cpp
         )
 set(TESTFILES

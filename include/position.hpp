@@ -74,6 +74,8 @@ public:
 
     bool is_attacked(Square target_square, Color attacker_color);
 
+    bool last_move_was_null_move();
+
 private:
     class Zobrist {
     public:
@@ -108,6 +110,9 @@ private:
     // Later we will restore them before undoing a move.
     std::array<State, MAX_MOVES> states;
     int states_size = 0;
+
+    std::array<Move, MAX_MOVES> moves;
+    int move_count = 0;
 
     Zobrist &zobrist;
 
