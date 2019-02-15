@@ -18,11 +18,11 @@
     "default": {
         "chester": {
             "hashes": [
-                "sha256:128e3fc3b7b59233b17c0e0dc93ba3a01608e05d113409e9b1f8134c8dc62bc5",
-                "sha256:d682ef7583582fe6e734645e47ee063b1933d122565f0cdc44791d8afcff91fa"
+                "sha256:56298b713676b8ecefc1a341ecc7d6ef9a2cf97812194360fc5659215a59ce70",
+                "sha256:9776fea16a120bd8c2f27b709bea1539f8cb7bc3c56a5b7d3cd08b5d547ca48c"
             ],
             "index": "pypi",
-            "version": "==0.2.0"
+            "version": "==0.2.1"
         },
         "python-chess": {
             "hashes": [
