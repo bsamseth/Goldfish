@@ -3,9 +3,9 @@
 namespace goldfish::Evaluation {
 
 constexpr int MAX_WEIGHT = 100;
-constexpr int material_weight = 100;
+constexpr int material_weight = 120;
 constexpr int mobility_weight = 80;
-constexpr int pawn_weight = 80;
+constexpr int pawn_weight = 50;
 
 Value evaluate_material(Color color, const Position &position);
 Value evaluate_mobility(Color color, const Position &position);
@@ -20,16 +20,15 @@ Value evaluate(const Position &position) {
     Value value = Value::ZERO;
 
     // Evaluate material
-    value += (evaluate_material(my_color, position) - evaluate_material(opposite_color, position))
-             * material_weight / MAX_WEIGHT;
+    value += (evaluate_material(my_color, position) - evaluate_material(opposite_color, position)) * material_weight;
 
     // Evaluate mobility
-    value += (evaluate_mobility(my_color, position) - evaluate_mobility(opposite_color, position))
-             * mobility_weight / MAX_WEIGHT;
+    value += (evaluate_mobility(my_color, position) - evaluate_mobility(opposite_color, position)) * mobility_weight;
 
     // Evaluate pawns
-    value += (evaluate_pawns(my_color, position) - evaluate_pawns(opposite_color, position))
-             * pawn_weight / MAX_WEIGHT;
+    value += (evaluate_pawns(my_color, position) - evaluate_pawns(opposite_color, position)) * pawn_weight;
+
+    value /= material_weight + mobility_weight + pawn_weight;
 
     // Add Tempo
     value += Value::TEMPO;
