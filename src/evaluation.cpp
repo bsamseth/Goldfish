@@ -112,11 +112,11 @@ Value evaluate_pawns(Color color, const Position& position) {
     const U64 our_pawns        = position.pieces[color][PieceType::PAWN];
     const U64 their_pawns      = position.pieces[~color][PieceType::PAWN];
 
-    Value v = 0;
+    Value v = Value::ZERO;
 
     for (U64 squares = our_pawns; squares != 0; squares = Bitboard::remainder(squares)) {
         const U64 pawn_bb = 1ULL << Bitboard::number_of_trailing_zeros(squares);
-        const Square pawn_sq = Bitboard::next(squares);
+        const Square pawn_sq = Square(Bitboard::next(squares));
         const U64 pawn_file = Squares::file_bb(pawn_sq);
         const U64 pawn_rank = Squares::rank_bb(pawn_sq);
         const U64 right_file = Squares::file_bb(pawn_sq + right);

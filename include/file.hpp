@@ -25,8 +25,8 @@ inline constexpr bool is_valid(File file) {
     return file != File::NO_FILE;
 }
 
-inline U64 file_bb(File f) {
-  return Bitboard::FileABB << f;
+inline constexpr U64 file_bb(File f) {
+    return Bitboard::FileABB << f;
 }
 
 }
