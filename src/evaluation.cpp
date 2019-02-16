@@ -123,13 +123,19 @@ Value evaluate_pawns(Color color, const Position& position) {
         const U64 left_file = Squares::file_bb(pawn_sq + left);
         const U64 two_in_front_rank = Squares::rank_bb(pawn_sq + forward + forward);
         const U64 behind_rank = Squares::rank_bb(pawn_sq + backward);
+        const U64 ranks_in_front = color == Color::WHITE ?
+                Ranks::range(++Squares::get_rank(pawn_sq)) : Ranks::range(Rank::RANK_1, --Squares::get_rank(pawn_sq));
 
+        const bool passed = (their_pawns & ranks_in_front & (pawn_file | left_file | right_file)) == 0;
+
+        if (passed)
+            v += 15;
+        // Connected?
+        if ((right_file | left_file) & our_pawns & (behind_rank | pawn_rank))
+            v += passed ? 50 : 5;
         // Isolated?
         if (!((right_file | left_file) & our_pawns))
             v -= 10;
-        // Connected?
-        if ((right_file | left_file) & our_pawns & (behind_rank | pawn_rank))
-            v += 5;
         // Backward?
         else if ((right_file | left_file) & their_pawns & two_in_front_rank)
             v -= 10;
