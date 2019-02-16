@@ -2,6 +2,7 @@
 
 #include <array>
 #include "operations.hpp"
+#include "bitboard.hpp"
 
 namespace goldfish {
 
@@ -21,6 +22,11 @@ constexpr std::array<Rank, VALUES_SIZE> values = {
 
 inline constexpr bool is_valid(Rank rank) {
     return rank != Rank::NO_RANK;
+}
+
+
+inline constexpr U64 rank_bb(Rank r) {
+    return Bitboard::Rank1BB << (8 * r);
 }
 
 }

@@ -103,6 +103,14 @@ constexpr Rank get_rank(Square square) {
     return Rank(square >> 4);
 }
 
+constexpr U64 rank_bb(Square square) {
+  return Ranks::rank_bb(get_rank(square));
+}
+
+constexpr U64 file_bb(Square square) {
+  return Files::file_bb(get_file(square));
+}
+
 }
 
 }

@@ -2,6 +2,7 @@
 
 #include <array>
 #include "operations.hpp"
+#include "bitboard.hpp"
 
 namespace goldfish {
 
@@ -22,6 +23,10 @@ constexpr std::array<File, VALUES_SIZE> values = {
 
 inline constexpr bool is_valid(File file) {
     return file != File::NO_FILE;
+}
+
+inline U64 file_bb(File f) {
+  return Bitboard::FileABB << f;
 }
 
 }
