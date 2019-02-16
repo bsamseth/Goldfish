@@ -53,7 +53,9 @@ before_script:
 
 script:
   - pipenv install
-  - CMAKE_BUILD_TYPE=Coverage pipenv run python tests/test_search.py
+ 
+  # Test sometimes times out due to no output for 10 mins. Using `travis_wait` to extend to n minutes.
+  - CMAKE_BUILD_TYPE=Coverage travis_wait 30 pipenv run python tests/test_search.py
   - cd $PARENTDIR/build
   - make bench  
   - make coverage
