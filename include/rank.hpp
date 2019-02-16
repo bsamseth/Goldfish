@@ -11,7 +11,7 @@ enum Rank {
 };
 
 
-ENABLE_INCR_OPERATORS_ON(Rank)
+ENABLE_FULL_OPERATORS_ON(Rank)
 
 namespace Ranks {
 
