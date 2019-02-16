@@ -117,21 +117,22 @@ Value evaluate_pawns(Color color, const Position& position) {
     for (U64 squares = our_pawns; squares != 0; squares = Bitboard::remainder(squares)) {
         const U64 pawn_bb = 1ULL << Bitboard::number_of_trailing_zeros(squares);
         const Square pawn_sq = Square(Bitboard::next(squares));
-        const U64 pawn_file = Squares::file_bb(pawn_sq);
-        const U64 pawn_rank = Squares::rank_bb(pawn_sq);
+        const Rank pawn_rank = Squares::get_rank(pawn_sq);
+        const U64 pawn_fileBB = Squares::file_bb(pawn_sq);
+        const U64 pawn_rankBB = Squares::rank_bb(pawn_sq);
         const U64 right_file = Squares::file_bb(pawn_sq + right);
         const U64 left_file = Squares::file_bb(pawn_sq + left);
         const U64 two_in_front_rank = Squares::rank_bb(pawn_sq + forward + forward);
         const U64 behind_rank = Squares::rank_bb(pawn_sq + backward);
         const U64 ranks_in_front = color == Color::WHITE ?
-                Ranks::range(++Squares::get_rank(pawn_sq)) : Ranks::range(Rank::RANK_1, --Squares::get_rank(pawn_sq));
+                Ranks::range(pawn_rank + Rank::RANK_1) : Ranks::range(Rank::RANK_1, pawn_rank - Rank::RANK_1);
 
-        const bool passed = (their_pawns & ranks_in_front & (pawn_file | left_file | right_file)) == 0;
+        const bool passed = (their_pawns & ranks_in_front & (pawn_fileBB | left_file | right_file)) == 0;
 
         if (passed)
             v += 15;
         // Connected?
-        if ((right_file | left_file) & our_pawns & (behind_rank | pawn_rank))
+        if ((right_file | left_file) & our_pawns & (behind_rank | pawn_rankBB))
             v += passed ? 50 : 5;
         // Isolated?
         if (!((right_file | left_file) & our_pawns))
@@ -140,7 +141,7 @@ Value evaluate_pawns(Color color, const Position& position) {
         else if ((right_file | left_file) & their_pawns & two_in_front_rank)
             v -= 10;
         // Doubled? Value counted for all pawns on the file.
-        if ((pawn_file & our_pawns) != pawn_bb)
+        if ((pawn_fileBB & our_pawns) != pawn_bb)
             v -= 10;
     }
 
