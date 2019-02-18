@@ -68,7 +68,8 @@ been added so far. The list is inspired in large part by [this writeup](http://w
 -   [ ] Staged move generation
 -   [ ] Better search algorithms, such as MTD-bi (?)
 -   [ ] More sophisticated static evaluation
-    +   [ ] Extra considerations for passed pawns
+    +   [X] Connected, backwards, isolated and doubled pawns
+    +   [X] Extra considerations for passed pawns
     +   [ ] Piece square tables
     +   [ ] King safety
     +   [ ] Center control

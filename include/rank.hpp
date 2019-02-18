@@ -2,6 +2,7 @@
 
 #include <array>
 #include "operations.hpp"
+#include "bitboard.hpp"
 
 namespace goldfish {
 
@@ -10,7 +11,7 @@ enum Rank {
 };
 
 
-ENABLE_INCR_OPERATORS_ON(Rank)
+ENABLE_FULL_OPERATORS_ON(Rank)
 
 namespace Ranks {
 
@@ -21,6 +22,17 @@ constexpr std::array<Rank, VALUES_SIZE> values = {
 
 inline constexpr bool is_valid(Rank rank) {
     return rank != Rank::NO_RANK;
+}
+
+inline constexpr U64 rank_bb(Rank r) {
+    return Bitboard::Rank1BB << (8 * r);
+}
+
+inline constexpr U64 range(Rank from, Rank to = Rank::NO_RANK) {
+    U64 res = rank_bb(from);
+    for (; from != to; ++from)
+        res |= rank_bb(from);
+    return res;
 }
 
 }

@@ -2,6 +2,16 @@
 
 namespace goldfish::Evaluation {
 
+constexpr int MAX_WEIGHT = 100;
+constexpr int material_weight = 120;
+constexpr int mobility_weight = 80;
+constexpr int pawn_weight = 50;
+
+Value evaluate_material(Color color, const Position &position);
+Value evaluate_mobility(Color color, const Position &position);
+Value evaluate_mobility(const Position &position, Square square, const std::vector<Direction>& directions);
+Value evaluate_pawns(Color color, const Position& position);
+
 
 Value evaluate(const Position &position) {
     // Initialize
@@ -10,14 +20,15 @@ Value evaluate(const Position &position) {
     Value value = Value::ZERO;
 
     // Evaluate material
-    Value material_score = (evaluate_material(my_color, position) - evaluate_material(opposite_color, position))
-                         * material_weight / MAX_WEIGHT;
-    value += material_score;
+    value += (evaluate_material(my_color, position) - evaluate_material(opposite_color, position)) * material_weight;
 
     // Evaluate mobility
-    Value mobility_score = (evaluate_mobility(my_color, position) - evaluate_mobility(opposite_color, position))
-                         * mobility_weight / MAX_WEIGHT;
-    value += mobility_score;
+    value += (evaluate_mobility(my_color, position) - evaluate_mobility(opposite_color, position)) * mobility_weight;
+
+    // Evaluate pawns
+    value += (evaluate_pawns(my_color, position) - evaluate_pawns(opposite_color, position)) * pawn_weight;
+
+    value /= material_weight + mobility_weight + pawn_weight;
 
     // Add Tempo
     value += Value::TEMPO;
@@ -90,6 +101,50 @@ Value evaluate_mobility(const Position &position, Square square, const std::vect
     }
 
     return Value(mobility);
+}
+
+Value evaluate_pawns(Color color, const Position& position) {
+    const Direction forward    = color == Color::WHITE ? Direction::NORTH : Direction::SOUTH;
+    const Direction right      = color == Color::WHITE ? Direction::EAST : Direction::WEST;
+    const Direction left       = color == Color::WHITE ? Direction::WEST : Direction::EAST;
+    const Direction backward   = color == Color::WHITE ? Direction::SOUTH : Direction::NORTH;
+    const U64 our_pawns        = position.pieces[color][PieceType::PAWN];
+    const U64 their_pawns      = position.pieces[~color][PieceType::PAWN];
+
+    Value v = Value::ZERO;
+
+    for (U64 squares = our_pawns; squares != 0; squares = Bitboard::remainder(squares)) {
+        const U64 pawn_bb = 1ULL << Bitboard::number_of_trailing_zeros(squares);
+        const Square pawn_sq = Square(Bitboard::next(squares));
+        const Rank pawn_rank = Squares::get_rank(pawn_sq);
+        const U64 pawn_fileBB = Squares::file_bb(pawn_sq);
+        const U64 pawn_rankBB = Squares::rank_bb(pawn_sq);
+        const U64 right_fileBB = Squares::file_bb(pawn_sq + right);
+        const U64 left_fileBB = Squares::file_bb(pawn_sq + left);
+        const U64 two_in_front_rankBB = Squares::rank_bb(pawn_sq + forward + forward);
+        const U64 behind_rankBB = Squares::rank_bb(pawn_sq + backward);
+        const U64 ranks_in_frontBB = color == Color::WHITE ?
+                Ranks::range(pawn_rank + Rank::RANK_1) : Ranks::range(Rank::RANK_1, pawn_rank);
+
+        const bool passed = (their_pawns & ranks_in_frontBB & (pawn_fileBB | left_fileBB | right_fileBB)) == 0;
+
+        if (passed)
+            v += 15;
+        // Connected?
+        if ((right_fileBB | left_fileBB) & our_pawns & (behind_rankBB | pawn_rankBB))
+            v += passed ? 50 : 5;
+        // Isolated?
+        if (!((right_fileBB | left_fileBB) & our_pawns))
+            v -= 10;
+        // Backward?
+        else if ((right_fileBB | left_fileBB) & their_pawns & two_in_front_rankBB)
+            v -= 10;
+        // Doubled? Value counted for all pawns on the file.
+        if ((pawn_fileBB & our_pawns) != pawn_bb)
+            v -= 10;
+    }
+
+    return v;
 }
 
 }

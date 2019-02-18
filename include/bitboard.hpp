@@ -9,6 +9,27 @@ using U64 = uint64_t;
 
 namespace Bitboard {
 
+constexpr U64 AllSquares = ~U64(0);
+constexpr U64 DarkSquares = 0xAA55AA55AA55AA55ULL;
+
+constexpr U64 FileABB = 0x0101010101010101ULL;
+constexpr U64 FileBBB = FileABB << 1;
+constexpr U64 FileCBB = FileABB << 2;
+constexpr U64 FileDBB = FileABB << 3;
+constexpr U64 FileEBB = FileABB << 4;
+constexpr U64 FileFBB = FileABB << 5;
+constexpr U64 FileGBB = FileABB << 6;
+constexpr U64 FileHBB = FileABB << 7;
+
+constexpr U64 Rank1BB = 0xFF;
+constexpr U64 Rank2BB = Rank1BB << (8 * 1);
+constexpr U64 Rank3BB = Rank1BB << (8 * 2);
+constexpr U64 Rank4BB = Rank1BB << (8 * 3);
+constexpr U64 Rank5BB = Rank1BB << (8 * 4);
+constexpr U64 Rank6BB = Rank1BB << (8 * 5);
+constexpr U64 Rank7BB = Rank1BB << (8 * 6);
+constexpr U64 Rank8BB = Rank1BB << (8 * 7);
+
 constexpr U64 DEBRUIJN64 = 0x03F79D71B4CB0A89ULL;
 
 constexpr std::array<int, 64> lsb_table = {
