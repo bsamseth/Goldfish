@@ -30,7 +30,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wfatal-errors")  
 
 # Build-type specific flags. Change as needed.
-SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 message(STATUS "Building with the following extra flags: ${CMAKE_CXX_FLAGS}")
