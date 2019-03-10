@@ -43,6 +43,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/tests
+    ${PROJECT_SOURCE_DIR}/external/Fathom/src
     ${PROJECT_SOURCE_DIR}/external/googletest
     ${PROJECT_SOURCE_DIR}/external/googletest/include)
 
