@@ -43,6 +43,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/tests
+    ${PROJECT_SOURCE_DIR}/external/
     ${PROJECT_SOURCE_DIR}/external/Fathom/src
     ${PROJECT_SOURCE_DIR}/external/googletest
     ${PROJECT_SOURCE_DIR}/external/googletest/include)
@@ -76,6 +77,7 @@ set(HEADERS
         include/rank.hpp
         include/search.hpp
         include/square.hpp
+        include/tb.hpp
         include/tt.hpp
         include/value.hpp)
 set(SOURCES
@@ -92,6 +94,7 @@ set(SOURCES
         src/searchmanagement.cpp
         src/semaphore.cpp
         src/timer.cpp
+        src/tb.cpp
         src/tt.cpp
         )
 set(TESTFILES
