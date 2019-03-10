@@ -76,6 +76,22 @@ public:
 
     bool last_move_was_null_move();
 
+    template<Color C, PieceType PT>
+    uint64_t get_pieces() {
+        return pieces[C][PT];
+    }
+
+    template<PieceType PT>
+    uint64_t get_pieces() {
+        return get_pieces<Color::WHITE, PT>() | get_pieces<Color::BLACK>();
+    }
+
+    template<Color C>
+    uint64_t get_pieces() {
+        return get_pieces<C, PieceType::PAWN>() | get_pieces<C, PieceType::KNIGHT>() | get_pieces<C, PieceType::BISHOP>() | get_pieces<C, PieceType::ROOK>() | get_pieces<C, PieceType::QUEEN>() | get_pieces<C, PieceType::KING>();
+    }
+
+
 private:
     class Zobrist {
     public:
