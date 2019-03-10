@@ -6,4 +6,4 @@
 	url = https://github.com/careless25/lichess-bot
 [submodule "external/Fathom"]
 	path = external/Fathom
-	url = git@github.com:bsamseth/Fathom.git
+	url = https://github.com/bsamseth/Fathom.git
