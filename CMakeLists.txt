@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set project name here.
-project(Goldfish VERSION 1.9.0 LANGUAGES CXX)
+project(Goldfish VERSION 1.9.0 LANGUAGES C CXX)
 
 # Include stuff. No change needed.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -113,8 +113,13 @@ set(TESTFILES
         tests/positiontest.cpp
         tests/ranktest.cpp
         tests/squaretest.cpp
+        tests/tbtest.cpp
         tests/tt.cpp)
 set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you wish).
+
+set(FATHOM_SOURCES
+    external/Fathom/src/tbprobe.c
+)
 
 
 
@@ -122,7 +127,7 @@ set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you w
 #                            Build! 
 # --------------------------------------------------------------------------------
 # Compile all sources into a library. Called engine here (change if you wish).
-add_library( engine ${SOURCES} ${HEADERS})
+add_library( engine ${SOURCES} ${FATHOM_SOURCES})
 
 add_executable(goldfish.x app/goldfish.cpp)
 add_dependencies(goldfish.x engine)
