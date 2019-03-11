@@ -83,7 +83,7 @@ public:
 
     template<PieceType PT>
     uint64_t get_pieces() const {
-        return get_pieces<Color::WHITE, PT>() | get_pieces<Color::BLACK>();
+        return get_pieces<Color::WHITE, PT>() | get_pieces<Color::BLACK, PT>();
     }
 
     template<Color C>
