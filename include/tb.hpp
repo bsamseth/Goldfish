@@ -73,7 +73,7 @@ struct TableResult {
     private:
         unsigned probe_;
     public:
-        TableResult(unsigned probe) : probe_(probe) {}
+        explicit TableResult(unsigned probe) : probe_(probe) {}
         constexpr bool failed() const { return probe_ == TB_RESULT_FAILED; }
         constexpr bool checkmate() const { return probe_ == TB_RESULT_CHECKMATE; }
         constexpr bool stalemate() const { return probe_ == TB_RESULT_STALEMATE; }
@@ -106,7 +106,7 @@ inline TableResult probe_root(const Position& pos) {
     if (pos.castling_rights)
         return TableResult(TB_RESULT_FAILED);
 
-    return {tb_probe_root_impl(
+    return TableResult {tb_probe_root_impl(
                 pos.get_pieces<Color::WHITE>(),
                 pos.get_pieces<Color::BLACK>(),
                 pos.get_pieces<PieceType::KING>(),
