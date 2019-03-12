@@ -23,7 +23,6 @@ public:
 
     void send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits) final;
 
-    static std::string from_move(Move move);
 
 private:
     std::unique_ptr<Search> search = std::make_unique<Search>(*this);

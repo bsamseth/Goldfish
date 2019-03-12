@@ -128,7 +128,7 @@ void Goldfish::receive_position(std::istringstream &input) {
         bool found = false;
         for (int i = 0; i < moves.size; i++) {
             Move move = moves.entries[i]->move;
-            if (from_move(move) == token) {
+            if (Notation::from_move(move) == token) {
                 current_position->make_move(move);
                 found = true;
                 break;
@@ -268,10 +268,10 @@ void Goldfish::send_best_move(Move best_move, Move ponder_move) {
     std::cout << "bestmove ";
 
     if (best_move != Move::NO_MOVE) {
-        std::cout << from_move(best_move);
+        std::cout << Notation::from_move(best_move);
 
         if (ponder_move != Move::NO_MOVE) {
-            std::cout << " ponder " << from_move(ponder_move);
+            std::cout << " ponder " << Notation::from_move(ponder_move);
         }
     } else {
         std::cout << "NO_MOVE";
@@ -304,7 +304,7 @@ void Goldfish::send_status(
         std::cout << " tbhits " << tb_hits;
 
         if (current_move != Move::NO_MOVE) {
-            std::cout << " currmove " << from_move(current_move);
+            std::cout << " currmove " << Notation::from_move(current_move);
             std::cout << " currmovenumber " << current_move_number;
         }
 
@@ -337,7 +337,7 @@ void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_
     if (entry.pv.size > 0) {
         std::cout << " pv";
         for (int i = 0; i < entry.pv.size; i++) {
-            std::cout << " " << from_move(entry.pv.moves[i]);
+            std::cout << " " << Notation::from_move(entry.pv.moves[i]);
         }
     }
 
@@ -346,18 +346,5 @@ void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_
     status_start_time = std::chrono::system_clock::now();
 }
 
-std::string Goldfish::from_move(Move move) {
-    std::string notation;
-
-    notation += Notation::from_square(Moves::get_origin_square(move));
-    notation += Notation::from_square(Moves::get_target_square(move));
-
-    PieceType promotion = Moves::get_promotion(move);
-    if (promotion != PieceType::NO_PIECE_TYPE) {
-        notation += (char) std::tolower(Notation::from_piece_type(promotion));
-    }
-
-    return notation;
 }
 
-}
