@@ -68,11 +68,11 @@ public:
 
     void undo_move(Move move);
 
-    bool is_check();
+    bool is_check() const;
 
-    bool is_check(Color color);
+    bool is_check(Color color) const;
 
-    bool is_attacked(Square target_square, Color attacker_color);
+    bool is_attacked(Square target_square, Color attacker_color) const;
 
     bool last_move_was_null_move();
 
@@ -134,9 +134,9 @@ private:
 
     void clear_castling(Square square);
 
-    bool is_attacked(Square target_square, Piece attacker_piece, const std::vector<Direction> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, const std::vector<Direction> &directions) const ;
 
-    bool is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Direction> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Direction> &directions) const;
 };
 
 }

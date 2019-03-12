@@ -3,7 +3,7 @@
 
 namespace goldfish {
 
-MoveList<MoveEntry> &MoveGenerator::get_legal_moves(Position &position, int depth, bool is_check) {
+MoveList<MoveEntry> &MoveGenerator::get_legal_moves(const Position &position, int depth, bool is_check) {
     MoveList<MoveEntry> &legal_moves = get_moves(position, depth, is_check);
 
     int size = legal_moves.size;
@@ -11,17 +11,17 @@ MoveList<MoveEntry> &MoveGenerator::get_legal_moves(Position &position, int dept
     for (int i = 0; i < size; i++) {
         Move move = legal_moves.entries[i]->move;
 
-        position.make_move(move);
+        const_cast<Position&>(position).make_move(move);
         if (!position.is_check(~position.active_color)) {
             legal_moves.entries[legal_moves.size++]->move = move;
         }
-        position.undo_move(move);
+        const_cast<Position&>(position).undo_move(move);
     }
 
     return legal_moves;
 }
 
-MoveList<MoveEntry> &MoveGenerator::get_moves(Position &position, int depth, bool is_check) {
+MoveList<MoveEntry> &MoveGenerator::get_moves(const Position &position, int depth, bool is_check) {
     moves.size = 0;
 
     if (depth > 0) {
@@ -56,7 +56,7 @@ MoveList<MoveEntry> &MoveGenerator::get_moves(Position &position, int depth, boo
     return moves;
 }
 
-void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Position &position) {
+void MoveGenerator::add_moves(MoveList<MoveEntry> &list, const Position &position) {
     int active_color = position.active_color;
 
     for (auto squares = position.pieces[active_color][PieceType::PAWN];
@@ -89,7 +89,7 @@ void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Position &position) {
 }
 
 void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Square origin_square, const std::vector<Direction> &directions,
-                              Position &position) {
+                              const Position &position) {
     Piece origin_piece = position.board[origin_square];
     bool sliding = PieceTypes::is_sliding(Pieces::get_type(origin_piece));
     Color opposite_color = ~Pieces::get_color(origin_piece);
@@ -127,7 +127,7 @@ void MoveGenerator::add_moves(MoveList<MoveEntry> &list, Square origin_square, c
     }
 }
 
-void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square, Position &position) {
+void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square, const Position &position) {
     Piece pawn_piece = position.board[pawn_square];
     Color pawn_color = Pieces::get_color(pawn_piece);
 
@@ -223,7 +223,7 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry> &list, Square pawn_square
     }
 }
 
-void MoveGenerator::add_castling_moves(MoveList<MoveEntry> &list, Square king_square, Position &position) {
+void MoveGenerator::add_castling_moves(MoveList<MoveEntry> &list, Square king_square, const Position &position) {
     Piece king_piece = position.board[king_square];
 
     if (Pieces::get_color(king_piece) == Color::WHITE) {
