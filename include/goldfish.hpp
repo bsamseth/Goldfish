@@ -33,8 +33,6 @@ private:
     std::unique_ptr<Position> current_position = std::make_unique<Position>(
             Notation::to_position(Notation::STANDARDPOSITION));
 
-    void receive_initialize();
-
     void receive_ready();
 
     void receive_new_game();
@@ -48,6 +46,9 @@ private:
     void receive_stop();
 
 public:
+
+    void receive_initialize();
+
     void receive_quit();
 
     void receive_bench();

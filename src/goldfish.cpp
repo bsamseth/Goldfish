@@ -7,6 +7,7 @@
 #include "goldfish.hpp"
 #include "projectmeta.hpp"
 #include "benchmark.hpp"
+#include "tb.hpp"
 
 extern std::vector<std::string> setup_bench();
 
@@ -14,6 +15,10 @@ namespace goldfish {
 
 void Goldfish::run() {
     std::cin.exceptions(std::iostream::eofbit | std::iostream::failbit | std::iostream::badbit);
+
+    // Initialize by default:
+    receive_initialize();
+
     while (true) {
         std::string line;
         std::getline(std::cin, line);
@@ -58,6 +63,7 @@ void Goldfish::receive_initialize() {
     // We could do some global initialization here. Probably it would be best
     // to initialize all tables here as they will exist until the end of the
     // program.
+    tb::initialize("/Users/bendik/drive/div/Goldfish/syzygy");
 
     // We must send an initialization answer back!
     std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH << '\n';
