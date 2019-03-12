@@ -62,7 +62,8 @@ bool initialize(std::string path);
 inline Outcome probe_outcome(const Position& pos) {
 
     // Tablebase only for positions without castling and with reset clock.
-    if (pos.halfmove_clock || pos.castling_rights)
+    // Also check that we have a tablebase at all, and that there are few enough pieces.
+    if (pos.halfmove_clock || pos.castling_rights || !MAX_MAN || MAX_MAN < tb_pop_count(pos.get_pieces<Color::WHITE>() | pos.get_pieces<Color::BLACK>()))
         return Outcome::FAILED_PROBE;
 
     const Outcome outcome =
