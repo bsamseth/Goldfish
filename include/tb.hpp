@@ -1,6 +1,8 @@
 #pragma once
 
 #include "position.hpp"
+#include "movegenerator.hpp"
+#include "movelist.hpp"
 #include "Fathom/src/tbprobe.h"
 #include <string>
 
@@ -85,15 +87,25 @@ struct TableResult {
     private:
         unsigned probe_;
     public:
+        TableResult() : probe_(TB_RESULT_FAILED) {}
         explicit TableResult(unsigned probe) : probe_(probe) {}
         constexpr bool failed() const { return probe_ == TB_RESULT_FAILED; }
         constexpr bool checkmate() const { return probe_ == TB_RESULT_CHECKMATE; }
         constexpr bool stalemate() const { return probe_ == TB_RESULT_STALEMATE; }
         constexpr unsigned distance_to_zero() const { return TB_GET_DTZ(probe_); }
         constexpr Outcome outcome() const { return static_cast<Outcome>(TB_GET_WDL(probe_)); }
-        constexpr Square from_square() const { return static_cast<Square>(Bitboard::to_x88_square(TB_GET_FROM(probe_))); }
-        constexpr Square to_square() const { return static_cast<Square>(Bitboard::to_x88_square(TB_GET_TO(probe_))); }
+        constexpr bool move_equal_to(const Move& m) const {
+            return Moves::get_origin_square(m) == Square(Bitboard::to_x88_square(TB_GET_FROM(probe_)))
+                && Moves::get_target_square(m) == Square(Bitboard::to_x88_square(TB_GET_TO(probe_)))
+                && (   (Moves::get_promotion(m) == PieceType::NO_PIECE_TYPE && TB_GET_PROMOTES(probe_) == TB_PROMOTES_NONE)
+                    || (Moves::get_promotion(m) == PieceType::QUEEN         && TB_GET_PROMOTES(probe_) == TB_PROMOTES_QUEEN)
+                    || (Moves::get_promotion(m) == PieceType::ROOK          && TB_GET_PROMOTES(probe_) == TB_PROMOTES_ROOK)
+                    || (Moves::get_promotion(m) == PieceType::BISHOP        && TB_GET_PROMOTES(probe_) == TB_PROMOTES_BISHOP)
+                    || (Moves::get_promotion(m) == PieceType::KNIGHT        && TB_GET_PROMOTES(probe_) == TB_PROMOTES_KNIGHT));
+        }
 };
+
+static_assert(sizeof(TableResult) == sizeof(unsigned));
 
 /*
  * Probe the Distance-To-Zero (DTZ) table.
@@ -101,37 +113,74 @@ struct TableResult {
  * PARAMETERS:
  * - pos
  *   The current position.
+ * - moves
+ *   List of legal moves
  *
  * RETURN:
- * - A TableResult instance:
+ * - A TableResult instance
+ * - moves list will be modified such that if there are n moves that preserve
+ *   the best case outcome, these moves will be the first n entries in the list,
+ *   and the remaining moves deleted. As such, any move chosen after this call
+ *   will be guaranteed to not lose points.
  *
  * NOTES:
  * - Engines can use this function to probe at the root.  This function should
  *   not be used during search.
- * - DTZ tablebases can suggest unnatural moves, especially for losing
- *   positions. Engines may prefer to traditional search combined with WDL
- *   move filtering using the alternative results array.
  * - This function is NOT thread safe.  For engines this function should only
  *   be called once at the root per search.
  */
-inline TableResult probe_root(const Position& pos) {
-    if (pos.castling_rights)
+template<typename Entry>
+inline TableResult probe_root(const Position& pos, MoveList<Entry>& moves) {
+    if (pos.castling_rights || !MAX_MAN)
         return TableResult(TB_RESULT_FAILED);
 
-    return TableResult {tb_probe_root_impl(
-                pos.get_pieces<Color::WHITE>(),
-                pos.get_pieces<Color::BLACK>(),
-                pos.get_pieces<PieceType::KING>(),
-                pos.get_pieces<PieceType::QUEEN>(),
-                pos.get_pieces<PieceType::ROOK>(),
-                pos.get_pieces<PieceType::BISHOP>(),
-                pos.get_pieces<PieceType::KNIGHT>(),
-                pos.get_pieces<PieceType::PAWN>(),
-                pos.halfmove_clock,
-                pos.enpassant_square == Square::NO_SQUARE ? 0 : Bitboard::to_bit_square(pos.enpassant_square),
-                pos.active_color == Color::WHITE,
-                nullptr)};
+    std::vector<TableResult> results(moves.size + 1);
+
+    TableResult result = TableResult{tb_probe_root_impl(
+        pos.get_pieces<Color::WHITE>(),
+        pos.get_pieces<Color::BLACK>(),
+        pos.get_pieces<PieceType::KING>(),
+        pos.get_pieces<PieceType::QUEEN>(),
+        pos.get_pieces<PieceType::ROOK>(),
+        pos.get_pieces<PieceType::BISHOP>(),
+        pos.get_pieces<PieceType::KNIGHT>(),
+        pos.get_pieces<PieceType::PAWN>(),
+        pos.halfmove_clock,
+        pos.enpassant_square == Square::NO_SQUARE ? 0 : Bitboard::to_bit_square(pos.enpassant_square),
+        pos.active_color == Color::WHITE,
+        reinterpret_cast<unsigned*>(results.data()))};
+
+    if (result.failed())
+        return result;
+
+    assert(results[moves.size].failed());  // results should be terminated by a TB_RESULT_FAILED
+
+    int optimal_move_count = 0;
+    for (const auto& tbres : results) {
+        if (tbres.outcome() == result.outcome()) {
+            for (int j = optimal_move_count; j < moves.size; ++j) {
+                if (tbres.move_equal_to(moves.entries[j]->move)) {
+                    std::swap(moves.entries[optimal_move_count], moves.entries[j]);
+                    ++optimal_move_count;
+                    break;
+                }
+            }
+        }
+    }
+    moves.size = optimal_move_count;
+
+    return result;
 }
+
+/*
+ * Utility version of the above, helpful for easy testing when move ordering is unimportant.
+ */
+inline TableResult probe_root(const Position& pos) {
+    MoveGenerator mg;
+    auto moves = mg.get_legal_moves(const_cast<Position&>(pos), 1, pos.is_check());
+    return probe_root(pos, moves);
+}
+
 
 
 }
