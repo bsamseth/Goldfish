@@ -115,6 +115,7 @@ void Search::reset() {
     abort = false;
     total_nodes = 0;
     tb_hits = 0;
+    root_in_TB = false;
     current_depth = initial_depth;
     current_max_depth = Depth::DEPTH_ZERO;
     current_move = Move::NO_MOVE;

@@ -131,6 +131,7 @@ private:
 
     // Search parameters
     MoveList<RootEntry> root_moves;
+    bool root_in_TB = false;
     bool abort;
     uint64_t total_nodes;
     uint64_t tb_hits;
