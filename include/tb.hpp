@@ -15,6 +15,17 @@ enum class Outcome {
     FAILED_PROBE = TB_GET_WDL(TB_RESULT_FAILED)
 };
 
+// Detect compatability with fathom tablebase definitions.
+static_assert(static_cast<int>(Outcome::LOSS) == 0);
+static_assert(static_cast<int>(Outcome::BLESSED_LOSS) == 1);
+static_assert(static_cast<int>(Outcome::DRAW) == 2);
+static_assert(static_cast<int>(Outcome::CURSED_WIN) == 3);
+static_assert(static_cast<int>(Outcome::WIN) == 4);
+
+constexpr int outcome_to_int(const Outcome o) {
+    return static_cast<int>(o) - static_cast<int>(Outcome::DRAW);
+}
+
 // Holds the maximum number of pieces seen in tablebase (after initialize is called).
 extern unsigned MAX_MAN;
 
