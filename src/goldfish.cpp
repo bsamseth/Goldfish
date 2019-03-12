@@ -281,15 +281,15 @@ void Goldfish::send_best_move(Move best_move, Move ponder_move) {
 }
 
 void Goldfish::send_status(
-        int current_depth, int current_max_depth, uint64_t total_nodes, Move current_move, int current_move_number) {
+        int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits, Move current_move, int current_move_number) {
     if (std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now() - status_start_time).count() >= 1000) {
-        send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+        send_status(false, current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
     }
 }
 
 void Goldfish::send_status(
-        bool force, int current_depth, int current_max_depth, uint64_t total_nodes, Move current_move,
+        bool force, int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits, Move current_move,
         int current_move_number) {
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now() - start_time);
@@ -301,6 +301,7 @@ void Goldfish::send_status(
         std::cout << " nodes " << total_nodes;
         std::cout << " time " << time_delta.count();
         std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
+        std::cout << " tbhits " << tb_hits;
 
         if (current_move != Move::NO_MOVE) {
             std::cout << " currmove " << from_move(current_move);
@@ -313,7 +314,7 @@ void Goldfish::send_status(
     }
 }
 
-void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes) {
+void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits) {
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now() - start_time);
 
@@ -323,6 +324,7 @@ void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_
     std::cout << " nodes " << total_nodes;
     std::cout << " time " << time_delta.count();
     std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
+    std::cout << " tbhits " << tb_hits;
 
     if (std::abs(entry.value) >= Value::CHECKMATE_THRESHOLD) {
         // Calculate mate distance

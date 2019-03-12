@@ -133,6 +133,7 @@ private:
     MoveList<RootEntry> root_moves;
     bool abort;
     uint64_t total_nodes;
+    uint64_t tb_hits;
     const Depth initial_depth = Depth(1);
     Depth current_depth;
     Depth current_max_depth;

@@ -14,14 +14,14 @@ public:
     void send_best_move(Move best_move, Move ponder_move) final;
 
     void send_status(
-            int current_depth, int current_max_depth, uint64_t total_nodes, Move current_move,
+            int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits, Move current_move,
             int current_move_number) final;
 
     void send_status(
-            bool force, int current_depth, int current_max_depth, uint64_t total_nodes, Move current_move,
+            bool force, int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits, Move current_move,
             int current_move_number) final;
 
-    void send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes) final;
+    void send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits) final;
 
     static std::string from_move(Move move);
 

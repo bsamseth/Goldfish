@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "search.hpp"
+#include "tb.hpp"
 
 namespace goldfish {
 
@@ -39,7 +40,7 @@ void Search::update_search(int ply) {
 
     pv[ply].size = 0;
 
-    protocol.send_status(current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+    protocol.send_status(current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
 }
 
 void Search::run() {
@@ -71,11 +72,13 @@ void Search::run() {
         running = true;
         run_signal.release();
 
+
+
         //### BEGIN Iterative Deepening
         for (Depth depth = initial_depth; !abort and depth <= search_depth; ++depth) {
             current_depth = depth;
             current_max_depth = Depth::DEPTH_ZERO;
-            protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
+            protocol.send_status(false, current_depth, current_max_depth, total_nodes, tb_hits , current_move,
                                  current_move_number);
 
             search_root(depth, -Value::INFINITE, Value::INFINITE);
@@ -93,7 +96,7 @@ void Search::run() {
         }
 
         // Update all stats
-        protocol.send_status(true, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+        protocol.send_status(true, current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
 
         // Send the best move and ponder move
         Move best_move = Move::NO_MOVE;
@@ -171,7 +174,7 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
 
         current_move = move;
         current_move_number = i + 1;
-        protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+        protocol.send_status(false, current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
 
         position.make_move(move);
 
@@ -193,7 +196,7 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
             root_moves.entries[i]->value = value;
             save_pv(move, pv[ply + 1], root_moves.entries[i]->pv);
 
-            protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes);
+            protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes, tb_hits);
 
             if (value >= beta)
                 return value;
