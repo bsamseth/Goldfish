@@ -27,11 +27,11 @@ TEST(TableBase, probe_wdl) {
 
 TEST(TableBase, probe_root) {
     ASSERT_LT(0U, tb::MAX_MAN) << "No tablebase entries!";
-    const Position pos_initial(Notation::to_position(Notation::STANDARDPOSITION));            // Initial position
-    const Position pos_win_Kc2(Notation::to_position("8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1"));   // Kc2 - mate
-    const Position pos_checkmate(Notation::to_position("8/8/8/8/6N1/8/3K4/5k1Q b - - 2 10")); // Checkmate
-    const Position pos_stalemate(Notation::to_position("8/8/8/8/6N1/8/3K1Q2/7k b - - 6 12")); // Stalemate
-    const Position pos_draw(Notation::to_position("8/3k4/8/8/8/4B3/4KB2/2B5 w - - 0 1"));   // Draw
+    Position pos_initial(Notation::to_position(Notation::STANDARDPOSITION));            // Initial position
+    Position pos_win_Kc2(Notation::to_position("8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1"));   // Kc2 - mate
+    Position pos_checkmate(Notation::to_position("8/8/8/8/6N1/8/3K4/5k1Q b - - 2 10")); // Checkmate
+    Position pos_stalemate(Notation::to_position("8/8/8/8/6N1/8/3K1Q2/7k b - - 6 12")); // Stalemate
+    Position pos_draw(Notation::to_position("8/3k4/8/8/8/4B3/4KB2/2B5 w - - 0 1"));   // Draw
 
     tb::TableResult tb_initial = tb::probe_root(pos_initial);
     tb::TableResult tb_win_Kc2 = tb::probe_root(pos_win_Kc2);
@@ -51,8 +51,7 @@ TEST(TableBase, probe_root) {
     ASSERT_FALSE(tb_win_Kc2.checkmate());
     ASSERT_FALSE(tb_win_Kc2.stalemate());
     ASSERT_EQ(5U, tb_win_Kc2.distance_to_zero());
-    ASSERT_EQ(Square::B1, tb_win_Kc2.from_square());
-    ASSERT_EQ(Square::C2, tb_win_Kc2.to_square());
+    ASSERT_TRUE(tb_win_Kc2.move_equal_to(Moves::value_of(MoveType::NORMAL, Square::B1, Square::C2, Piece::WHITE_KING, Piece::NO_PIECE, PieceType::NO_PIECE_TYPE)));
 
     // Checkmate.
     ASSERT_EQ(tb::Outcome::WIN, tb_checkmate.outcome());
@@ -74,4 +73,16 @@ TEST(TableBase, probe_root) {
     ASSERT_FALSE(tb_draw.checkmate());
     ASSERT_FALSE(tb_draw.stalemate());
     ASSERT_EQ(0U, tb_draw.distance_to_zero());
+}
+
+TEST(TableBase, probe_root_move_sort) {
+    const Position pos(Notation::to_position("1K1k4/1P6/8/8/8/8/r7/2R5 w - - 0 1"));
+    MoveGenerator mg;
+    auto moves = mg.get_legal_moves(pos, 1, pos.is_check());
+
+    ASSERT_EQ(14, moves.size);
+
+    tb::probe_root(pos, moves);
+
+    ASSERT_EQ(12, moves.size);
 }
