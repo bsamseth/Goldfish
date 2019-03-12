@@ -5,6 +5,7 @@
 #include "movelist.hpp"
 #include "Fathom/src/tbprobe.h"
 #include <string>
+#include <array>
 
 namespace goldfish::tb {
 
@@ -134,7 +135,7 @@ inline TableResult probe_root(const Position& pos, MoveList<Entry>& moves) {
     if (pos.castling_rights || !MAX_MAN)
         return TableResult(TB_RESULT_FAILED);
 
-    std::vector<TableResult> results(moves.size + 1);
+    std::array<unsigned, TB_MAX_MOVES> results;
 
     TableResult result = TableResult{tb_probe_root_impl(
         pos.get_pieces<Color::WHITE>(),
@@ -148,15 +149,30 @@ inline TableResult probe_root(const Position& pos, MoveList<Entry>& moves) {
         pos.halfmove_clock,
         pos.enpassant_square == Square::NO_SQUARE ? 0 : Bitboard::to_bit_square(pos.enpassant_square),
         pos.active_color == Color::WHITE,
-        reinterpret_cast<unsigned*>(results.data()))};
+        results.data())};
+
 
     if (result.failed())
         return result;
 
-    assert(results[moves.size].failed());  // results should be terminated by a TB_RESULT_FAILED
+#ifndef NDEBUG
+    // results should be terminated by a TB_RESULT_FAILED
+    // cannot just check results[root_moves.size], as root_moves
+    // might have been shortened already by a previous probe.
+    bool results_properly_terminated = false;
+    for (unsigned i = 0; i < results.size(); ++i) {
+        if (results[i] == TB_RESULT_FAILED) {
+            results_properly_terminated = true;
+            break;
+        }
+    }
+    assert(results_properly_terminated);
+#endif
+
 
     int optimal_move_count = 0;
-    for (const auto& tbres : results) {
+    for (const auto& raw : results) {
+        const TableResult tbres{raw};
         if (tbres.outcome() == result.outcome()) {
             for (int j = optimal_move_count; j < moves.size; ++j) {
                 if (tbres.move_equal_to(moves.entries[j]->move)) {
