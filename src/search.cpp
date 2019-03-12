@@ -72,7 +72,14 @@ void Search::run() {
         running = true;
         run_signal.release();
 
-
+        // Tablebase lookup:
+        // If successful, this will sort root_moves such that only the moves
+        // that preserves the best case outcome are present in root_moves.
+        tb::TableResult tb_entry = tb::probe_root(position, root_moves);
+        if (!tb_entry.failed()) {
+            root_in_TB = true;
+            tb_hits++;
+        }
 
         //### BEGIN Iterative Deepening
         for (Depth depth = initial_depth; !abort and depth <= search_depth; ++depth) {
