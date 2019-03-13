@@ -5,6 +5,10 @@ dist: xenial
 notifications:
   email: false
 
+cache: 
+  directories:
+    - $TRAVIS_BUILD_DIR/syzygy
+
 addons:
   apt:
     sources:
@@ -44,6 +48,8 @@ install:
 
   # Install coverals gem for uploading coverage to coveralls.
   - gem install coveralls-lcov
+  
+  - bash ci/fetch-tablebase.sh
 
 before_script:
   - lcov --version
