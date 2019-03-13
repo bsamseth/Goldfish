@@ -24,6 +24,7 @@ before_install:
 install: 
   - pyenv global $(pyenv whence 2to3)  # activate all python versions
   - pip install pipenv
+  - pipenv install --dev --skip-lock
 
   # C++17
   - sudo apt-get install -qq g++-7 gcc-7
@@ -58,7 +59,6 @@ before_script:
   - PARENTDIR=$(pwd)
 
 script:
-  - pipenv install
   - CMAKE_BUILD_TYPE=Coverage pipenv run python tests/test_search.py
   - cd $PARENTDIR/build
   - make bench  
