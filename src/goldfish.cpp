@@ -63,7 +63,7 @@ void Goldfish::receive_initialize() {
     // We could do some global initialization here. Probably it would be best
     // to initialize all tables here as they will exist until the end of the
     // program.
-    tb::initialize("/Users/bendik/drive/div/Goldfish/syzygy");
+    tb::initialize("../syzygy");
 
     // We must send an initialization answer back!
     std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH << '\n';
