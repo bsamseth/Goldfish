@@ -5,14 +5,23 @@
 
 using namespace goldfish;
 
+bool HasTables = false;
+
 TEST(TableBase, init) {
-    const bool result = tb::initialize("/Users/bendik/drive/div/Goldfish/syzygy");
+    const bool result = tb::initialize("../syzygy");
     ASSERT_TRUE(result);
 
+    HasTables = tb::MAX_MAN > 0U;
+
+    if (!HasTables)
+        GTEST_SKIP();
     ASSERT_LE(5U, tb::MAX_MAN);
 }
 
 TEST(TableBase, probe_wdl) {
+    if (!HasTables) {
+        GTEST_SKIP();
+    }
     ASSERT_LT(0U, tb::MAX_MAN) << "No tablebase entries!";
     const Position pos_initial(Notation::to_position(Notation::STANDARDPOSITION));            // Initial position
     const Position pos_win_Kc2(Notation::to_position("8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1"));   // Kc2 - mate
@@ -26,6 +35,8 @@ TEST(TableBase, probe_wdl) {
 }
 
 TEST(TableBase, probe_root) {
+    if (!HasTables)
+        GTEST_SKIP();
     ASSERT_LT(0U, tb::MAX_MAN) << "No tablebase entries!";
     Position pos_initial(Notation::to_position(Notation::STANDARDPOSITION));            // Initial position
     Position pos_win_Kc2(Notation::to_position("8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1"));   // Kc2 - mate
@@ -76,6 +87,9 @@ TEST(TableBase, probe_root) {
 }
 
 TEST(TableBase, probe_root_move_sort) {
+    if (!HasTables)
+        GTEST_SKIP();
+
     const Position pos(Notation::to_position("1K1k4/1P6/8/8/8/8/r7/2R5 w - - 0 1"));
     MoveGenerator mg;
     auto moves = mg.get_legal_moves(pos, 1, pos.is_check());
