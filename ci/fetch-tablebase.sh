@@ -301,7 +301,7 @@ else
     echo "Downloading 3-4-5 Syzygy tablebase files..."
 
     for file in $files; do
-        wget http://tablebase.sesse.net/syzygy/3-4-5/$file -O syzygy/
+        wget http://tablebase.sesse.net/syzygy/3-4-5/$file -O syzygy/$file
     done
 fi
 
