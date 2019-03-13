@@ -33,9 +33,9 @@ with open(args.checksum_file, 'r') as f:
              checksums[name] = checksum
 
 erros = 0
-for path in tqdm.tqdm(os.listdir(args.root_folder)):
+for path in tqdm.tqdm([os.path.join(args.root_folder, p) for p in os.listdir(args.root_folder)]):
     try:
-        checksum = checksums[path]
+        checksum = checksums[os.path.basename(path)]
     except KeyError:
         if not path in (__file__, args.checksum_file, '.gitignore'):
             print(f'Missing checksum for file: {path}')
