@@ -5,10 +5,11 @@ The format of the checksum file to compare with is as follows:
 
     md5-hash  name-of-file
 """
-import tqdm
+import sys
 import os
 import argparse
 import hashlib
+import tqdm
 
 def md5(fname):
     hash_md5 = hashlib.md5()
@@ -31,16 +32,17 @@ with open(args.checksum_file, 'r') as f:
              checksum, name = line.strip().split()
              checksums[name] = checksum
 
-
+erros = 0
 for path in tqdm.tqdm(os.listdir(args.root_folder)):
     try:
         checksum = checksums[path]
     except KeyError:
-        if not path == __file__ and not path == args.checksum_file:
+        if not path in (__file__, args.checksum_file, '.gitignore'):
             print(f'Missing checksum for file: {path}')
         continue
 
     if checksum != md5(path):
         print(f'{path}: Incorrect checksum. Expected {checksum[:10]}, got {md5(path)[:10]}')
+        erros += 1
 
-
+sys.exit(erros)
