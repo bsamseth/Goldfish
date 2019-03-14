@@ -193,7 +193,7 @@ inline TableResult probe_root(const Position& pos, MoveList<Entry>& moves) {
  */
 inline TableResult probe_root(const Position& pos) {
     MoveGenerator mg;
-    auto moves = mg.get_legal_moves(const_cast<Position&>(pos), 1, pos.is_check());
+    auto moves = mg.get_legal_moves(pos, 1, pos.is_check());
     return probe_root(pos, moves);
 }
 
