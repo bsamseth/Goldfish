@@ -14,6 +14,8 @@ enum Value : int {
     CHECKMATE_THRESHOLD = CHECKMATE - Depth::MAX_PLY,
     INFINITE = 2 * CHECKMATE,
     NO_VALUE = 3 * CHECKMATE,
+    KNOWN_WIN = CHECKMATE_THRESHOLD - 1,
+    KNOWN_LOSS = -KNOWN_WIN,
 
 
     // Piece values as defined by Larry Kaufman

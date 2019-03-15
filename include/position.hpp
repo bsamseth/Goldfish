@@ -68,13 +68,29 @@ public:
 
     void undo_move(Move move);
 
-    bool is_check();
+    bool is_check() const;
 
-    bool is_check(Color color);
+    bool is_check(Color color) const;
 
-    bool is_attacked(Square target_square, Color attacker_color);
+    bool is_attacked(Square target_square, Color attacker_color) const;
 
     bool last_move_was_null_move();
+
+    template<Color C, PieceType PT>
+    uint64_t get_pieces() const {
+        return pieces[C][PT];
+    }
+
+    template<PieceType PT>
+    uint64_t get_pieces() const {
+        return get_pieces<Color::WHITE, PT>() | get_pieces<Color::BLACK, PT>();
+    }
+
+    template<Color C>
+    uint64_t get_pieces() const {
+        return get_pieces<C, PieceType::PAWN>() | get_pieces<C, PieceType::KNIGHT>() | get_pieces<C, PieceType::BISHOP>() | get_pieces<C, PieceType::ROOK>() | get_pieces<C, PieceType::QUEEN>() | get_pieces<C, PieceType::KING>();
+    }
+
 
 private:
     class Zobrist {
@@ -118,9 +134,9 @@ private:
 
     void clear_castling(Square square);
 
-    bool is_attacked(Square target_square, Piece attacker_piece, const std::vector<Direction> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, const std::vector<Direction> &directions) const ;
 
-    bool is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Direction> &directions);
+    bool is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Direction> &directions) const;
 };
 
 }

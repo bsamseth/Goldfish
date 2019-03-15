@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "search.hpp"
+#include "tb.hpp"
 
 namespace goldfish {
 
@@ -39,7 +40,7 @@ void Search::update_search(int ply) {
 
     pv[ply].size = 0;
 
-    protocol.send_status(current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+    protocol.send_status(current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
 }
 
 void Search::run() {
@@ -71,11 +72,20 @@ void Search::run() {
         running = true;
         run_signal.release();
 
+        // Tablebase lookup:
+        // If successful, this will sort root_moves such that only the moves
+        // that preserves the best case outcome are present in root_moves.
+        tb::TableResult tb_entry = tb::probe_root(position, root_moves);
+        if (!tb_entry.failed()) {
+            root_in_TB = true;
+            tb_hits++;
+        }
+
         //### BEGIN Iterative Deepening
         for (Depth depth = initial_depth; !abort and depth <= search_depth; ++depth) {
             current_depth = depth;
             current_max_depth = Depth::DEPTH_ZERO;
-            protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move,
+            protocol.send_status(false, current_depth, current_max_depth, total_nodes, tb_hits , current_move,
                                  current_move_number);
 
             search_root(depth, -Value::INFINITE, Value::INFINITE);
@@ -93,7 +103,7 @@ void Search::run() {
         }
 
         // Update all stats
-        protocol.send_status(true, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+        protocol.send_status(true, current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
 
         // Send the best move and ponder move
         Move best_move = Move::NO_MOVE;
@@ -166,12 +176,13 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
         root_moves.entries[i]->value = -Value::INFINITE;
     }
 
+
     for (int i = 0; i < root_moves.size; i++) {
         Move move = root_moves.entries[i]->move;
 
         current_move = move;
         current_move_number = i + 1;
-        protocol.send_status(false, current_depth, current_max_depth, total_nodes, current_move, current_move_number);
+        protocol.send_status(false, current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
 
         position.make_move(move);
 
@@ -193,7 +204,7 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
             root_moves.entries[i]->value = value;
             save_pv(move, pv[ply + 1], root_moves.entries[i]->pv);
 
-            protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes);
+            protocol.send_move(*root_moves.entries[i], current_depth, current_max_depth, total_nodes, tb_hits);
 
             if (value >= beta)
                 return value;
@@ -227,6 +238,14 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         }
     }
 
+
+    // Initialize
+    Value best_value = -Value::INFINITE;
+    Move best_move = Move::NO_MOVE;
+    int searched_moves = 0;
+
+
+
     // We are at a leaf/horizon. So calculate that value.
     if (depth <= 0) {
         // Descend into quiescent
@@ -256,6 +275,38 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     beta = std::min(Value::CHECKMATE - (ply + 1), beta);
     if (alpha >= beta)
         return alpha;
+
+    // Next we check the tablebases:
+    const tb::Outcome tb_outcome = tb::probe_outcome(position);
+    if (tb_outcome != tb::Outcome::FAILED_PROBE) {
+        tb_hits++;
+        int wdl = tb::outcome_to_int(tb_outcome);
+
+        constexpr int DrawScore = 1;  // Change to 0 to ignore rule50.
+
+        Value value = wdl < -DrawScore ? Value::KNOWN_LOSS + ply
+                    : wdl >  DrawScore ? Value::KNOWN_WIN - ply
+                                       : Value::DRAW + 2 * DrawScore * wdl;
+
+        Bound b = wdl < -DrawScore ? Bound::UPPER
+                : wdl >  DrawScore ? Bound::LOWER : Bound::EXACT;
+
+        if (b == Bound::EXACT
+            || (b == Bound::LOWER && value >= beta)
+            || (b == Bound::UPPER && value <= alpha)) {
+
+            // Tablebase result is final, no need to go futher.
+            ttable.store(position.zobrist_key, tt::value_to_tt(value, ply), b,
+                std::min(Depth::MAX_PLY - 1, depth + 5), Move::NO_MOVE);
+            return value;
+        }
+
+        if (b == Bound::LOWER)
+        {
+            best_value = value;
+            alpha = std::max(alpha, value);
+        }
+    }
 
     bool is_check = position.is_check();
 
@@ -309,10 +360,6 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
         }
     }
 
-    // Initialize
-    Value best_value = -Value::INFINITE;
-    Move best_move = Move::NO_MOVE;
-    int searched_moves = 0;
 
     if (is_check)
         depth += 1;

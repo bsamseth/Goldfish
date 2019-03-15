@@ -504,4 +504,19 @@ std::string Notation::from_square(Square square) {
     return notation;
 }
 
+std::string Notation::from_move(Move move) {
+    std::string notation;
+
+    notation += Notation::from_square(Moves::get_origin_square(move));
+    notation += Notation::from_square(Moves::get_target_square(move));
+
+    PieceType promotion = Moves::get_promotion(move);
+    if (promotion != PieceType::NO_PIECE_TYPE) {
+        notation += (char) std::tolower(Notation::from_piece_type(promotion));
+    }
+
+    return notation;
+}
+
+
 }

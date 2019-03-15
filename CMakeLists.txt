@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set project name here.
-project(Goldfish VERSION 1.9.0 LANGUAGES CXX)
+project(Goldfish VERSION 1.11.0 LANGUAGES C CXX)
 
 # Include stuff. No change needed.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -30,7 +30,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wfatal-errors")  
 
 # Build-type specific flags. Change as needed.
-SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+SET(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 message(STATUS "Building with the following extra flags: ${CMAKE_CXX_FLAGS}")
@@ -43,8 +43,11 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/tests
-    ${PROJECT_SOURCE_DIR}/external/googletest
-    ${PROJECT_SOURCE_DIR}/external/googletest/include)
+    ${PROJECT_SOURCE_DIR}/external/
+    ${PROJECT_SOURCE_DIR}/external/Fathom/src
+    ${PROJECT_SOURCE_DIR}/external/googletest/googletest
+    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src
+    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/include)
 
 # Make variables referring to all the sources and test files.  Could use file
 # globbing, but this does not play nice with IDEs and is also discouraged due
@@ -75,6 +78,7 @@ set(HEADERS
         include/rank.hpp
         include/search.hpp
         include/square.hpp
+        include/tb.hpp
         include/tt.hpp
         include/value.hpp)
 set(SOURCES
@@ -91,6 +95,7 @@ set(SOURCES
         src/searchmanagement.cpp
         src/semaphore.cpp
         src/timer.cpp
+        src/tb.cpp
         src/tt.cpp
         )
 set(TESTFILES
@@ -109,8 +114,13 @@ set(TESTFILES
         tests/positiontest.cpp
         tests/ranktest.cpp
         tests/squaretest.cpp
+        tests/tbtest.cpp
         tests/tt.cpp)
 set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you wish).
+
+set(FATHOM_SOURCES
+    external/Fathom/src/tbprobe.c
+)
 
 
 
@@ -118,7 +128,7 @@ set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you w
 #                            Build! 
 # --------------------------------------------------------------------------------
 # Compile all sources into a library. Called engine here (change if you wish).
-add_library( engine ${SOURCES} ${HEADERS})
+add_library( engine ${SOURCES} ${FATHOM_SOURCES})
 
 add_executable(goldfish.x app/goldfish.cpp)
 add_dependencies(goldfish.x engine)
@@ -190,11 +200,11 @@ add_custom_target( git_update
     COMMAND git submodule update
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} )
 add_library( googletest
-    ${PROJECT_SOURCE_DIR}/external/googletest/src/gtest-all.cc
-    ${PROJECT_SOURCE_DIR}/external/googletest/src/gtest_main.cc )
+    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest-all.cc
+    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest_main.cc )
 add_dependencies(googletest git_update)
-set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/src/gtest-all.cc  PROPERTIES GENERATED 1)
-set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/src/gtest_main.cc PROPERTIES GENERATED 1)
+set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest-all.cc  PROPERTIES GENERATED 1)
+set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest_main.cc PROPERTIES GENERATED 1)
 
 
 

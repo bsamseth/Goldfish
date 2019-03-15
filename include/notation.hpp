@@ -46,6 +46,8 @@ public:
 
     static std::string from_square(Square square);
 
+    static std::string from_move(Move m);
+
     Notation() = delete;
 
     ~Notation() = delete;

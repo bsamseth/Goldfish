@@ -430,12 +430,12 @@ void Position::clear_castling(Square square) {
     }
 }
 
-bool Position::is_check() {
+bool Position::is_check() const {
     // Check whether our king is attacked by any opponent piece
     return is_attacked(Square(Bitboard::next(pieces[active_color][PieceType::KING])), ~active_color);
 }
 
-bool Position::is_check(Color color) {
+bool Position::is_check(Color color) const {
     // Check whether the king for color is attacked by any opponent piece
     return is_attacked(Square(Bitboard::next(pieces[color][PieceType::KING])), ~color);
 }
@@ -448,7 +448,7 @@ bool Position::is_check(Color color) {
  * @param attacker_color the attacker Color.
  * @return whether the target_square is attacked.
  */
-bool Position::is_attacked(Square target_square, Color attacker_color) {
+bool Position::is_attacked(Square target_square, Color attacker_color) const {
     // Pawn attacks
     Piece pawn_piece = Pieces::value_of(attacker_color, PieceType::PAWN);
     for (unsigned int i = 1; i < Squares::pawn_directions[attacker_color].size(); i++) {
@@ -486,7 +486,7 @@ bool Position::is_attacked(Square target_square, Color attacker_color) {
 /**
  * Returns whether the target_square is attacked by a non-sliding piece.
  */
-bool Position::is_attacked(Square target_square, Piece attacker_piece, const std::vector<Direction> &directions) {
+bool Position::is_attacked(Square target_square, Piece attacker_piece, const std::vector<Direction> &directions) const {
     for (auto direction : directions) {
         Square attacker_square = target_square + direction;
 
@@ -501,7 +501,7 @@ bool Position::is_attacked(Square target_square, Piece attacker_piece, const std
 /**
  * Returns whether the target_square is attacked by a sliding piece.
  */
-bool Position::is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Direction> &directions) {
+bool Position::is_attacked(Square target_square, Piece attacker_piece, Piece queen_piece, const std::vector<Direction> &directions) const {
     for (auto direction : directions) {
         Square attacker_square = target_square + direction;
 
