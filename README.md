@@ -56,6 +56,7 @@ been added so far. The list is inspired in large part by [this writeup](http://w
 -   [X] Complete refactoring of base types
 -   [X] Null move pruning
 -   [X] Transposition table
+-   [X] Syzygy endgame tablebases
 -   [X] Check extensions
 -   [X] Killer move heuristic
 -   [X] Principal variation search
@@ -81,169 +82,182 @@ you see a relative rating between the current versions. In this rating system,
 v1.0 is held at 2000 rating points, and the others are adjusted accordingly.
 This gives an impression of the relative improvements of the engine over time.
 
-   | #| PLAYER             |  RATING | POINTS |PLAYED | (Win %)|
+
+   |  # | PLAYER              |  RATING | POINTS | PLAYED | (%) |
    |:---:|---|:---:|:---:|:---:|:---:|
-   | 1| Goldfish v1.9.0    |  2353.1 | 280.5  |  430  | 65
-   | 2| Goldfish v1.7.0    |  2251.5 | 877.5  | 1699  | 52
-   | 3| Goldfish v1.7.1    |  2243.8 | 244.0  |  477  | 51
-   | 4| Goldfish v1.8.0    |  2237.0 | 324.0  |  650  | 50
-   | 5| Goldfish v1.8.1    |  2234.1 | 485.5  | 1000  | 49
-   | 6| Goldfish v1.8.2    |  2234.0 | 174.0  |  429  | 41
-   | 7| Goldfish v1.6.0    |  2218.7 | 434.5  |  797  | 55
-   | 8| Goldfish v1.7.2    |  2218.0 |  69.5  |  150  | 46
-   | 9| Goldfish v1.5.1    |  2168.8 | 460.5  |  970  | 47
-   |10| Goldfish v1.5      |  2158.6 | 554.5  | 1145  | 48
-   |11| Goldfish v1.4      |  2153.5 | 487.0  |  970  | 50
-   |12| Goldfish v1.3      |  2130.7 | 162.5  |  325  | 50
-   |13| Goldfish v1.2      |  2112.2 | 107.5  |  230  | 47
-   |14| Goldfish v1.1      |  2055.2 |  93.0  |  232  | 40
-   |15| Goldfish v1.0      |  2000.0 |  13.5  |   32  | 42
+   |  1 | Goldfish v1.9.0     |  2353.2 |  831.0 |   1530 |  54|
+   |  2 | Goldfish v1.11.0    |  2352.9 |  549.5 |   1100 |  50|
+   |  3 | Goldfish v1.7.0     |  2251.6 |  877.5 |   1699 |  52|
+   |  4 | Goldfish v1.7.1     |  2243.8 |  244.0 |    477 |  51|
+   |  5 | Goldfish v1.8.0     |  2237.1 |  324.0 |    650 |  50|
+   |  6 | Goldfish v1.8.1     |  2234.2 |  485.5 |   1000 |  49|
+   |  7 | Goldfish v1.8.2     |  2234.1 |  174.0 |    429 |  41|
+   |  8 | Goldfish v1.6.0     |  2218.8 |  434.5 |    797 |  55|
+   |  9 | Goldfish v1.7.2     |  2218.1 |   69.5 |    150 |  46|
+   | 10 | Goldfish v1.5.1     |  2168.9 |  460.5 |    970 |  47|
+   | 11 | Goldfish v1.5       |  2158.6 |  554.5 |   1145 |  48|
+   | 12 | Goldfish v1.4       |  2153.6 |  487.0 |    970 |  50|
+   | 13 | Goldfish v1.3       |  2130.8 |  162.5 |    325 |  50|
+   | 14 | Goldfish v1.2       |  2112.2 |  107.5 |    230 |  47|
+   | 15 | Goldfish v1.1       |  2055.2 |   93.0 |    232 |  40|
+   | 16 | Goldfish v1.0       |  2000.0 |   13.5 |     32 |  42|
 
 ```text
 Head to head statistics:
 
- 1) Goldfish v1.9.0 2353.1 :    430 (+201,=159,-70),  65.2 %
+ 1) Goldfish v1.9.0  2353.2 :   1530 (+573,=516,-441),  54.3 %
 
-    vs.                    :  games (   +,   =,  -),   (%) :    Diff
-    Goldfish v1.7.0        :    215 ( 101,  84, 30),  66.5 :  +101.6
-    Goldfish v1.8.2        :    215 ( 100,  75, 40),  64.0 :  +119.1
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.11.0        :   1100 ( 372, 357, 371),  50.0 :    +0.3
+    Goldfish v1.7.0         :    215 ( 101,  84,  30),  66.5 :  +101.6
+    Goldfish v1.8.2         :    215 ( 100,  75,  40),  64.0 :  +119.1
 
- 2) Goldfish v1.7.0 2251.5 :   1699 (+383,=989,-327),  51.6 %
+ 2) Goldfish v1.11.0 2352.9 :   1100 (+371,=357,-372),  50.0 %
 
-    vs.                    :  games (   +,   =,   -),   (%) :    Diff
-    Goldfish v1.9.0        :    215 (  30,  84, 101),  33.5 :  -101.6
-    Goldfish v1.7.1        :    250 (  44, 168,  38),  51.2 :    +7.7
-    Goldfish v1.8.0        :    150 (  32,  84,  34),  49.3 :   +14.5
-    Goldfish v1.8.1        :    500 ( 114, 305,  81),  53.3 :   +17.4
-    Goldfish v1.8.2        :    214 (  48, 139,  27),  54.9 :   +17.5
-    Goldfish v1.6.0        :    160 (  47,  85,  28),  55.9 :   +32.8
-    Goldfish v1.5.1        :    160 (  43, 102,  15),  58.8 :   +82.7
-    Goldfish v1.5          :     10 (   4,   5,   1),  65.0 :   +92.9
-    Goldfish v1.4          :     10 (   4,   6,   0),  70.0 :   +98.0
-    Goldfish v1.3          :     10 (   5,   5,   0),  75.0 :  +120.8
-    Goldfish v1.2          :     10 (   4,   4,   2),  60.0 :  +139.3
-    Goldfish v1.1          :     10 (   8,   2,   0),  90.0 :  +196.3
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.9.0         :   1100 ( 371, 357, 372),  50.0 :    -0.3
 
- 3) Goldfish v1.7.1 2243.8 :    477 (+97,=294,-86),  51.2 %
+ 3) Goldfish v1.7.0  2251.6 :   1699 (+383,=989,-327),  51.6 %
 
-    vs.                    :  games (  +,   =,  -),   (%) :    Diff
-    Goldfish v1.7.0        :    250 ( 38, 168, 44),  48.8 :    -7.7
-    Goldfish v1.6.0        :     77 ( 19,  45, 13),  53.9 :   +25.1
-    Goldfish v1.7.2        :    150 ( 40,  81, 29),  53.7 :   +25.8
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.9.0         :    215 (  30,  84, 101),  33.5 :  -101.6
+    Goldfish v1.7.1         :    250 (  44, 168,  38),  51.2 :    +7.7
+    Goldfish v1.8.0         :    150 (  32,  84,  34),  49.3 :   +14.5
+    Goldfish v1.8.1         :    500 ( 114, 305,  81),  53.3 :   +17.4
+    Goldfish v1.8.2         :    214 (  48, 139,  27),  54.9 :   +17.5
+    Goldfish v1.6.0         :    160 (  47,  85,  28),  55.9 :   +32.8
+    Goldfish v1.5.1         :    160 (  43, 102,  15),  58.8 :   +82.7
+    Goldfish v1.5           :     10 (   4,   5,   1),  65.0 :   +93.0
+    Goldfish v1.4           :     10 (   4,   6,   0),  70.0 :   +98.0
+    Goldfish v1.3           :     10 (   5,   5,   0),  75.0 :  +120.8
+    Goldfish v1.2           :     10 (   4,   4,   2),  60.0 :  +139.4
+    Goldfish v1.1           :     10 (   8,   2,   0),  90.0 :  +196.4
 
- 4) Goldfish v1.8.0 2237.0 :    650 (+133,=382,-135),  49.8 %
+ 4) Goldfish v1.7.1  2243.8 :    477 (+97,=294,-86),  51.2 %
 
-    vs.                    :  games (   +,   =,   -),   (%) :    Diff
-    Goldfish v1.7.0        :    150 (  34,  84,  32),  50.7 :   -14.5
-    Goldfish v1.8.1        :    500 (  99, 298, 103),  49.6 :    +2.9
+    vs.                     :  games (  +,   =,  -),   (%) :    Diff
+    Goldfish v1.7.0         :    250 ( 38, 168, 44),  48.8 :    -7.7
+    Goldfish v1.6.0         :     77 ( 19,  45, 13),  53.9 :   +25.1
+    Goldfish v1.7.2         :    150 ( 40,  81, 29),  53.7 :   +25.8
 
- 5) Goldfish v1.8.1 2234.1 :   1000 (+184,=603,-213),  48.5 %
+ 5) Goldfish v1.8.0  2237.1 :    650 (+133,=382,-135),  49.8 %
 
-    vs.                    :  games (   +,   =,   -),   (%) :    Diff
-    Goldfish v1.7.0        :    500 (  81, 305, 114),  46.7 :   -17.4
-    Goldfish v1.8.0        :    500 ( 103, 298,  99),  50.4 :    -2.9
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.7.0         :    150 (  34,  84,  32),  50.7 :   -14.5
+    Goldfish v1.8.1         :    500 (  99, 298, 103),  49.6 :    +2.9
 
- 6) Goldfish v1.8.2 2234.0 :    429 (+67,=214,-148),  40.6 %
+ 6) Goldfish v1.8.1  2234.2 :   1000 (+184,=603,-213),  48.5 %
 
-    vs.                    :  games (  +,   =,   -),   (%) :    Diff
-    Goldfish v1.9.0        :    215 ( 40,  75, 100),  36.0 :  -119.1
-    Goldfish v1.7.0        :    214 ( 27, 139,  48),  45.1 :   -17.5
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.7.0         :    500 (  81, 305, 114),  46.7 :   -17.4
+    Goldfish v1.8.0         :    500 ( 103, 298,  99),  50.4 :    -2.9
 
- 7) Goldfish v1.6.0 2218.7 :    797 (+193,=483,-121),  54.5 %
+ 7) Goldfish v1.8.2  2234.1 :    429 (+67,=214,-148),  40.6 %
 
-    vs.                    :  games (   +,   =,   -),   (%) :    Diff
-    Goldfish v1.7.0        :    160 (  28,  85,  47),  44.1 :   -32.8
-    Goldfish v1.7.1        :     77 (  13,  45,  19),  46.1 :   -25.1
-    Goldfish v1.5.1        :    260 (  66, 162,  32),  56.5 :   +49.8
-    Goldfish v1.5          :    260 (  77, 163,  20),  61.0 :   +60.1
-    Goldfish v1.4          :     10 (   1,   8,   1),  50.0 :   +65.2
-    Goldfish v1.3          :     10 (   1,   8,   1),  50.0 :   +87.9
-    Goldfish v1.2          :     10 (   4,   6,   0),  70.0 :  +106.5
-    Goldfish v1.1          :     10 (   3,   6,   1),  60.0 :  +163.4
+    vs.                     :  games (  +,   =,   -),   (%) :    Diff
+    Goldfish v1.9.0         :    215 ( 40,  75, 100),  36.0 :  -119.1
+    Goldfish v1.7.0         :    214 ( 27, 139,  48),  45.1 :   -17.5
 
- 8) Goldfish v1.7.2 2218.0 :    150 (+29,=81,-40),  46.3 %
+ 8) Goldfish v1.6.0  2218.8 :    797 (+193,=483,-121),  54.5 %
 
-    vs.                    :  games (  +,  =,  -),   (%) :    Diff
-    Goldfish v1.7.1        :    150 ( 29, 81, 40),  46.3 :   -25.8
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.7.0         :    160 (  28,  85,  47),  44.1 :   -32.8
+    Goldfish v1.7.1         :     77 (  13,  45,  19),  46.1 :   -25.1
+    Goldfish v1.5.1         :    260 (  66, 162,  32),  56.5 :   +49.9
+    Goldfish v1.5           :    260 (  77, 163,  20),  61.0 :   +60.1
+    Goldfish v1.4           :     10 (   1,   8,   1),  50.0 :   +65.2
+    Goldfish v1.3           :     10 (   1,   8,   1),  50.0 :   +88.0
+    Goldfish v1.2           :     10 (   4,   6,   0),  70.0 :  +106.5
+    Goldfish v1.1           :     10 (   3,   6,   1),  60.0 :  +163.5
 
- 9) Goldfish v1.5.1 2168.8 :    970 (+145,=631,-194),  47.5 %
+ 9) Goldfish v1.7.2  2218.1 :    150 (+29,=81,-40),  46.3 %
 
-    vs.                    :  games (   +,   =,   -),   (%) :    Diff
-    Goldfish v1.7.0        :    160 (  15, 102,  43),  41.2 :   -82.7
-    Goldfish v1.6.0        :    260 (  32, 162,  66),  43.5 :   -49.8
-    Goldfish v1.5          :    260 (  45, 172,  43),  50.4 :   +10.2
-    Goldfish v1.4          :    260 (  45, 176,  39),  51.2 :   +15.3
-    Goldfish v1.3          :     10 (   2,   7,   1),  55.0 :   +38.1
-    Goldfish v1.2          :     10 (   2,   6,   2),  50.0 :   +56.6
-    Goldfish v1.1          :     10 (   4,   6,   0),  70.0 :  +113.6
+    vs.                     :  games (  +,  =,  -),   (%) :    Diff
+    Goldfish v1.7.1         :    150 ( 29, 81, 40),  46.3 :   -25.8
 
-10) Goldfish v1.5   2158.6 :   1145 (+174,=761,-210),  48.4 %
+10) Goldfish v1.5.1  2168.9 :    970 (+145,=631,-194),  47.5 %
 
-    vs.                    :  games (   +,   =,   -),   (%) :    Diff
-    Goldfish v1.7.0        :     10 (   1,   5,   4),  35.0 :   -92.9
-    Goldfish v1.6.0        :    260 (  20, 163,  77),  39.0 :   -60.1
-    Goldfish v1.5.1        :    260 (  43, 172,  45),  49.6 :   -10.2
-    Goldfish v1.4          :    510 (  88, 352,  70),  51.8 :    +5.1
-    Goldfish v1.3          :     85 (  12,  61,  12),  50.0 :   +27.8
-    Goldfish v1.2          :     10 (   4,   6,   0),  70.0 :   +46.4
-    Goldfish v1.1          :     10 (   6,   2,   2),  70.0 :  +103.4
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.7.0         :    160 (  15, 102,  43),  41.2 :   -82.7
+    Goldfish v1.6.0         :    260 (  32, 162,  66),  43.5 :   -49.9
+    Goldfish v1.5           :    260 (  45, 172,  43),  50.4 :   +10.3
+    Goldfish v1.4           :    260 (  45, 176,  39),  51.2 :   +15.3
+    Goldfish v1.3           :     10 (   2,   7,   1),  55.0 :   +38.1
+    Goldfish v1.2           :     10 (   2,   6,   2),  50.0 :   +56.7
+    Goldfish v1.1           :     10 (   4,   6,   0),  70.0 :  +113.6
 
-11) Goldfish v1.4   2153.5 :    970 (+164,=646,-160),  50.2 %
+11) Goldfish v1.5    2158.6 :   1145 (+174,=761,-210),  48.4 %
 
-    vs.                    :  games (   +,   =,   -),   (%) :    Diff
-    Goldfish v1.7.0        :     10 (   0,   6,   4),  30.0 :   -98.0
-    Goldfish v1.6.0        :     10 (   1,   8,   1),  50.0 :   -65.2
-    Goldfish v1.5.1        :    260 (  39, 176,  45),  48.8 :   -15.3
-    Goldfish v1.5          :    510 (  70, 352,  88),  48.2 :    -5.1
-    Goldfish v1.3          :     60 (  13,  37,  10),  52.5 :   +22.8
-    Goldfish v1.2          :     60 (  17,  34,   9),  56.7 :   +41.3
-    Goldfish v1.1          :     60 (  24,  33,   3),  67.5 :   +98.3
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.7.0         :     10 (   1,   5,   4),  35.0 :   -93.0
+    Goldfish v1.6.0         :    260 (  20, 163,  77),  39.0 :   -60.1
+    Goldfish v1.5.1         :    260 (  43, 172,  45),  49.6 :   -10.3
+    Goldfish v1.4           :    510 (  88, 352,  70),  51.8 :    +5.1
+    Goldfish v1.3           :     85 (  12,  61,  12),  50.0 :   +27.8
+    Goldfish v1.2           :     10 (   4,   6,   0),  70.0 :   +46.4
+    Goldfish v1.1           :     10 (   6,   2,   2),  70.0 :  +103.4
 
-12) Goldfish v1.3   2130.7 :    325 (+55,=215,-55),  50.0 %
+12) Goldfish v1.4    2153.6 :    970 (+164,=646,-160),  50.2 %
 
-    vs.                    :  games (  +,   =,  -),   (%) :    Diff
-    Goldfish v1.7.0        :     10 (  0,   5,  5),  25.0 :  -120.8
-    Goldfish v1.6.0        :     10 (  1,   8,  1),  50.0 :   -87.9
-    Goldfish v1.5.1        :     10 (  1,   7,  2),  45.0 :   -38.1
-    Goldfish v1.5          :     85 ( 12,  61, 12),  50.0 :   -27.8
-    Goldfish v1.4          :     60 ( 10,  37, 13),  47.5 :   -22.8
-    Goldfish v1.2          :     90 ( 17,  61, 12),  52.8 :   +18.6
-    Goldfish v1.1          :     60 ( 14,  36, 10),  53.3 :   +75.5
+    vs.                     :  games (   +,   =,   -),   (%) :    Diff
+    Goldfish v1.7.0         :     10 (   0,   6,   4),  30.0 :   -98.0
+    Goldfish v1.6.0         :     10 (   1,   8,   1),  50.0 :   -65.2
+    Goldfish v1.5.1         :    260 (  39, 176,  45),  48.8 :   -15.3
+    Goldfish v1.5           :    510 (  70, 352,  88),  48.2 :    -5.1
+    Goldfish v1.3           :     60 (  13,  37,  10),  52.5 :   +22.7
+    Goldfish v1.2           :     60 (  17,  34,   9),  56.7 :   +41.3
+    Goldfish v1.1           :     60 (  24,  33,   3),  67.5 :   +98.3
 
-13) Goldfish v1.2   2112.2 :    230 (+37,=141,-52),  46.7 %
+13) Goldfish v1.3    2130.8 :    325 (+55,=215,-55),  50.0 %
 
-    vs.                    :  games (  +,   =,  -),   (%) :    Diff
-    Goldfish v1.7.0        :     10 (  2,   4,  4),  40.0 :  -139.3
-    Goldfish v1.6.0        :     10 (  0,   6,  4),  30.0 :  -106.5
-    Goldfish v1.5.1        :     10 (  2,   6,  2),  50.0 :   -56.6
-    Goldfish v1.5          :     10 (  0,   6,  4),  30.0 :   -46.4
-    Goldfish v1.4          :     60 (  9,  34, 17),  43.3 :   -41.3
-    Goldfish v1.3          :     90 ( 12,  61, 17),  47.2 :   -18.6
-    Goldfish v1.1          :     40 ( 12,  24,  4),  60.0 :   +57.0
+    vs.                     :  games (  +,   =,  -),   (%) :    Diff
+    Goldfish v1.7.0         :     10 (  0,   5,  5),  25.0 :  -120.8
+    Goldfish v1.6.0         :     10 (  1,   8,  1),  50.0 :   -88.0
+    Goldfish v1.5.1         :     10 (  1,   7,  2),  45.0 :   -38.1
+    Goldfish v1.5           :     85 ( 12,  61, 12),  50.0 :   -27.8
+    Goldfish v1.4           :     60 ( 10,  37, 13),  47.5 :   -22.7
+    Goldfish v1.2           :     90 ( 17,  61, 12),  52.8 :   +18.6
+    Goldfish v1.1           :     60 ( 14,  36, 10),  53.3 :   +75.6
 
-14) Goldfish v1.1   2055.2 :    232 (+27,=132,-73),  40.1 %
+14) Goldfish v1.2    2112.2 :    230 (+37,=141,-52),  46.7 %
 
-    vs.                    :  games (  +,   =,  -),   (%) :    Diff
-    Goldfish v1.7.0        :     10 (  0,   2,  8),  10.0 :  -196.3
-    Goldfish v1.6.0        :     10 (  1,   6,  3),  40.0 :  -163.4
-    Goldfish v1.5.1        :     10 (  0,   6,  4),  30.0 :  -113.6
-    Goldfish v1.5          :     10 (  2,   2,  6),  30.0 :  -103.4
-    Goldfish v1.4          :     60 (  3,  33, 24),  32.5 :   -98.3
-    Goldfish v1.3          :     60 ( 10,  36, 14),  46.7 :   -75.5
-    Goldfish v1.2          :     40 (  4,  24, 12),  40.0 :   -57.0
-    Goldfish v1.0          :     32 (  7,  23,  2),  57.8 :   +55.2
+    vs.                     :  games (  +,   =,  -),   (%) :    Diff
+    Goldfish v1.7.0         :     10 (  2,   4,  4),  40.0 :  -139.4
+    Goldfish v1.6.0         :     10 (  0,   6,  4),  30.0 :  -106.5
+    Goldfish v1.5.1         :     10 (  2,   6,  2),  50.0 :   -56.7
+    Goldfish v1.5           :     10 (  0,   6,  4),  30.0 :   -46.4
+    Goldfish v1.4           :     60 (  9,  34, 17),  43.3 :   -41.3
+    Goldfish v1.3           :     90 ( 12,  61, 17),  47.2 :   -18.6
+    Goldfish v1.1           :     40 ( 12,  24,  4),  60.0 :   +57.0
 
-15) Goldfish v1.0   2000.0 :     32 (+2,=23,-7),  42.2 %
+15) Goldfish v1.1    2055.2 :    232 (+27,=132,-73),  40.1 %
 
-    vs.                    :  games ( +,  =, -),   (%) :    Diff
-    Goldfish v1.1          :     32 ( 2, 23, 7),  42.2 :   -55.2
+    vs.                     :  games (  +,   =,  -),   (%) :    Diff
+    Goldfish v1.7.0         :     10 (  0,   2,  8),  10.0 :  -196.4
+    Goldfish v1.6.0         :     10 (  1,   6,  3),  40.0 :  -163.5
+    Goldfish v1.5.1         :     10 (  0,   6,  4),  30.0 :  -113.6
+    Goldfish v1.5           :     10 (  2,   2,  6),  30.0 :  -103.4
+    Goldfish v1.4           :     60 (  3,  33, 24),  32.5 :   -98.3
+    Goldfish v1.3           :     60 ( 10,  36, 14),  46.7 :   -75.6
+    Goldfish v1.2           :     40 (  4,  24, 12),  40.0 :   -57.0
+    Goldfish v1.0           :     32 (  7,  23,  2),  57.8 :   +55.2
 
-Total games                4769
- - White wins               966
- - Draws                   2877
- - Black wins               925
+16) Goldfish v1.0    2000.0 :     32 (+2,=23,-7),  42.2 %
+
+    vs.                     :  games ( +,  =, -),   (%) :    Diff
+    Goldfish v1.1           :     32 ( 2, 23, 7),  42.2 :   -55.2
+
+Total games                5869
+ - White wins              1383
+ - Draws                   3234
+ - Black wins              1251
  - Truncated/Discarded        1
+Unique head to head        1.33%
 Reference rating      2000.0 (set to "Goldfish v1.0")
+
+players with no games = 0
+players with all wins = 0
+players w/ all losses = 0
 ```
 
 This is meant as a project to work on as practice/just for the fun of it.
@@ -267,6 +281,10 @@ engine it self.
 
 ## Run
 
+Although it is possible to use the text based interface directly, it's
+recommended to run this through a UCI compatible graphical user interface, such
+as Scid. Or better still, play on [lichess.org](https://lichess.org/@/Goldfish-Engine).
+
 After building the `goldfish.x` executable, you _can_ run it directly. The engine
 speaks using the UCI protocol. An example (Scid is the UI communicating with the engine, or you if you run it directly):
 
@@ -283,6 +301,3 @@ Engine: info depth 1 score cp -1 time 10 nodes 26 nps 633 pv d7d6
 Engine: bestmove d7d6
 ```
 
-Although it is possible to use the text based interface directly, it's
-recommended to run this through a UCI compatible graphical user interface, such
-as Scid. Or better still, play on [lichess.org](https://lichess.org/@/Goldfish-Engine).
