@@ -1,4 +1,3 @@
-import chess
 from chester.timecontrol import TimeControl
 from chester.tournament import play_tournament
 
