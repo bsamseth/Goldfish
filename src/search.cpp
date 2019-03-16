@@ -216,6 +216,17 @@ Value Search::search_root(Depth depth, Value alpha, Value beta) {
 }
 
 Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
+
+    // Abort conditions
+    if (abort || ply == Depth::MAX_PLY) {
+        return Evaluation::evaluate(position);
+    }
+
+    // Check insufficient material, repetition and fifty move rule
+    if (position.halfmove_clock >= 100 || position.has_insufficient_material() || position.is_repetition()) {
+        return Value::DRAW;
+    }
+
     Value alpha_orig = alpha;
 
     // Check TTable before anything else is done.
@@ -254,15 +265,6 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
     update_search(ply);
 
-    // Abort conditions
-    if (abort || ply == Depth::MAX_PLY) {
-        return Evaluation::evaluate(position);
-    }
-
-    // Check insufficient material, repetition and fifty move rule
-    if (position.is_repetition() || position.has_insufficient_material() || position.halfmove_clock >= 100) {
-        return Value::DRAW;
-    }
 
     // Mate distance pruning:
     // Even if we mate at the next move our score
