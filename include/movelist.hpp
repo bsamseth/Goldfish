@@ -1,25 +1,26 @@
 #pragma once
 
-#include "value.hpp"
 #include "move.hpp"
+#include "value.hpp"
 
 #include <array>
 #include <memory>
 
-namespace goldfish {
-
+namespace goldfish
+{
 /**
  * This class stores our moves for a specific position. For the root node we
  * will populate pv for every root move.
  */
-template<class T>
-class MoveList {
+template <class T>
+class MoveList
+{
 private:
     static const int MAX_MOVES = 256;
 
 public:
     std::array<std::shared_ptr<T>, MAX_MOVES> entries;
-    int size = 0;
+    int                                       size = 0;
 
     MoveList();
 
@@ -30,21 +31,24 @@ public:
     void add_killer(Move m);
 };
 
-class MoveVariation {
+class MoveVariation
+{
 public:
     std::array<Move, Depth::MAX_PLY> moves;
-    int size = 0;
+    int                              size = 0;
 };
 
-class MoveEntry {
+class MoveEntry
+{
 public:
-    Move move = Move::MOVE_NONE;
+    Move  move  = Move::MOVE_NONE;
     Value value = Value::NO_VALUE;
 };
 
-class RootEntry : public MoveEntry {
+class RootEntry : public MoveEntry
+{
 public:
     MoveVariation pv;
 };
 
-}
+}  // namespace goldfish

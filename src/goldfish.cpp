@@ -1,61 +1,84 @@
+#include "goldfish.hpp"
+
+#include "benchmark.hpp"
+#include "projectmeta.hpp"
+#include "tb.hpp"
+
+#include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <chrono>
-#include <algorithm>
-
-#include "goldfish.hpp"
-#include "projectmeta.hpp"
-#include "benchmark.hpp"
-#include "tb.hpp"
 
 extern std::vector<std::string> setup_bench();
 
-namespace goldfish {
-
-void Goldfish::run() {
-    std::cin.exceptions(std::iostream::eofbit | std::iostream::failbit | std::iostream::badbit);
+namespace goldfish
+{
+void Goldfish::run()
+{
+    std::cin.exceptions(std::iostream::eofbit | std::iostream::failbit
+                        | std::iostream::badbit);
 
     // Initialize by default:
     receive_initialize();
 
-    while (true) {
+    while (true)
+    {
         std::string line;
         std::getline(std::cin, line);
         std::istringstream input(line);
 
         std::string token;
         input >> std::skipws >> token;
-        if (token == "uci") {
+        if (token == "uci")
+        {
             receive_initialize();
-        } else if (token == "isready") {
+        }
+        else if (token == "isready")
+        {
             receive_ready();
-        } else if (token == "ucinewgame") {
+        }
+        else if (token == "ucinewgame")
+        {
             receive_new_game();
-        } else if (token == "position") {
+        }
+        else if (token == "position")
+        {
             receive_position(input);
-        } else if (token == "go") {
+        }
+        else if (token == "go")
+        {
             receive_go(input);
-        } else if (token == "stop") {
+        }
+        else if (token == "stop")
+        {
             receive_stop();
-        } else if (token == "ponderhit") {
+        }
+        else if (token == "ponderhit")
+        {
             receive_ponder_hit();
-        } else if (token == "bench") {
+        }
+        else if (token == "bench")
+        {
             receive_bench();
-        }else if (token == "quit") {
+        }
+        else if (token == "quit")
+        {
             receive_quit();
             break;
         }
     }
 }
 
-void Goldfish::receive_quit() {
+void Goldfish::receive_quit()
+{
     // We received a quit command. Stop calculating now and
     // cleanup!
     search->quit();
 }
 
-void Goldfish::receive_initialize() {
+void Goldfish::receive_initialize()
+{
     search->stop();
 
     // We received an initialization request.
@@ -66,12 +89,14 @@ void Goldfish::receive_initialize() {
     tb::initialize("../syzygy");
 
     // We must send an initialization answer back!
-    std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH << '\n';
+    std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "."
+              << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH << '\n';
     std::cout << "id author Bendik Samseth" << '\n';
     std::cout << "uciok" << std::endl;
 }
 
-void Goldfish::receive_ready() {
+void Goldfish::receive_ready()
+{
     // We received a ready request. We must send the token back as soon as we
     // can. However, because we launch the search in a separate thread, our main
     // thread is able to handle the commands asynchronously to the search. If we
@@ -80,7 +105,8 @@ void Goldfish::receive_ready() {
     std::cout << "readyok" << std::endl;
 }
 
-void Goldfish::receive_new_game() {
+void Goldfish::receive_new_game()
+{
     search->stop();
 
     // We received a new game command.
@@ -89,53 +115,70 @@ void Goldfish::receive_new_game() {
     *current_position = Notation::to_position(Notation::STANDARDPOSITION);
 }
 
-void Goldfish::receive_position(std::istringstream &input) {
+void Goldfish::receive_position(std::istringstream& input)
+{
     search->stop();
 
     // We received an position command. Just setup the position.
 
     std::string token;
     input >> token;
-    if (token == "startpos") {
+    if (token == "startpos")
+    {
         *current_position = Notation::to_position(Notation::STANDARDPOSITION);
 
-        if (input >> token) {
-            if (token != "moves") {
+        if (input >> token)
+        {
+            if (token != "moves")
+            {
                 throw std::exception();
             }
         }
-    } else if (token == "fen") {
+    }
+    else if (token == "fen")
+    {
         std::string fen;
 
-        while (input >> token) {
-            if (token == "moves") {
+        while (input >> token)
+        {
+            if (token == "moves")
+            {
                 break;
-            } else {
+            }
+            else
+            {
                 fen += token + " ";
             }
         }
 
         *current_position = Notation::to_position(fen);
-    } else {
+    }
+    else
+    {
         throw std::exception();
     }
 
     MoveGenerator move_generator;
 
-    while (input >> token) {
+    while (input >> token)
+    {
         // Verify moves
-        MoveList<MoveEntry> &moves = move_generator.get_legal_moves(*current_position, 1, current_position->is_check());
+        MoveList<MoveEntry>& moves = move_generator.get_legal_moves(
+            *current_position, 1, current_position->is_check());
         bool found = false;
-        for (int i = 0; i < moves.size; i++) {
+        for (int i = 0; i < moves.size; i++)
+        {
             Move move = moves.entries[i]->move;
-            if (Notation::from_move(move) == token) {
+            if (Notation::from_move(move) == token)
+            {
                 current_position->make_move(move);
                 found = true;
                 break;
             }
         }
 
-        if (!found) {
+        if (!found)
+        {
             throw std::exception();
         }
     }
@@ -143,134 +186,184 @@ void Goldfish::receive_position(std::istringstream &input) {
     // Don't start searching though!
 }
 
-void Goldfish::receive_go(std::istringstream &input) {
+void Goldfish::receive_go(std::istringstream& input)
+{
     search->stop();
 
     // We received a start command. Extract all parameters from the
     // command and start the search.
     std::string token;
     input >> token;
-    if (token == "depth") {
+    if (token == "depth")
+    {
         int search_depth;
-        if (input >> search_depth) {
+        if (input >> search_depth)
+        {
             search->new_depth_search(*current_position, Depth(search_depth));
-        } else {
+        }
+        else
+        {
             throw std::exception();
         }
-    } else if (token == "nodes") {
+    }
+    else if (token == "nodes")
+    {
         uint64_t search_nodes;
-        if (input >> search_nodes) {
+        if (input >> search_nodes)
+        {
             search->new_nodes_search(*current_position, search_nodes);
         }
-    } else if (token == "movetime") {
+    }
+    else if (token == "movetime")
+    {
         uint64_t search_time;
-        if (input >> search_time) {
+        if (input >> search_time)
+        {
             search->new_time_search(*current_position, search_time);
         }
-    } else if (token == "infinite") {
+    }
+    else if (token == "infinite")
+    {
         search->new_infinite_search(*current_position);
-    } else {
-        uint64_t white_time_left = 1;
+    }
+    else
+    {
+        uint64_t white_time_left      = 1;
         uint64_t white_time_increment = 0;
-        uint64_t black_time_left = 1;
+        uint64_t black_time_left      = 1;
         uint64_t black_time_increment = 0;
-        int search_moves_toGo = 40;
-        bool ponder = false;
+        int      search_moves_toGo    = 40;
+        bool     ponder               = false;
 
-        do {
-            if (token == "wtime") {
-                if (!(input >> white_time_left)) {
+        do
+        {
+            if (token == "wtime")
+            {
+                if (!(input >> white_time_left))
+                {
                     throw std::exception();
                 }
-            } else if (token == "winc") {
-                if (!(input >> white_time_increment)) {
+            }
+            else if (token == "winc")
+            {
+                if (!(input >> white_time_increment))
+                {
                     throw std::exception();
                 }
-            } else if (token == "btime") {
-                if (!(input >> black_time_left)) {
+            }
+            else if (token == "btime")
+            {
+                if (!(input >> black_time_left))
+                {
                     throw std::exception();
                 }
-            } else if (token == "binc") {
-                if (!(input >> black_time_increment)) {
+            }
+            else if (token == "binc")
+            {
+                if (!(input >> black_time_increment))
+                {
                     throw std::exception();
                 }
-            } else if (token == "movestogo") {
-                if (!(input >> search_moves_toGo)) {
+            }
+            else if (token == "movestogo")
+            {
+                if (!(input >> search_moves_toGo))
+                {
                     throw std::exception();
                 }
-            } else if (token == "ponder") {
+            }
+            else if (token == "ponder")
+            {
                 ponder = true;
             }
         } while (input >> token);
 
-        if (ponder) {
+        if (ponder)
+        {
             search->new_ponder_search(*current_position,
-                                      white_time_left, white_time_increment, black_time_left, black_time_increment,
+                                      white_time_left,
+                                      white_time_increment,
+                                      black_time_left,
+                                      black_time_increment,
                                       search_moves_toGo);
-        } else {
+        }
+        else
+        {
             search->new_clock_search(*current_position,
-                                     white_time_left, white_time_increment, black_time_left, black_time_increment,
+                                     white_time_left,
+                                     white_time_increment,
+                                     black_time_left,
+                                     black_time_increment,
                                      search_moves_toGo);
         }
     }
 
     // Go...
     search->start();
-    start_time = std::chrono::system_clock::now();
+    start_time        = std::chrono::system_clock::now();
     status_start_time = start_time;
 }
 
-void Goldfish::receive_ponder_hit() {
+void Goldfish::receive_ponder_hit()
+{
     // We received a ponder hit command. Just call ponderhit().
     search->ponderhit();
 }
 
-void Goldfish::receive_stop() {
+void Goldfish::receive_stop()
+{
     // We received a stop command. If a search is running, stop it.
     search->stop();
 }
 
-void Goldfish::receive_bench() {
-
-    auto list = setup_bench();
-    auto num_positions = std::count_if(list.begin(), list.end(),
-                                       [](std::string s) { return s.find("go ") == 0; });
-    int count = 1;
+void Goldfish::receive_bench()
+{
+    auto list          = setup_bench();
+    auto num_positions = std::count_if(
+        list.begin(), list.end(), [](std::string s) { return s.find("go ") == 0; });
+    int      count       = 1;
     uint64_t total_nodes = 0;
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    for (const auto& cmd : list) {
-        std::string token;
+    for (const auto& cmd : list)
+    {
+        std::string        token;
         std::istringstream is(cmd);
         is >> std::skipws >> token;
 
-        if (token == "go") {
+        if (token == "go")
+        {
             std::cerr << "\nPosition: " << count++ << '/' << num_positions << std::endl;
 
             receive_go(is);
             search->wait_for_finished();
             total_nodes += search->get_total_nodes();
-
         }
-        else if (token == "position") receive_position(is);
-        else if (token == "ucinewgame") receive_new_game();
+        else if (token == "position")
+            receive_position(is);
+        else if (token == "ucinewgame")
+            receive_new_game();
     }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    double time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() + 1;
+    auto   end_time = std::chrono::high_resolution_clock::now();
+    double time
+        = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time)
+              .count()
+          + 1;
 
     std::cerr << "\n==========================="
-              << "\nTotal time (ms) : " << time
-              << "\nNodes searched  : " << total_nodes
-              << "\nNodes/second    : " << 1000*total_nodes/time << std::endl;
+              << "\nTotal time (ms) : " << time << "\nNodes searched  : " << total_nodes
+              << "\nNodes/second    : " << 1000 * total_nodes / time << std::endl;
 }
 
-void Goldfish::send_best_move(Move best_move, Move ponder_move) {
+void Goldfish::send_best_move(Move best_move, Move ponder_move)
+{
     std::cout << "bestmove ";
 
     if (Moves::is_valid(best_move) {
         std::cout << Notation::from_move(best_move);
 
-        if (Moves::is_valid(ponder_move)) {
+        if (Moves::is_valid(ponder_move))
+        {
             std::cout << " ponder " << Notation::from_move(ponder_move);
         }
     } else {
@@ -280,30 +373,54 @@ void Goldfish::send_best_move(Move best_move, Move ponder_move) {
     std::cout << std::endl;
 }
 
-void Goldfish::send_status(
-        int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits, Move current_move, int current_move_number) {
+void Goldfish::send_status(int      current_depth,
+                           int      current_max_depth,
+                           uint64_t total_nodes,
+                           uint64_t tb_hits,
+                           Move     current_move,
+                           int      current_move_number)
+{
     if (std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now() - status_start_time).count() >= 1000) {
-        send_status(false, current_depth, current_max_depth, total_nodes, tb_hits, current_move, current_move_number);
+            std::chrono::system_clock::now() - status_start_time)
+            .count()
+        >= 1000)
+    {
+        send_status(false,
+                    current_depth,
+                    current_max_depth,
+                    total_nodes,
+                    tb_hits,
+                    current_move,
+                    current_move_number);
     }
 }
 
-void Goldfish::send_status(
-        bool force, int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits, Move current_move,
-        int current_move_number) {
+void Goldfish::send_status(bool     force,
+                           int      current_depth,
+                           int      current_max_depth,
+                           uint64_t total_nodes,
+                           uint64_t tb_hits,
+                           Move     current_move,
+                           int      current_move_number)
+{
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now() - start_time);
+        std::chrono::system_clock::now() - start_time);
 
-    if (force || time_delta.count() >= 1000) {
+    if (force || time_delta.count() >= 1000)
+    {
         std::cout << "info";
         std::cout << " depth " << current_depth;
         std::cout << " seldepth " << current_max_depth;
         std::cout << " nodes " << total_nodes;
         std::cout << " time " << time_delta.count();
-        std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
+        std::cout << " nps "
+                  << (time_delta.count() >= 1000
+                          ? (total_nodes * 1000) / time_delta.count()
+                          : 0);
         std::cout << " tbhits " << tb_hits;
 
-        if (Moves::is_valid(current_move)) {
+        if (Moves::is_valid(current_move))
+        {
             std::cout << " currmove " << Notation::from_move(current_move);
             std::cout << " currmovenumber " << current_move_number;
         }
@@ -314,29 +431,42 @@ void Goldfish::send_status(
     }
 }
 
-void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_max_depth, uint64_t total_nodes, uint64_t tb_hits) {
+void Goldfish::send_move(const RootEntry& entry,
+                         int              current_depth,
+                         int              current_max_depth,
+                         uint64_t         total_nodes,
+                         uint64_t         tb_hits)
+{
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now() - start_time);
+        std::chrono::system_clock::now() - start_time);
 
     std::cout << "info";
     std::cout << " depth " << current_depth;
     std::cout << " seldepth " << current_max_depth;
     std::cout << " nodes " << total_nodes;
     std::cout << " time " << time_delta.count();
-    std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
+    std::cout << " nps "
+              << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count()
+                                             : 0);
     std::cout << " tbhits " << tb_hits;
 
-    if (std::abs(entry.value) >= Value::CHECKMATE_THRESHOLD) {
+    if (std::abs(entry.value) >= Value::CHECKMATE_THRESHOLD)
+    {
         // Calculate mate distance
         int mate_depth = Value::CHECKMATE - std::abs(entry.value);
-        std::cout << " score mate " << ((entry.value > 0) - (entry.value < 0)) * (mate_depth + 1) / 2;
-    } else {
+        std::cout << " score mate "
+                  << ((entry.value > 0) - (entry.value < 0)) * (mate_depth + 1) / 2;
+    }
+    else
+    {
         std::cout << " score cp " << entry.value;
     }
 
-    if (entry.pv.size > 0) {
+    if (entry.pv.size > 0)
+    {
         std::cout << " pv";
-        for (int i = 0; i < entry.pv.size; i++) {
+        for (int i = 0; i < entry.pv.size; i++)
+        {
             std::cout << " " << Notation::from_move(entry.pv.moves[i]);
         }
     }
@@ -346,5 +476,4 @@ void Goldfish::send_move(const RootEntry& entry, int current_depth, int current_
     status_start_time = std::chrono::system_clock::now();
 }
 
-}
-
+}  // namespace goldfish

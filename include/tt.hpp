@@ -1,60 +1,65 @@
 #pragma once
 
-#include "position.hpp"
-#include "move.hpp"
-#include "depth.hpp"
-#include "value.hpp"
 #include "bound.hpp"
+#include "depth.hpp"
 #include "move.hpp"
+#include "position.hpp"
+#include "value.hpp"
 
-namespace goldfish::tt {
-
-struct  TTEntry  {
+namespace goldfish::tt
+{
+struct TTEntry
+{
     uint32_t key32;
     uint32_t move32;
-    int16_t value16;
-    uint8_t bound8;
-    uint8_t depth8;
+    int16_t  value16;
+    uint8_t  bound8;
+    uint8_t  depth8;
 
     uint32_t key() const { return key32; }
-    Move move() const { return Move(move32); }
-    Value value() const { return Value(value16); }
-    Bound bound() const { return Bound(bound8); }
-    Depth depth() const { return Depth(depth8); }
-
+    Move     move() const { return Move(move32); }
+    Value    value() const { return Value(value16); }
+    Bound    bound() const { return Bound(bound8); }
+    Depth    depth() const { return Depth(depth8); }
 
     void save(uint64_t key, Value value, Bound bound, Depth depth, Move move);
 };
 
-// If the compiler does not support packed attribute (GCC feature), then the size might not be
-// as expected. We would like to know this, so fail hard.
+// If the compiler does not support packed attribute (GCC feature), then the size might
+// not be as expected. We would like to know this, so fail hard.
 static_assert(sizeof(TTEntry) == 12, "Size of TTEntry not as expected.");
 
-template<int Mb_Size>
-class TranspositionTable {
-    private:
-        static constexpr size_t size = Mb_Size * 1024 * 1024 / sizeof(TTEntry);
-        std::array<TTEntry, size> table;
+template <int Mb_Size>
+class TranspositionTable
+{
+private:
+    static constexpr size_t   size = Mb_Size * 1024 * 1024 / sizeof(TTEntry);
+    std::array<TTEntry, size> table;
 
-    public:
-
-        const TTEntry* probe(const uint64_t key) const;
-        void store(const uint64_t key, Value value, Bound bound, Depth depth, Move move);
+public:
+    const TTEntry* probe(const uint64_t key) const;
+    void store(const uint64_t key, Value value, Bound bound, Depth depth, Move move);
 };
 
-
-template<int Mb_Size>
-const TTEntry* TranspositionTable<Mb_Size>::probe(const uint64_t key) const {
+template <int Mb_Size>
+const TTEntry* TranspositionTable<Mb_Size>::probe(const uint64_t key) const
+{
     const TTEntry* tte = &table[static_cast<uint32_t>(key) % size];
-    if (tte->key() == key >> 32) {
+    if (tte->key() == key >> 32)
+    {
         return tte;
     }
     return nullptr;
 }
 
-template<int Mb_Size>
-void TranspositionTable<Mb_Size>::store(const uint64_t key, Value value, Bound bound, Depth depth, Move move) {
-    TTEntry *tte = &table[static_cast<uint32_t>(key) % size];
+template <int Mb_Size>
+void TranspositionTable<Mb_Size>::store(const uint64_t key,
+                                        Value          value,
+                                        Bound          bound,
+                                        Depth          depth,
+                                        Move           move)
+{
+    TTEntry* tte = &table[static_cast<uint32_t>(key) % size];
 
     // Update preference implemented in save, not handled here.
     tte->save(key, value, bound, depth, move);
@@ -63,19 +68,23 @@ void TranspositionTable<Mb_Size>::store(const uint64_t key, Value value, Bound b
 // value_to_tt() adjusts a mate score from "plies to mate from the root" to
 // "plies to mate from the current position". Non-mate scores are unchanged.
 // The function is called before storing a value in the transposition table.
-constexpr Value value_to_tt(Value v, int ply) {
+constexpr Value value_to_tt(Value v, int ply)
+{
     assert(v != Value::NO_VALUE);
-    return  v >= Value::CHECKMATE_THRESHOLD ? v + ply
-        : v <= Value::CHECKMATE_THRESHOLD ? v - ply : v;
+    return v >= Value::CHECKMATE_THRESHOLD
+               ? v + ply
+               : v <= Value::CHECKMATE_THRESHOLD ? v - ply : v;
 }
 
 // value_from_tt() is the inverse of value_to_tt(): It adjusts a mate score
 // from the transposition table (which refers to the plies to mate/be mated
 // from current position) to "plies to mate/be mated from the root".
-constexpr Value value_from_tt(Value v, int ply) {
-    return  v == Value::NO_VALUE ? Value::NO_VALUE
-        : v >= Value::CHECKMATE_THRESHOLD ? v - ply
-        : v <= Value::CHECKMATE_THRESHOLD ? v + ply : v;
+constexpr Value value_from_tt(Value v, int ply)
+{
+    return v == Value::NO_VALUE ? Value::NO_VALUE
+                                : v >= Value::CHECKMATE_THRESHOLD
+                                      ? v - ply
+                                      : v <= Value::CHECKMATE_THRESHOLD ? v + ply : v;
 }
 
-}
+}  // namespace goldfish::tt

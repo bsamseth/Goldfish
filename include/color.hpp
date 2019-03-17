@@ -1,12 +1,14 @@
 #pragma once
 
-#include <array>
-#include <cassert>
 #include "operations.hpp"
 
-namespace goldfish {
+#include <array>
+#include <cassert>
 
-enum Color {
+namespace goldfish
+{
+enum Color
+{
     WHITE = 0,
     BLACK,
     NO_COLOR
@@ -14,17 +16,15 @@ enum Color {
 
 ENABLE_INCR_OPERATORS_ON(Color);
 
-constexpr Color operator~(Color c) {
+constexpr Color operator~(Color c)
+{
     return Color(c ^ BLACK);
 }
 
-namespace Colors {
+namespace Colors
+{
+constexpr int                            VALUES_SIZE = 2;
+constexpr std::array<Color, VALUES_SIZE> values      = {WHITE, BLACK};
 
-constexpr int VALUES_SIZE = 2;
-constexpr std::array<Color, VALUES_SIZE> values = {
-    WHITE, BLACK
-};
-
-}
-}
-
+}  // namespace Colors
+}  // namespace goldfish
