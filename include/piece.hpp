@@ -44,43 +44,5 @@ constexpr Color color_of(Piece pc) {
 }
 
 
-// Move directions
-constexpr std::array<std::array<Direction, 3>, 2> pawn_directions = {
-    {NORTH, NORTH_EAST, NORTH_WEST}, // Color::WHITE
-    {SOUTH, SOUTH_EAST, SOUTH_WEST}  // Color::BLACK
-};
-
-constexpr std::array<Direction, 8> knight_directions = {
-    NORTH + NORTH + EAST,
-    NORTH + NORTH + WEST,
-    NORTH + EAST + EAST,
-    NORTH + WEST + WEST,
-    SOUTH + SOUTH + EAST,
-    SOUTH + SOUTH + WEST,
-    SOUTH + EAST + EAST,
-    SOUTH + WEST + WEST
-};
-constexpr std::array<Direction, 4> bishop_directions = {
-    NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST
-};
-constexpr std::array<Direction, 4> rook_directions = {
-    NORTH, EAST, SOUTH, WEST
-};
-constexpr std::array<Direction, 8> queen_directions = {
-    NORTH, EAST, SOUTH, WEST,
-    NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST
-};
-constexpr std::array<Direction, 8> king_directions = queen_directions;
-
-template<Piece pc>
-constexpr auto& directions(Piece pc) {
-    if constexpr (type_of(pc) == PieceType::PAWN) {
-        return pawn_directions[color_of(pc)];
-    }
-}
-
-
-
-
 }
 }
