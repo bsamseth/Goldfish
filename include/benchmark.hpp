@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
-namespace goldfish {
-
+namespace goldfish
+{
 std::vector<std::string> setup_bench();
 
 }

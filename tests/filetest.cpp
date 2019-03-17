@@ -4,8 +4,10 @@
 
 using namespace goldfish;
 
-TEST(filetest, test_values) {
-    for ( auto file : Files::values) {
+TEST(filetest, test_values)
+{
+    for (auto file : Files::values)
+    {
         EXPECT_EQ(file, Files::values[file]);
     }
 }

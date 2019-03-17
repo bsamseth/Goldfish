@@ -2,9 +2,10 @@
 
 #include "movegenerator.hpp"
 
-namespace goldfish {
-
-class Perft {
+namespace goldfish
+{
+class Perft
+{
 public:
     void run();
 
@@ -13,7 +14,7 @@ private:
 
     std::array<MoveGenerator, MAX_DEPTH> move_generators;
 
-    uint64_t mini_max(int depth, Position &position, int ply);
+    uint64_t mini_max(int depth, Position& position, int ply);
 };
 
-}
+}  // namespace goldfish
