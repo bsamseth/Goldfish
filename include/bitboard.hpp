@@ -37,10 +37,6 @@ constexpr int to_bit_square(int square) {
     return ((square & ~7) >> 1) | (square & 7);
 }
 
-constexpr int to_x88_square(int square) {
-    return ((square & ~7) << 1) | (square & 7);
-}
-
 constexpr U64 add(int square, U64 bitboard) {
     return bitboard | 1ULL << to_bit_square(square);
 }
@@ -50,7 +46,7 @@ constexpr U64 remove(int square, U64 bitboard) {
 }
 
 constexpr int next(U64 bitboard) {
-    return to_x88_square(number_of_trailing_zeros(bitboard));
+    return number_of_trailing_zeros(bitboard);
 }
 
 constexpr U64 remainder(U64 bitboard) {

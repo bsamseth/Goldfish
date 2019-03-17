@@ -267,10 +267,10 @@ void Goldfish::receive_bench() {
 void Goldfish::send_best_move(Move best_move, Move ponder_move) {
     std::cout << "bestmove ";
 
-    if (best_move != Move::NO_MOVE) {
+    if (Moves::is_valid(best_move) {
         std::cout << Notation::from_move(best_move);
 
-        if (ponder_move != Move::NO_MOVE) {
+        if (Moves::is_valid(ponder_move)) {
             std::cout << " ponder " << Notation::from_move(ponder_move);
         }
     } else {
@@ -303,7 +303,7 @@ void Goldfish::send_status(
         std::cout << " nps " << (time_delta.count() >= 1000 ? (total_nodes * 1000) / time_delta.count() : 0);
         std::cout << " tbhits " << tb_hits;
 
-        if (current_move != Move::NO_MOVE) {
+        if (Moves::is_valid(current_move)) {
             std::cout << " currmove " << Notation::from_move(current_move);
             std::cout << " currmovenumber " << current_move_number;
         }

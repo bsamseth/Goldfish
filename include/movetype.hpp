@@ -3,17 +3,10 @@
 namespace goldfish {
 
 enum MoveType {
-    NORMAL = 0,
-    PAWN_DOUBLE,
-    PAWN_PROMOTION,
-    EN_PASSANT,
-    CASTLING,
-    NO_MOVE_TYPE
+  NORMAL,
+  PROMOTION = 1 << 14,
+  ENPASSANT = 2 << 14,
+  CASTLING  = 3 << 14
 };
 
-namespace MoveTypes {
-
-constexpr int MASK = 0x7;
-
-}
 }

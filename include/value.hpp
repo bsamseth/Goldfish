@@ -47,5 +47,15 @@ constexpr bool is_checkmate_in(Value value, Depth depth) {
     Value absvalue = Value(std::abs(value));
     return absvalue + depth >= Value::CHECKMATE;
 }
+
+constexpr Value mate_in(int ply) {
+    return Value::CHECKMATE - ply;
+}
+
+constexpr Value mated_in(int ply) {
+    return -Value::CHECKMATE + ply;
+}
+
+
 }
 }

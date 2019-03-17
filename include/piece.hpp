@@ -7,20 +7,15 @@
 namespace goldfish {
 
 enum Piece {
-    WHITE_PAWN = 0,
-    WHITE_KNIGHT,
-    WHITE_BISHOP,
-    WHITE_ROOK,
-    WHITE_QUEEN,
-    WHITE_KING,
-    BLACK_PAWN,
-    BLACK_KNIGHT,
-    BLACK_BISHOP,
-    BLACK_ROOK,
-    BLACK_QUEEN,
-    BLACK_KING,
     NO_PIECE,
+    WHITE_PAWN = 1, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
+    BLACK_PAWN = 9, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
+    PIECE_NB = 16
 };
+
+constexpr Piece operator~(Piece pc) {
+  return Piece(pc ^ 8); // Swap color of piece BLACK_KNIGHT -> WHITE_KNIGHT
+}
 
 namespace Pieces {
 
@@ -31,114 +26,61 @@ constexpr std::array<Piece, VALUES_SIZE> values = {
         BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING
 };
 
-constexpr int MASK = 0x1F;
+constexpr bool is_valid(Piece pc) {
+    return (WHITE_PAWN <= pc && pc <= WHITE_KING) || (BLACK_PAWN <= pc && pc <= BLACK_KING);
+}
 
-inline constexpr bool is_valid(Piece piece) {
-    switch (piece) {
-        case WHITE_PAWN:
-        case WHITE_KNIGHT:
-        case WHITE_BISHOP:
-        case WHITE_ROOK:
-        case WHITE_QUEEN:
-        case WHITE_KING:
-        case BLACK_PAWN:
-        case BLACK_KNIGHT:
-        case BLACK_BISHOP:
-        case BLACK_ROOK:
-        case BLACK_QUEEN:
-        case BLACK_KING:
-            return true;
-        default:
-            return false;
+constexpr Piece value_of(Color c, PieceType pt) {
+    return Piece((c << 3) + pt);
+}
+
+constexpr PieceType type_of(Piece pc) {
+    return PieceType(pc & 7);
+}
+
+constexpr Color color_of(Piece pc) {
+    assert(pc != NO_PIECE);
+    return Color(pc >> 3);
+}
+
+
+// Move directions
+constexpr std::array<std::array<Direction, 3>, 2> pawn_directions = {
+    {NORTH, NORTH_EAST, NORTH_WEST}, // Color::WHITE
+    {SOUTH, SOUTH_EAST, SOUTH_WEST}  // Color::BLACK
+};
+
+constexpr std::array<Direction, 8> knight_directions = {
+    NORTH + NORTH + EAST,
+    NORTH + NORTH + WEST,
+    NORTH + EAST + EAST,
+    NORTH + WEST + WEST,
+    SOUTH + SOUTH + EAST,
+    SOUTH + SOUTH + WEST,
+    SOUTH + EAST + EAST,
+    SOUTH + WEST + WEST
+};
+constexpr std::array<Direction, 4> bishop_directions = {
+    NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST
+};
+constexpr std::array<Direction, 4> rook_directions = {
+    NORTH, EAST, SOUTH, WEST
+};
+constexpr std::array<Direction, 8> queen_directions = {
+    NORTH, EAST, SOUTH, WEST,
+    NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST
+};
+constexpr std::array<Direction, 8> king_directions = queen_directions;
+
+template<Piece pc>
+constexpr auto& directions(Piece pc) {
+    if constexpr (type_of(pc) == PieceType::PAWN) {
+        return pawn_directions[color_of(pc)];
     }
 }
 
-inline constexpr Piece value_of(Color color, PieceType piecetype) {
-    switch (color) {
-        case Color::WHITE:
-            switch (piecetype) {
-                case PieceType::PAWN:
-                    return WHITE_PAWN;
-                case PieceType::KNIGHT:
-                    return WHITE_KNIGHT;
-                case PieceType::BISHOP:
-                    return WHITE_BISHOP;
-                case PieceType::ROOK:
-                    return WHITE_ROOK;
-                case PieceType::QUEEN:
-                    return WHITE_QUEEN;
-                case PieceType::KING:
-                    return WHITE_KING;
-                default:
-                    throw std::invalid_argument("Bad piecetype");
-            }
-        case Color::BLACK:
-            switch (piecetype) {
-                case PieceType::PAWN:
-                    return BLACK_PAWN;
-                case PieceType::KNIGHT:
-                    return BLACK_KNIGHT;
-                case PieceType::BISHOP:
-                    return BLACK_BISHOP;
-                case PieceType::ROOK:
-                    return BLACK_ROOK;
-                case PieceType::QUEEN:
-                    return BLACK_QUEEN;
-                case PieceType::KING:
-                    return BLACK_KING;
-                default:
-                    throw std::invalid_argument("Bad piecetype");
-            }
-        default:
-            throw std::invalid_argument("Bad color");
-    }
-}
 
-inline constexpr PieceType get_type(Piece piece) {
-    switch (piece) {
-        case WHITE_PAWN:
-        case BLACK_PAWN:
-            return PieceType::PAWN;
-        case WHITE_KNIGHT:
-        case BLACK_KNIGHT:
-            return PieceType::KNIGHT;
-        case WHITE_BISHOP:
-        case BLACK_BISHOP:
-            return PieceType::BISHOP;
-        case WHITE_ROOK:
-        case BLACK_ROOK:
-            return PieceType::ROOK;
-        case WHITE_QUEEN:
-        case BLACK_QUEEN:
-            return PieceType::QUEEN;
-        case WHITE_KING:
-        case BLACK_KING:
-            return PieceType::KING;
-        default:
-            throw std::invalid_argument("Bad piece");
-    }
-}
 
-inline constexpr Color get_color(Piece piece) {
-    switch (piece) {
-        case WHITE_PAWN:
-        case WHITE_KNIGHT:
-        case WHITE_BISHOP:
-        case WHITE_ROOK:
-        case WHITE_QUEEN:
-        case WHITE_KING:
-            return Color::WHITE;
-        case BLACK_PAWN:
-        case BLACK_KNIGHT:
-        case BLACK_BISHOP:
-        case BLACK_ROOK:
-        case BLACK_QUEEN:
-        case BLACK_KING:
-            return Color::BLACK;
-        default:
-            throw std::invalid_argument("Bad piece");
-    }
-}
 
 }
 }

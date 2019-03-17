@@ -17,14 +17,14 @@ namespace goldfish {
 
 class Position {
 public:
-    std::array<Piece, Squares::VALUES_LENGTH> board;
+    std::array<Piece, Squares::VALUES_SIZE> board;
 
     std::array<std::array<uint64_t, PieceTypes::VALUES_SIZE>, Colors::VALUES_SIZE> pieces = {};
 
     std::array<Value, Colors::VALUES_SIZE> material = {};
 
     Castling castling_rights = Castling::NO_CASTLING;
-    Square enpassant_square = Square::NO_SQUARE;
+    Square enpassant_square = Square::SQ_NONE;
     Color active_color = Color::WHITE;
     int halfmove_clock = 0;
 
@@ -95,9 +95,9 @@ public:
 private:
     class Zobrist {
     public:
-        std::array<std::array<uint64_t, Squares::VALUES_LENGTH>, Pieces::VALUES_SIZE> board;
+        std::array<std::array<uint64_t, Squares::VALUES_SIZE>, Pieces::VALUES_SIZE> board;
         std::array<uint64_t, Castlings::VALUES_LENGTH> castling_rights;
-        std::array<uint64_t, Squares::VALUES_LENGTH> enpassant_square;
+        std::array<uint64_t, Squares::VALUES_SIZE> enpassant_square;
         uint64_t active_color;
 
         static Zobrist &instance();
@@ -114,7 +114,7 @@ private:
     public:
         uint64_t zobrist_key = 0;
         Castling castling_rights = Castling::NO_CASTLING;
-        Square enpassant_square = Square::NO_SQUARE;
+        Square enpassant_square = Square::SQ_NONE;
         int halfmove_clock = 0;
     };
 

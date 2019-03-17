@@ -38,7 +38,7 @@ public:
 
 class MoveEntry {
 public:
-    Move move = Move::NO_MOVE;
+    Move move = Move::MOVE_NONE;
     Value value = Value::NO_VALUE;
 };
 

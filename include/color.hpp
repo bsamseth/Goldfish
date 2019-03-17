@@ -14,9 +14,8 @@ enum Color {
 
 ENABLE_INCR_OPERATORS_ON(Color);
 
-inline constexpr Color operator~(Color c) {
-    assert(c != Color::NO_COLOR);
-    return c == Color::WHITE ? Color::BLACK : Color::WHITE;
+constexpr Color operator~(Color c) {
+    return Color(c ^ BLACK);
 }
 
 namespace Colors {

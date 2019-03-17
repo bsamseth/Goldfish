@@ -73,7 +73,7 @@ Value evaluate_mobility(Color color, const Position& position) {
 
 Value evaluate_mobility(const Position &position, Square square, const std::vector<Direction> &directions) {
     int mobility = 0;
-    bool sliding = PieceTypes::is_sliding(Pieces::get_type(position.board[square]));
+    bool sliding = PieceTypes::is_sliding(Pieces::type_of(position.board[square]));
 
     for (auto direction : directions) {
         Square target_square = square + direction;

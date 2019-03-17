@@ -2,58 +2,35 @@
 
 #include <array>
 #include "value.hpp"
+#include "operations.hpp"
 
 namespace goldfish {
 
 enum PieceType {
-    PAWN = 0,
-    KNIGHT,
-    BISHOP,
-    ROOK,
-    QUEEN,
-    KING,
-    NO_PIECE_TYPE
+  NO_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
+  ALL_PIECES = 0,
+  PIECE_TYPE_NB = 8
 };
 
-namespace PieceTypes {
+ENABLE_INCR_OPERATORS_ON(PieceType)
 
-constexpr int MASK = 0x7;
+namespace PieceTypes {
 
 constexpr int VALUES_SIZE = 6;
 constexpr std::array<PieceType, VALUES_SIZE> values = {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
 };
 
-
-constexpr bool is_valid_promotion(PieceType piecetype) {
-    switch (piecetype) {
-        case KNIGHT:
-        case BISHOP:
-        case ROOK:
-        case QUEEN:
-            return true;
-        default:
-            return false;
-    }
+constexpr bool is_valid_promotion(PieceType pt) {
+    return KNIGHT <= pt && pt <= QUEEN;
 }
 
-constexpr bool is_sliding(PieceType piecetype) {
-    switch (piecetype) {
-        case BISHOP:
-        case ROOK:
-        case QUEEN:
-            return true;
-        case PAWN:
-        case KNIGHT:
-        case KING:
-            return false;
-        default:
-            throw std::exception();
-    }
+constexpr bool is_sliding(PieceType pt) {
+    return BISHOP <= pt && pt <= QUEEN;
 }
 
-constexpr Value get_value(PieceType piecetype) {
-    switch (piecetype) {
+constexpr Value value_of(PieceType pt) {
+    switch (pt) {
         case PAWN:
             return Value::PAWN_VALUE;
         case KNIGHT:
