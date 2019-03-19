@@ -6,7 +6,7 @@
 
 namespace goldfish::UCI {
 
-namespace {
+namespace _internals {
 
 using OptionValue = std::variant<int, std::string>;
 
@@ -74,12 +74,12 @@ inline std::ostream& operator<<(std::ostream& stm, const IntegerOption& s)
 class OptionsManager
 {
 private:
-    StringOption syzygy_path_ {"SyzygyPath", "syzygy"};
-    IntegerOption tthash_ {"Hash", 256, 0, 10 * 1024};
+    _internals::StringOption syzygy_path_ {"SyzygyPath", "syzygy"};
+    _internals::IntegerOption tthash_ {"Hash", 256, 0, 10 * 1024};
 
 public:
-    StringOption&  SyzygyPath() { return syzygy_path_; }
-    IntegerOption& Hash() { return tthash_; }
+    _internals::StringOption&  SyzygyPath() { return syzygy_path_; }
+    _internals::IntegerOption& Hash() { return tthash_; }
 };
 inline std::ostream& operator<<(std::ostream& stm, OptionsManager& opt)
 {
@@ -88,5 +88,6 @@ inline std::ostream& operator<<(std::ostream& stm, OptionsManager& opt)
     return stm;
 }
 
-OptionsManager options;
+extern OptionsManager options;
+
 }

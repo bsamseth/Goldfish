@@ -11,6 +11,7 @@
 #include "movegenerator.hpp"
 #include "evaluation.hpp"
 #include "tt.hpp"
+#include "uci.hpp"
 
 namespace goldfish {
 
@@ -114,7 +115,7 @@ private:
     std::array<MoveGenerator, Depth::MAX_PLY> move_generators;
 
     // Transposition table initialized in advance.
-    tt::TranspositionTable<300> ttable;
+    tt::TranspositionTable ttable;
 
     // Depths search
     Depth search_depth;

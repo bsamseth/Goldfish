@@ -1,7 +1,11 @@
 #include <cassert>
 #include "tt.hpp"
+#include "uci.hpp"
 
 namespace goldfish::tt {
+
+TranspositionTable::TranspositionTable() : TranspositionTable(UCI::options.Hash().default_value()) {}
+TranspositionTable::TranspositionTable(size_t MB_size) : table_(MB_size * MB) {}
 
 void TTEntry::save(uint64_t key, Value value, Bound bound, Depth depth, Move move) {
 

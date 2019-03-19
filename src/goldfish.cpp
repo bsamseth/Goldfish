@@ -46,6 +46,8 @@ void Goldfish::run() {
         }else if (token == "quit") {
             receive_quit();
             break;
+        } else {
+            std::cout << "Unknown command: " << token << std::endl;
         }
     }
 }

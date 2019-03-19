@@ -97,10 +97,9 @@ void Search::new_ponder_search(Position &position,
 Search::Search(Protocol &protocol)
         : wakeup_signal(0), run_signal(0), stop_signal(0), finished_signal(0),
           protocol(protocol),
-          timer(timer_stopped, do_time_management, current_depth, initial_depth, abort) {
-
+          timer(timer_stopped, do_time_management, current_depth, initial_depth, abort)
+{
     reset();
-
     thread = std::thread(&Search::run, this);
 }
 
