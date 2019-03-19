@@ -8,6 +8,7 @@
 #include "projectmeta.hpp"
 #include "benchmark.hpp"
 #include "tb.hpp"
+#include "uci.hpp"
 
 extern std::vector<std::string> setup_bench();
 
@@ -16,8 +17,8 @@ namespace goldfish {
 void Goldfish::run() {
     std::cin.exceptions(std::iostream::eofbit | std::iostream::failbit | std::iostream::badbit);
 
-    // Initialize by default:
-    receive_initialize();
+    std::cout << "Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH
+              << " by B. Samseth\n";
 
     while (true) {
         std::string line;
@@ -63,11 +64,12 @@ void Goldfish::receive_initialize() {
     // We could do some global initialization here. Probably it would be best
     // to initialize all tables here as they will exist until the end of the
     // program.
-    tb::initialize("../syzygy");
+    tb::initialize(UCI::options.SyzygyPath().current_value());
 
     // We must send an initialization answer back!
     std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH << '\n';
     std::cout << "id author Bendik Samseth" << '\n';
+    std::cout << UCI::options << '\n';
     std::cout << "uciok" << std::endl;
 }
 
