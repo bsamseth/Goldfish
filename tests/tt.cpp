@@ -9,7 +9,7 @@ using namespace goldfish;
 using namespace goldfish::tt;
 
 TEST(ttable, test_store_and_probe) {
-    TranspositionTable<1> tt;
+    TranspositionTable tt(1);
 
     Position pos(Notation::to_position(Notation::STANDARDPOSITION));
     uint64_t key = pos.zobrist_key;
