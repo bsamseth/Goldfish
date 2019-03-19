@@ -80,6 +80,7 @@ set(HEADERS
         include/square.hpp
         include/tb.hpp
         include/tt.hpp
+        include/uci.hpp
         include/value.hpp)
 set(SOURCES
         src/benchmark.cpp
@@ -97,7 +98,7 @@ set(SOURCES
         src/timer.cpp
         src/tb.cpp
         src/tt.cpp
-        )
+        src/uci.cpp)
 set(TESTFILES
         tests/bitboardtest.cpp
         tests/castlingtest.cpp
