@@ -254,7 +254,7 @@ std::string Notation::from_position(const Position &position) {
 }
 
 Color Notation::to_color(char notation) {
-    char lowercase_notation = std::tolower(notation);
+    char lowercase_notation = tolower(notation);
     switch (lowercase_notation) {
         case WHITE_NOTATION:
             return Color::WHITE;
@@ -278,7 +278,7 @@ char Notation::from_color(Color color) {
 }
 
 Color Notation::color_of(char notation) {
-    if (std::islower(notation)) {
+    if (islower(notation)) {
         return Color::BLACK;
     } else {
         return Color::WHITE;
@@ -288,16 +288,16 @@ Color Notation::color_of(char notation) {
 char Notation::transform(char notation, Color color) {
     switch (color) {
         case Color::WHITE:
-            return std::toupper(notation);
+            return toupper(notation);
         case Color::BLACK:
-            return std::tolower(notation);
+            return tolower(notation);
         default:
             throw std::exception();
     }
 }
 
 PieceType Notation::to_piece_type(char notation) {
-    char uppercase_notation = std::toupper(notation);
+    char uppercase_notation = toupper(notation);
     switch (uppercase_notation) {
         case PAWN_NOTATION:
             return PieceType::PAWN;
@@ -352,7 +352,7 @@ char Notation::from_piece(Piece piece) {
 }
 
 CastlingType Notation::to_castling_type(char notation) {
-    char uppercase_notation = std::toupper(notation);
+    char uppercase_notation = toupper(notation);
     switch (uppercase_notation) {
         case KING_SIDE_NOTATION:
             return CastlingType::KING_SIDE;
@@ -391,7 +391,7 @@ char Notation::from_castling(Castling castling) {
 }
 
 File Notation::to_file(char notation) {
-    char lowercase_notation = std::tolower(notation);
+    char lowercase_notation = tolower(notation);
     switch (lowercase_notation) {
         case A_NOTATION:
             return File::FILE_A;
@@ -512,7 +512,7 @@ std::string Notation::from_move(Move move) {
 
     PieceType promotion = Moves::get_promotion(move);
     if (promotion != PieceType::NO_PIECE_TYPE) {
-        notation += (char) std::tolower(Notation::from_piece_type(promotion));
+        notation += (char) tolower(Notation::from_piece_type(promotion));
     }
 
     return notation;
