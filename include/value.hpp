@@ -39,12 +39,12 @@ inline Value& operator-=(Value& v, int i) { return v = v - i; }
 namespace Values {
 
 constexpr bool is_checkmate(Value value) {
-    Value absvalue = Value(std::abs(value));
+    Value absvalue = Value(value < 0 ? -value : value);
     return absvalue >= Value::CHECKMATE_THRESHOLD && absvalue <= Value::CHECKMATE;
 }
 
 constexpr bool is_checkmate_in(Value value, Depth depth) {
-    Value absvalue = Value(std::abs(value));
+    Value absvalue = Value(value < 0 ? -value : value);
     return absvalue + depth >= Value::CHECKMATE;
 }
 }
