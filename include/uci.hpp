@@ -1,93 +1,74 @@
+/*
+  This file is largely a copy of Stockfish's uci.h file, with some
+  small modifications. Original copyright:
+
+  Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+  Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+  Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+  Copyright (C) 2015-2019 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+  Stockfish is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Stockfish is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #pragma once
 
-#include <iostream>
-#include <variant>
+#include <map>
 #include <string>
 
 namespace goldfish::UCI {
 
-namespace _internals {
+/// Custom comparator because UCI options should be case insensitive
+struct CaseInsensitiveLess {
+  bool operator() (const std::string&, const std::string&) const;
+};
 
-using OptionValue = std::variant<int, std::string>;
+class Option;
 
+/// Our options container is actually a std::map
+typedef std::map<std::string, Option, CaseInsensitiveLess> OptionsMap;
 
-struct Option
-{
-protected:
-    std::string name_;
-    std::string type_;
-    OptionValue current_value_;
-    OptionValue default_value_;
+/// Option class implements an option as defined by UCI protocol
+class Option {
 
-    Option(std::string n, std::string t, OptionValue d)
-        : name_(n), type_(t), current_value_(d), default_value_(d) {}
+  typedef void (*OnChange)(const Option&);
 
 public:
-    const std::string& name() const { return name_; }
-    const std::string& type() const { return type_; }
-    void set(const OptionValue& value) { current_value_ = value; }
-};
+  Option(OnChange = nullptr);
+  Option(bool v, OnChange = nullptr);
+  Option(const char* v, OnChange = nullptr);
+  Option(double v, int minv, int maxv, OnChange = nullptr);
+  Option(const char* v, const char* cur, OnChange = nullptr);
 
-inline std::ostream& operator<<(std::ostream& stm, const Option& s)
-{
-    return stm << "option name " << s.name() << " type " << s.type();
-}
+  Option& operator=(const std::string&);
+  void operator<<(const Option&);
+  operator double() const;
+  operator std::string() const;
+  bool operator==(const char*) const;
 
-struct StringOption : public Option
-{
-    StringOption(std::string n, std::string d)
-        : Option(n, "string", d) {}
-    const std::string& default_value() const { return std::get<std::string>(default_value_); }
-    const std::string& current_value() const { return std::get<std::string>(current_value_); }
-};
-
-inline std::ostream& operator<<(std::ostream& stm, const StringOption& s)
-{
-    return stm << static_cast<Option>(s) << " default " << s.default_value();
-}
-
-struct IntegerOption : public Option
-{
 private:
-    int min_value_;
-    int max_value_;
+  friend std::ostream& operator<<(std::ostream&, const OptionsMap&);
 
-public:
-    IntegerOption(std::string n, int d, int min, int max)
-        : Option(n, "spin", d), min_value_(min), max_value_(max) {}
-    int default_value() const { return std::get<int>(default_value_); }
-    int current_value() const { return std::get<int>(current_value_); }
-    int minimum()       const { return min_value_; }
-    int maximum()       const { return max_value_; }
+  std::string defaultValue, currentValue, type;
+  int min, max;
+  size_t idx;
+  OnChange on_change;
 };
 
-inline std::ostream& operator<<(std::ostream& stm, const IntegerOption& s)
-{
-    return stm << static_cast<Option>(s)
-               << " default " << s.default_value()
-               << " min " << s.minimum()
-               << " max " << s.maximum();
-}
+
+// Initialize all options.
+void init(OptionsMap&);
+
+extern UCI::OptionsMap Options;
 
 }
 
-class OptionsManager
-{
-private:
-    _internals::StringOption syzygy_path_ {"SyzygyPath", "syzygy"};
-    _internals::IntegerOption tthash_ {"Hash", 256, 0, 10 * 1024};
-
-public:
-    _internals::StringOption&  SyzygyPath() { return syzygy_path_; }
-    _internals::IntegerOption& Hash() { return tthash_; }
-};
-inline std::ostream& operator<<(std::ostream& stm, OptionsManager& opt)
-{
-    stm << opt.SyzygyPath() << '\n';
-    stm << opt.Hash();
-    return stm;
-}
-
-extern OptionsManager options;
-
-}

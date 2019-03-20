@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "position.hpp"
 #include "move.hpp"
 #include "depth.hpp"
@@ -47,6 +49,7 @@ class TranspositionTable {
 
 inline void TranspositionTable::resize(size_t size)
 {
+    std::cout << "info string resizing transposition table to " << size << " MB\n";
     table_.resize(size * MB);
 }
 
@@ -82,5 +85,9 @@ constexpr Value value_from_tt(Value v, int ply) {
         : v >= Value::CHECKMATE_THRESHOLD ? v - ply
         : v <= Value::CHECKMATE_THRESHOLD ? v + ply : v;
 }
-
+}
+namespace goldfish
+{
+// Global TT object.
+extern tt::TranspositionTable TT;
 }

@@ -114,9 +114,6 @@ private:
     // in search. (which is expensive)
     std::array<MoveGenerator, Depth::MAX_PLY> move_generators;
 
-    // Transposition table initialized in advance.
-    tt::TranspositionTable ttable;
-
     // Depths search
     Depth search_depth;
 

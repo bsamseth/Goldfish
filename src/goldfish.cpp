@@ -41,9 +41,11 @@ void Goldfish::run() {
             receive_stop();
         } else if (token == "ponderhit") {
             receive_ponder_hit();
+        } else if (token == "setoption") {
+            receive_setoption(input);
         } else if (token == "bench") {
             receive_bench();
-        }else if (token == "quit") {
+        } else if (token == "quit") {
             receive_quit();
             break;
         } else {
@@ -66,12 +68,12 @@ void Goldfish::receive_initialize() {
     // We could do some global initialization here. Probably it would be best
     // to initialize all tables here as they will exist until the end of the
     // program.
-    tb::initialize(UCI::options.SyzygyPath().current_value());
+    UCI::init(UCI::Options);
 
     // We must send an initialization answer back!
     std::cout << "id name Goldfish v" << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "." << PROJECT_VERSION_PATCH << '\n';
     std::cout << "id author Bendik Samseth" << '\n';
-    std::cout << UCI::options << '\n';
+    std::cout << UCI::Options << '\n';
     std::cout << "uciok" << std::endl;
 }
 
@@ -267,6 +269,30 @@ void Goldfish::receive_bench() {
               << "\nNodes searched  : " << total_nodes
               << "\nNodes/second    : " << 1000*total_nodes/time << std::endl;
 }
+
+// setoption() is called when engine receives the "setoption" UCI command. The
+// function updates the UCI option ("name") to the given value ("value").
+void Goldfish::receive_setoption(std::istringstream& input) {
+
+    std::string token, name, value;
+
+    input >> token; // Consume "name" token
+
+    // Read option name (can contain spaces)
+    while (input >> token && token != "value")
+        name += (name.empty() ? "" : " ") + token;
+
+    // Read option value (can contain spaces)
+    while (input >> token)
+        value += (value.empty() ? "" : " ") + token;
+
+    if (UCI::Options.count(name))
+        UCI::Options[name] = value;
+    else
+        std::cout << "No such option: " << name << std::endl;
+}
+
+
 
 void Goldfish::send_best_move(Move best_move, Move ponder_move) {
     std::cout << "bestmove ";

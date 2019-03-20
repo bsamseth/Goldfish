@@ -2,9 +2,14 @@
 #include "tt.hpp"
 #include "uci.hpp"
 
-namespace goldfish::tt {
+namespace goldfish {
 
-TranspositionTable::TranspositionTable() : TranspositionTable(UCI::options.Hash().default_value()) {}
+// Global TT object.
+tt::TranspositionTable TT;
+
+namespace tt {
+
+TranspositionTable::TranspositionTable() : TranspositionTable(16) {}
 TranspositionTable::TranspositionTable(size_t MB_size) : table_(MB_size * MB) {}
 
 void TTEntry::save(uint64_t key, Value value, Bound bound, Depth depth, Move move) {
@@ -29,5 +34,6 @@ void TTEntry::save(uint64_t key, Value value, Bound bound, Depth depth, Move mov
         assert(depth < (1 << 8));
         depth8 = (uint8_t) depth;
     }
+}
 }
 }
