@@ -257,14 +257,14 @@ TEST(positiontest, test_bitboard_fetchers) {
     const U64 bpawn = 1ULL << 30;
     const U64 wknight = 1ULL << 3;
 
-    ASSERT_EQ(wking, (pos.get_pieces<Color::WHITE, PieceType::KING>()));
-    ASSERT_EQ(bking, (pos.get_pieces<Color::BLACK, PieceType::KING>()));
-    ASSERT_EQ(wpawn, (pos.get_pieces<Color::WHITE, PieceType::PAWN>()));
-    ASSERT_EQ(bpawn, (pos.get_pieces<Color::BLACK, PieceType::PAWN>()));
-    ASSERT_EQ(wknight, (pos.get_pieces<Color::WHITE, PieceType::KNIGHT>()));
-    ASSERT_EQ(wking | wpawn | wknight, (pos.get_pieces<Color::WHITE>()));
-    ASSERT_EQ(bking | bpawn, (pos.get_pieces<Color::BLACK>()));
-    ASSERT_EQ(wking | bking, (pos.get_pieces<PieceType::KING>()));
-    ASSERT_EQ(wpawn | bpawn, (pos.get_pieces<PieceType::PAWN>()));
-    ASSERT_EQ(wknight, (pos.get_pieces<PieceType::KNIGHT>()));
+    ASSERT_EQ(wking, (pos.get_pieces(Color::WHITE, PieceType::KING)));
+    ASSERT_EQ(bking, (pos.get_pieces(Color::BLACK, PieceType::KING)));
+    ASSERT_EQ(wpawn, (pos.get_pieces(Color::WHITE, PieceType::PAWN)));
+    ASSERT_EQ(bpawn, (pos.get_pieces(Color::BLACK, PieceType::PAWN)));
+    ASSERT_EQ(wknight, (pos.get_pieces(Color::WHITE, PieceType::KNIGHT)));
+    ASSERT_EQ(wking | wpawn | wknight, (pos.get_pieces(Color::WHITE)));
+    ASSERT_EQ(bking | bpawn, (pos.get_pieces(Color::BLACK)));
+    ASSERT_EQ(wking | bking, (pos.get_pieces(PieceType::KING)));
+    ASSERT_EQ(wpawn | bpawn, (pos.get_pieces(PieceType::PAWN)));
+    ASSERT_EQ(wknight, (pos.get_pieces(PieceType::KNIGHT)));
 }
