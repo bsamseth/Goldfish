@@ -78,13 +78,13 @@ target_compile_options(engine PRIVATE # clang/GCC warnings
                       "/Wall" >)
 
 add_executable(goldfish.x app/goldfish.cpp)
-target_link_libraries(goldfish.x PRIVATE engine )
+target_link_libraries(goldfish.x PRIVATE engine $<$<BOOL:UNIX>:"pthread">)
 
 add_executable(bench.x app/bench.cpp)
-target_link_libraries(bench.x PRIVATE engine )
+target_link_libraries(bench.x PRIVATE engine  $<$<BOOL:UNIX>:"pthread">)
 
 add_executable(perft.x app/perft.cpp)
-target_link_libraries(perft.x PRIVATE engine )
+target_link_libraries(perft.x PRIVATE engine  $<$<BOOL:UNIX>:"pthread">)
 
 set_target_properties(
     engine goldfish.x bench.x perft.x 
@@ -93,14 +93,13 @@ set_target_properties(
     CXX_STANDARD_REQUIRED YES 
     CXX_EXTENSIONS NO)
 
-
 # --------------------------------------------------------------------------------
 #                         Make Tests
 # --------------------------------------------------------------------------------
 # Add a make target 'gtest', that runs the tests (and builds all dependencies).
 # The setup of Google Test is done at the very end of this file.
 add_executable(${TEST_MAIN} ${TESTFILES})
-target_link_libraries(${TEST_MAIN} googletest engine )
+target_link_libraries(${TEST_MAIN} googletest engine  $<$<BOOL:UNIX>:"pthread">)
 add_custom_target(gtest 
     COMMAND "${PROJECT_BINARY_DIR}/${TEST_MAIN}"
     DEPENDS ${TEST_MAIN})
