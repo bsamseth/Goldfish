@@ -135,7 +135,6 @@ void Option::operator<<(const Option& o) {
 /// from the user by console window, so let's check the bounds anyway.
 
 Option& Option::operator=(const std::string& v) {
-    std::cout << "operator= called with arg: " << v << std::endl;
     assert(!type.empty());
 
     if (   (type != "button" && v.empty())
