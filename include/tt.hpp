@@ -45,7 +45,12 @@ class TranspositionTable {
         void resize(size_t size);
         const TTEntry* probe(const uint64_t key) const;
         void store(const uint64_t key, Value value, Bound bound, Depth depth, Move move);
+        size_t size() const;
 };
+
+inline size_t TranspositionTable::size() const {
+    return table_.size() / MB;
+}
 
 inline void TranspositionTable::resize(size_t size)
 {

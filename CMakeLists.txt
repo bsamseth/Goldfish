@@ -55,7 +55,8 @@ set(TESTFILES
         tests/ranktest.cpp
         tests/squaretest.cpp
         tests/tbtest.cpp
-        tests/tt.cpp)
+        tests/tt.cpp
+        tests/ucioptions.cpp)
 set(FATHOM_SOURCES
     external/Fathom/src/tbprobe.c)
 set(TEST_MAIN unit_tests.x)
