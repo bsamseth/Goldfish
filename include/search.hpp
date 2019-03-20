@@ -129,6 +129,7 @@ private:
 
     // Search parameters
     MoveList<RootEntry> root_moves;
+    Value contempt;
     bool root_in_TB = false;
     bool abort;
     uint64_t total_nodes;

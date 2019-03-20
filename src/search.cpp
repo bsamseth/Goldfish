@@ -82,6 +82,9 @@ void Search::run() {
             tb_hits++;
         }
 
+        // Load contempt value. Options value is in centipawns, so convert to whatever unit Value::PAWN_VALUE defines.
+        contempt = Value(((int) UCI::Options["Contempt"]) * Value::PAWN_VALUE / 100);
+
         //### BEGIN Iterative Deepening
         for (Depth depth = initial_depth; !abort and depth <= search_depth; ++depth) {
             current_depth = depth;
@@ -225,7 +228,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
     // Check insufficient material, repetition and fifty move rule
     if (position.halfmove_clock >= 100 || position.has_insufficient_material() || position.is_repetition()) {
-        return Value::DRAW;
+        return contempt;
     }
 
     Value alpha_orig = alpha;
@@ -289,7 +292,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
         Value value = wdl < -DrawScore ? Value::KNOWN_LOSS + ply
                     : wdl >  DrawScore ? Value::KNOWN_WIN - ply
-                                       : Value::DRAW + 2 * DrawScore * wdl;
+                                       : contempt + 2 * DrawScore * wdl;
 
         Bound b = wdl < -DrawScore ? Bound::UPPER
                 : wdl >  DrawScore ? Bound::LOWER : Bound::EXACT;
@@ -434,7 +437,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
     // If we cannot move, check for checkmate and stalemate.
     if (searched_moves == 0) {
-        best_value = is_check ? -Value::CHECKMATE + ply : Value::DRAW;
+        best_value = is_check ? -Value::CHECKMATE + ply : contempt;
         best_value_bound = Bound::EXACT;
     }
 
@@ -456,7 +459,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
 
     // Check insufficient material, repetition and fifty move rule
     if (position.is_repetition() || position.has_insufficient_material() || position.halfmove_clock >= 100) {
-        return Value::DRAW;
+        return contempt;
     }
 
     // Initialize
