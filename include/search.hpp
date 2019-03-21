@@ -23,7 +23,7 @@ struct Stack
 {
     Value staticEval;
 
-    Stack(Value v = Value::NO_VALUE) : staticEval(v) {}
+    explicit Stack(Value v = Value::NO_VALUE) : staticEval(v) {}
 };
 
 /**
