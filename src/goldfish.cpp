@@ -248,7 +248,7 @@ void Goldfish::receive_bench() {
         std::istringstream hash_options("name Hash value 128");
         hash_options >> std::skipws;
         receive_setoption(hash_options);
-        if (UCI::Options["SyzygyPath"] == "<empty>")
+        if ((std::string) UCI::Options["SyzygyPath"] == "<empty>")
         {
             std::istringstream syzygy_options("name SyzygyPath value ../syzygy");
             syzygy_options >> std::skipws;
