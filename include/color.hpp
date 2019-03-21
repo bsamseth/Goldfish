@@ -12,7 +12,7 @@ enum Color {
     NO_COLOR
 };
 
-ENABLE_INCR_OPERATORS_ON(Color);
+ENABLE_INCR_OPERATORS_ON(Color)
 
 inline constexpr Color operator~(Color c) {
     assert(c != Color::NO_COLOR);
