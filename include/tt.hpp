@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "position.hpp"
 #include "move.hpp"
 #include "depth.hpp"
@@ -30,31 +32,42 @@ struct  TTEntry  {
 // as expected. We would like to know this, so fail hard.
 static_assert(sizeof(TTEntry) == 12, "Size of TTEntry not as expected.");
 
-template<int Mb_Size>
 class TranspositionTable {
     private:
-        static constexpr size_t size = Mb_Size * 1024 * 1024 / sizeof(TTEntry);
-        std::array<TTEntry, size> table;
+        static constexpr size_t MB = 1024 * 1024 / sizeof(TTEntry);
+        std::vector<TTEntry> table_;
 
     public:
 
+        TranspositionTable();
+        TranspositionTable(size_t size);
+
+        void resize(size_t size);
         const TTEntry* probe(const uint64_t key) const;
         void store(const uint64_t key, Value value, Bound bound, Depth depth, Move move);
+        size_t size() const;
 };
 
+inline size_t TranspositionTable::size() const {
+    return table_.size() / MB;
+}
 
-template<int Mb_Size>
-const TTEntry* TranspositionTable<Mb_Size>::probe(const uint64_t key) const {
-    const TTEntry* tte = &table[static_cast<uint32_t>(key) % size];
+inline void TranspositionTable::resize(size_t size)
+{
+    std::cout << "info string resizing transposition table to " << size << " MB\n";
+    table_.resize(size * MB);
+}
+
+inline const TTEntry* TranspositionTable::probe(const uint64_t key) const {
+    const TTEntry* tte = &table_[static_cast<uint32_t>(key) % table_.size()];
     if (tte->key() == key >> 32) {
         return tte;
     }
     return nullptr;
 }
 
-template<int Mb_Size>
-void TranspositionTable<Mb_Size>::store(const uint64_t key, Value value, Bound bound, Depth depth, Move move) {
-    TTEntry *tte = &table[static_cast<uint32_t>(key) % size];
+inline void TranspositionTable::store(const uint64_t key, Value value, Bound bound, Depth depth, Move move) {
+    TTEntry* tte = &table_[static_cast<uint32_t>(key) % table_.size()];
 
     // Update preference implemented in save, not handled here.
     tte->save(key, value, bound, depth, move);
@@ -77,5 +90,9 @@ constexpr Value value_from_tt(Value v, int ply) {
         : v >= Value::CHECKMATE_THRESHOLD ? v - ply
         : v <= Value::CHECKMATE_THRESHOLD ? v + ply : v;
 }
-
+}
+namespace goldfish
+{
+// Global TT object.
+extern tt::TranspositionTable TT;
 }

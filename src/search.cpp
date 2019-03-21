@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "search.hpp"
+#include "tt.hpp"
 #include "tb.hpp"
 
 namespace goldfish {
@@ -80,6 +81,9 @@ void Search::run() {
             root_in_TB = true;
             tb_hits++;
         }
+
+        // Load contempt value. Options value is in centipawns, so convert to whatever unit Value::PAWN_VALUE defines.
+        contempt = Value(((int) UCI::Options["Contempt"]) * Value::PAWN_VALUE / 100);
 
         //### BEGIN Iterative Deepening
         for (Depth depth = initial_depth; !abort and depth <= search_depth; ++depth) {
@@ -224,13 +228,13 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
     // Check insufficient material, repetition and fifty move rule
     if (position.halfmove_clock >= 100 || position.has_insufficient_material() || position.is_repetition()) {
-        return Value::DRAW;
+        return contempt;
     }
 
     Value alpha_orig = alpha;
 
     // Check TTable before anything else is done.
-    auto entry = ttable.probe(position.zobrist_key);
+    auto entry = TT.probe(position.zobrist_key);
     if (entry != nullptr and entry->depth() >= depth) {
         const Value tt_value = tt::value_from_tt(entry->value(), ply);
         if (entry->bound() & Bound::LOWER) {
@@ -288,7 +292,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
         Value value = wdl < -DrawScore ? Value::KNOWN_LOSS + ply
                     : wdl >  DrawScore ? Value::KNOWN_WIN - ply
-                                       : Value::DRAW + 2 * DrawScore * wdl;
+                                       : contempt + 2 * DrawScore * wdl;
 
         Bound b = wdl < -DrawScore ? Bound::UPPER
                 : wdl >  DrawScore ? Bound::LOWER : Bound::EXACT;
@@ -298,7 +302,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             || (b == Bound::UPPER && value <= alpha)) {
 
             // Tablebase result is final, no need to go futher.
-            ttable.store(position.zobrist_key, tt::value_to_tt(value, ply), b,
+            TT.store(position.zobrist_key, tt::value_to_tt(value, ply), b,
                 std::min(Depth::MAX_PLY - 1, depth + 5), Move::NO_MOVE);
             return value;
         }
@@ -357,7 +361,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
             if (value >= Value::CHECKMATE_THRESHOLD)
                 value = beta;
 
-            ttable.store(position.zobrist_key, tt::value_to_tt(value, ply), Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R + 1), Move::NO_MOVE);
+            TT.store(position.zobrist_key, tt::value_to_tt(value, ply), Bound::LOWER, std::max(Depth::DEPTH_ZERO, depth - R + 1), Move::NO_MOVE);
             return value;
         }
     }
@@ -371,14 +375,14 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
     // Internal Iterative deepening:
     // When we have no good guess for the best move, do a reduced search
     // first to find a likely candidate. Only do this if a search would
-    // lead to a new entry in the ttable.
+    // lead to a new entry in the TT.
     constexpr Depth iid_reduction = Depth(7);
     if (     depth > iid_reduction
         and (entry == nullptr
          or (entry->move() == Move::NO_MOVE and entry->depth() < depth - iid_reduction))) {
 
         search(depth - iid_reduction, alpha, beta, ply);
-        entry = ttable.probe(position.zobrist_key);
+        entry = TT.probe(position.zobrist_key);
     }
 
     // Killer Move Heuristic:
@@ -433,17 +437,17 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply) {
 
     // If we cannot move, check for checkmate and stalemate.
     if (searched_moves == 0) {
-        best_value = is_check ? -Value::CHECKMATE + ply : Value::DRAW;
+        best_value = is_check ? -Value::CHECKMATE + ply : contempt;
         best_value_bound = Bound::EXACT;
     }
 
-    ttable.store(position.zobrist_key, tt::value_to_tt(best_value, ply), best_value_bound,
+    TT.store(position.zobrist_key, tt::value_to_tt(best_value, ply), best_value_bound,
                  depth, best_move);
     return best_value;
 }
 
 Value Search::quiescent(Value alpha, Value beta, int ply) {
-    // No need to check the ttable, as we only decend to quiescense if there is
+    // No need to check the TT, as we only decend to quiescense if there is
     // no entry in the table.
 
     update_search(ply);
@@ -455,7 +459,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
 
     // Check insufficient material, repetition and fifty move rule
     if (position.is_repetition() || position.has_insufficient_material() || position.halfmove_clock >= 100) {
-        return Value::DRAW;
+        return contempt;
     }
 
     // Initialize
@@ -500,7 +504,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply) {
             searched_moves++;
             // Note that we do not use PVS here, as we have no
             // reason to believe move ordering works very well here, and
-            // we know we don't have a killer move from ttable.
+            // we know we don't have a killer move from TT.
             value = -quiescent(-beta, -alpha, ply + 1);
         }
         position.undo_move(move);

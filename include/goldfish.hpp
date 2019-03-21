@@ -44,6 +44,8 @@ private:
 
     void receive_stop();
 
+    void receive_setoption(std::istringstream& input);
+
 public:
 
     void receive_initialize();

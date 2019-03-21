@@ -66,19 +66,19 @@ inline Outcome probe_outcome(const Position& pos) {
 
     // Tablebase only for positions without castling and with reset clock.
     // Also check that we have a tablebase at all, and that there are few enough pieces.
-    if (pos.halfmove_clock || pos.castling_rights || !MAX_MAN || MAX_MAN < tb_pop_count(pos.get_pieces<Color::WHITE>() | pos.get_pieces<Color::BLACK>()))
+    if (pos.halfmove_clock || pos.castling_rights || !MAX_MAN || MAX_MAN < tb_pop_count(pos.get_pieces(Color::WHITE) | pos.get_pieces(Color::BLACK)))
         return Outcome::FAILED_PROBE;
 
     const Outcome outcome =
         static_cast<Outcome>(tb_probe_wdl_impl(
-            pos.get_pieces<Color::WHITE>(),
-            pos.get_pieces<Color::BLACK>(),
-            pos.get_pieces<PieceType::KING>(),
-            pos.get_pieces<PieceType::QUEEN>(),
-            pos.get_pieces<PieceType::ROOK>(),
-            pos.get_pieces<PieceType::BISHOP>(),
-            pos.get_pieces<PieceType::KNIGHT>(),
-            pos.get_pieces<PieceType::PAWN>(),
+            pos.get_pieces(Color::WHITE),
+            pos.get_pieces(Color::BLACK),
+            pos.get_pieces(PieceType::KING),
+            pos.get_pieces(PieceType::QUEEN),
+            pos.get_pieces(PieceType::ROOK),
+            pos.get_pieces(PieceType::BISHOP),
+            pos.get_pieces(PieceType::KNIGHT),
+            pos.get_pieces(PieceType::PAWN),
             pos.enpassant_square == Square::NO_SQUARE ? 0 : Bitboard::to_bit_square(pos.enpassant_square),
             pos.active_color == Color::WHITE));
     return outcome;
@@ -138,14 +138,14 @@ inline TableResult probe_root(const Position& pos, MoveList<Entry>& moves) {
     std::array<unsigned, TB_MAX_MOVES> results;
 
     TableResult result = TableResult{tb_probe_root_impl(
-        pos.get_pieces<Color::WHITE>(),
-        pos.get_pieces<Color::BLACK>(),
-        pos.get_pieces<PieceType::KING>(),
-        pos.get_pieces<PieceType::QUEEN>(),
-        pos.get_pieces<PieceType::ROOK>(),
-        pos.get_pieces<PieceType::BISHOP>(),
-        pos.get_pieces<PieceType::KNIGHT>(),
-        pos.get_pieces<PieceType::PAWN>(),
+        pos.get_pieces(Color::WHITE),
+        pos.get_pieces(Color::BLACK),
+        pos.get_pieces(PieceType::KING),
+        pos.get_pieces(PieceType::QUEEN),
+        pos.get_pieces(PieceType::ROOK),
+        pos.get_pieces(PieceType::BISHOP),
+        pos.get_pieces(PieceType::KNIGHT),
+        pos.get_pieces(PieceType::PAWN),
         pos.halfmove_clock,
         pos.enpassant_square == Square::NO_SQUARE ? 0 : Bitboard::to_bit_square(pos.enpassant_square),
         pos.active_color == Color::WHITE,

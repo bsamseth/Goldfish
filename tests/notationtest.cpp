@@ -74,3 +74,14 @@ TEST(notationtest, test_standard_position) {
     // Test full move number
     EXPECT_EQ(1, position.get_fullmove_number());
 }
+
+TEST(notationtest, to_square) {
+    for (char file = 'a'; file <= 'h'; ++file) {
+        for (char rank = '1'; rank <= '8'; ++rank) {
+            Square sq = Notation::to_square(std::string() + file + rank);
+            ASSERT_EQ(Squares::values[(file-'a') + 8 * (rank - '1')], sq);
+        }
+    }
+    ASSERT_EQ(Square::NO_SQUARE, Notation::to_square("a9"));
+    ASSERT_EQ(Square::NO_SQUARE, Notation::to_square("k1"));
+}

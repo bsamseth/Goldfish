@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set project name here.
-project(Goldfish VERSION 1.11.1 LANGUAGES C CXX)
+project(Goldfish VERSION 1.11.2 LANGUAGES C CXX)
 
 # Include stuff. No change needed.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -18,69 +18,9 @@ include(ConfigSafeGuards)
 include(Colors)
 
 
-# --------------------------------------------------------------------------------
-#                          Compile flags
-# --------------------------------------------------------------------------------
-# Set the C++ standard you wish to use (will apply to all files).
-# If you do not use any features that limits the standard required,
-# you could omit this line.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-
-# Things to always include as flags. Change as needed.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wfatal-errors")  
-
-# Build-type specific flags. Change as needed.
-SET(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-
-message(STATUS "Building with the following extra flags: ${CMAKE_CXX_FLAGS}")
-
-# --------------------------------------------------------------------------------
-#                         Locate files 
-# --------------------------------------------------------------------------------
-# We make sure that CMake sees all the files.
-include_directories(
-    ${PROJECT_SOURCE_DIR}/src
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/tests
-    ${PROJECT_SOURCE_DIR}/external/
-    ${PROJECT_SOURCE_DIR}/external/Fathom/src
-    ${PROJECT_SOURCE_DIR}/external/googletest/googletest
-    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src
-    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/include)
-
 # Make variables referring to all the sources and test files.  Could use file
 # globbing, but this does not play nice with IDEs and is also discouraged due
 # to a reload having to be done anyway when we add new files.
-set(HEADERS
-        include/LRUCache.hpp
-        include/benchmark.hpp
-        include/bitboard.hpp
-        include/bound.hpp
-        include/castling.hpp
-        include/castlingtype.hpp
-        include/color.hpp
-        include/depth.hpp
-        include/evaluation.hpp
-        include/file.hpp
-        include/goldfish.hpp
-        include/move.hpp
-        include/movegenerator.hpp
-        include/movelist.hpp
-        include/movetype.hpp
-        include/notation.hpp
-        include/perft.hpp
-        include/piece.hpp
-        include/piecetype.hpp
-        include/position.hpp
-        include/projectmeta.hpp.in
-        include/protocol.hpp
-        include/rank.hpp
-        include/search.hpp
-        include/square.hpp
-        include/tb.hpp
-        include/tt.hpp
-        include/value.hpp)
 set(SOURCES
         src/benchmark.cpp
         src/bitboard.cpp
@@ -97,7 +37,7 @@ set(SOURCES
         src/timer.cpp
         src/tb.cpp
         src/tt.cpp
-        )
+        src/uci.cpp)
 set(TESTFILES
         tests/bitboardtest.cpp
         tests/castlingtest.cpp
@@ -115,33 +55,47 @@ set(TESTFILES
         tests/ranktest.cpp
         tests/squaretest.cpp
         tests/tbtest.cpp
-        tests/tt.cpp)
-set(TEST_MAIN unit_tests.x)  # Default name for test executable (change if you wish).
-
+        tests/tt.cpp
+        tests/ucioptions.cpp)
 set(FATHOM_SOURCES
-    external/Fathom/src/tbprobe.c
-)
-
+    external/Fathom/src/tbprobe.c)
+set(TEST_MAIN unit_tests.x)
 
 
 # --------------------------------------------------------------------------------
 #                            Build! 
 # --------------------------------------------------------------------------------
-# Compile all sources into a library. Called engine here (change if you wish).
-add_library( engine ${SOURCES} ${FATHOM_SOURCES})
+add_library(engine ${SOURCES} ${FATHOM_SOURCES})
+target_include_directories(engine 
+    PUBLIC ${PROJECT_SOURCE_DIR}/include 
+           ${PROJECT_SOURCE_DIR}/external
+           ${PROJECT_SOURCE_DIR}/external/Fathom/src)
+
+target_compile_options(engine PRIVATE # clang/GCC warnings
+                      $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>: 
+                      "-Wall" "-Wextra" >
+                      # MSVC warnings
+                      $<$<CXX_COMPILER_ID:MSVC>: 
+                      "/Wall" >)
+if(UNIX)
+    target_link_libraries(engine PUBLIC pthread)
+endif()
 
 add_executable(goldfish.x app/goldfish.cpp)
-add_dependencies(goldfish.x engine)
-target_link_libraries(goldfish.x engine pthread)
+target_link_libraries(goldfish.x PRIVATE engine)
 
 add_executable(bench.x app/bench.cpp)
-add_dependencies(bench.x engine)
-target_link_libraries(bench.x engine pthread)
+target_link_libraries(bench.x PRIVATE engine)
 
 add_executable(perft.x app/perft.cpp)
-add_dependencies(perft.x engine)
-target_link_libraries(perft.x engine pthread)
+target_link_libraries(perft.x PRIVATE engine)
 
+set_target_properties(
+    engine goldfish.x bench.x perft.x 
+    PROPERTIES
+    CXX_STANDARD 17 
+    CXX_STANDARD_REQUIRED YES 
+    CXX_EXTENSIONS NO)
 
 # --------------------------------------------------------------------------------
 #                         Make Tests
@@ -149,17 +103,17 @@ target_link_libraries(perft.x engine pthread)
 # Add a make target 'gtest', that runs the tests (and builds all dependencies).
 # The setup of Google Test is done at the very end of this file.
 add_executable(${TEST_MAIN} ${TESTFILES})
-add_dependencies(${TEST_MAIN} googletest engine)
-target_link_libraries(${TEST_MAIN} googletest engine pthread)
+target_link_libraries(${TEST_MAIN} googletest engine)
 add_custom_target(gtest 
     COMMAND "${PROJECT_BINARY_DIR}/${TEST_MAIN}"
-    DEPENDS engine ${TEST_MAIN})
+    DEPENDS ${TEST_MAIN})
 add_custom_target(bench 
     COMMAND "${PROJECT_BINARY_DIR}/bench.x"
     DEPENDS engine bench.x)
 add_custom_target(perft 
     COMMAND "${PROJECT_BINARY_DIR}/perft.x"
     DEPENDS engine perft.x)
+
 
 
 # Add a standard make target 'test' that runs the tests under CTest (only as an alt. to gtest).
@@ -193,20 +147,19 @@ endif(DOXYGEN_FOUND)
 # --------------------------------------------------------------------------------
 #                         Google Test
 # --------------------------------------------------------------------------------
-# The following makes sure that an up-to-date version of googletest is available,
-# and built so that it may be used by your tests. 
-add_custom_target( git_update
-    COMMAND git submodule init
-    COMMAND git submodule update
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} )
 add_library( googletest
     ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest-all.cc
-    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest_main.cc )
-add_dependencies(googletest git_update)
-set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest-all.cc  PROPERTIES GENERATED 1)
-set_source_files_properties(${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest_main.cc PROPERTIES GENERATED 1)
-
-
+    ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src/gtest_main.cc
+)
+target_include_directories(googletest 
+    PUBLIC ${PROJECT_SOURCE_DIR}/external/googletest/googletest
+           ${PROJECT_SOURCE_DIR}/external/googletest/googletest/src
+           ${PROJECT_SOURCE_DIR}/external/googletest/googletest/include)
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/external/googletest/src/gtest-all.cc  
+    ${PROJECT_SOURCE_DIR}/external/googletest/src/gtest_main.cc
+    PROPERTIES GENERATED 1
+)
 
 # --------------------------------------------------------------------------------
 #                            Misc

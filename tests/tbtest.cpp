@@ -1,4 +1,5 @@
 #include "tb.hpp"
+#include "uci.hpp"
 #include "notation.hpp"
 
 #include "gtest/gtest.h"
@@ -8,8 +9,9 @@ using namespace goldfish;
 bool HasTables = false;
 
 TEST(TableBase, init) {
-    const bool result = tb::initialize("../syzygy");
-    ASSERT_TRUE(result);
+    UCI::init(UCI::Options);
+    // Changing the table path should load the tables.
+    UCI::Options["SyzygyPath"] = std::string{"../syzygy"};
 
     HasTables = tb::MAX_MAN > 0U;
 

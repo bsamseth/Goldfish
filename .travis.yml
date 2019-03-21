@@ -9,34 +9,30 @@ cache:
   directories:
     - $TRAVIS_BUILD_DIR/syzygy
 
-addons:
-  apt:
-    sources:
-    - deadsnakes
-    packages:
-    - python3.7-dev
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - deadsnakes
+          packages:
+            - lcov
+            - g++-7
+            - python3.7-dev
 
 before_install:
   # C++17
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update -qq
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 90
+  - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 90
 
 install: 
   - pyenv global $(pyenv whence 2to3)  # activate all python versions
   - pip install pipenv
   - pipenv install --dev --skip-lock
 
-  # C++17
-  - sudo apt-get install -qq g++-7 gcc-7
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 90
-  - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-7 90
-   
-  # install newer LCOV (apt version outdated and fails for new gcov).
-  - wget http://ftp.de.debian.org/debian/pool/main/l/lcov/lcov_1.11.orig.tar.gz
-  - tar xf lcov_1.11.orig.tar.gz
-  - sudo make -C lcov-1.11/ install  
-  - which lcov 
     
   # Install stockfish (used in search verification). Script from https://github.com/niklasf/python-chess/blob/master/.travis.yml
   - wget https://stockfish.s3.amazonaws.com/stockfish-10-linux.zip

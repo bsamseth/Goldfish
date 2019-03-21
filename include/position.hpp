@@ -76,19 +76,16 @@ public:
 
     bool last_move_was_null_move();
 
-    template<Color C, PieceType PT>
-    uint64_t get_pieces() const {
-        return pieces[C][PT];
+    constexpr uint64_t get_pieces(Color c, PieceType pt) const {
+        return pieces[c][pt];
     }
 
-    template<PieceType PT>
-    uint64_t get_pieces() const {
-        return get_pieces<Color::WHITE, PT>() | get_pieces<Color::BLACK, PT>();
+    constexpr uint64_t get_pieces(Color c) const {
+        return get_pieces(c, PieceType::PAWN) | get_pieces(c, PieceType::KNIGHT) | get_pieces(c, PieceType::BISHOP) | get_pieces(c, PieceType::ROOK) | get_pieces(c, PieceType::QUEEN) | get_pieces(c, PieceType::KING);
     }
 
-    template<Color C>
-    uint64_t get_pieces() const {
-        return get_pieces<C, PieceType::PAWN>() | get_pieces<C, PieceType::KNIGHT>() | get_pieces<C, PieceType::BISHOP>() | get_pieces<C, PieceType::ROOK>() | get_pieces<C, PieceType::QUEEN>() | get_pieces<C, PieceType::KING>();
+    constexpr uint64_t get_pieces(PieceType pt) const {
+        return get_pieces(Color::WHITE, pt) | get_pieces(Color::BLACK, pt);
     }
 
 
