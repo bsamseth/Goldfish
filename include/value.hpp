@@ -28,6 +28,9 @@ enum Value : int
     KING_VALUE   = 20000,
 
     TEMPO = 1,
+
+    RAZOR_MARGIN = 600,
+    FUTILITY_MARGIN = 200,
 };
 
 ENABLE_FULL_OPERATORS_ON(Value)

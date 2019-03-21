@@ -15,6 +15,17 @@
 
 namespace goldfish
 {
+
+// Stack struct keeps track of the information we need to remember from nodes
+// shallower and deeper in the tree during the search. The number of entries here
+// will likely grow as search becomes more sophisticated.
+struct Stack
+{
+    Value staticEval;
+
+    Stack(Value v = Value::NO_VALUE) : staticEval(v) {}
+};
+
 /**
  * This class implements our search in a separate thread to keep the main
  * thread available for more commands.
@@ -127,6 +138,9 @@ private:
     // in search. (which is expensive)
     std::array<MoveGenerator, Depth::MAX_PLY> move_generators;
 
+    // Similarly for the search Stacks
+    std::array<Stack, Depth::MAX_PLY + 10> stacks;
+
     // Depths search
     Depth search_depth;
 
@@ -160,13 +174,13 @@ private:
 
     void save_pv(const Move move, const MoveVariation& src, MoveVariation& dest);
 
-    Value pv_search(Depth depth, Value alpha, Value beta, int ply, int move_number);
+    Value pv_search(Depth depth, Stack* ss, Value alpha, Value beta, int ply, int move_number);
 
-    Value search_root(Depth depth, Value alpha, Value beta);
+    Value search_root(Depth depth, Stack* ss, Value alpha, Value beta);
 
-    Value search(Depth depth, Value alpha, Value beta, int ply);
+    Value search(Depth depth, Stack* ss, Value alpha, Value beta, int ply);
 
-    Value quiescent(Value alpha, Value beta, int ply);
+    Value quiescent(Stack* ss, Value alpha, Value beta, int ply);
 };
 
 inline uint64_t Search::get_total_nodes()
