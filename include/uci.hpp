@@ -25,11 +25,12 @@
 #include <map>
 #include <string>
 
-namespace goldfish::UCI {
-
+namespace goldfish::UCI
+{
 /// Custom comparator because UCI options should be case insensitive
-struct CaseInsensitiveLess {
-  bool operator() (const std::string&, const std::string&) const;
+struct CaseInsensitiveLess
+{
+    bool operator()(const std::string&, const std::string&) const;
 };
 
 class Option;
@@ -38,37 +39,35 @@ class Option;
 typedef std::map<std::string, Option, CaseInsensitiveLess> OptionsMap;
 
 /// Option class implements an option as defined by UCI protocol
-class Option {
-
-  typedef void (*OnChange)(const Option&);
+class Option
+{
+    typedef void (*OnChange)(const Option&);
 
 public:
-  Option(OnChange = nullptr);
-  Option(bool v, OnChange = nullptr);
-  Option(const char* v, OnChange = nullptr);
-  Option(double v, int minv, int maxv, OnChange = nullptr);
-  Option(const char* v, const char* cur, OnChange = nullptr);
+    Option(OnChange = nullptr);
+    Option(bool v, OnChange = nullptr);
+    Option(const char* v, OnChange = nullptr);
+    Option(double v, int minv, int maxv, OnChange = nullptr);
+    Option(const char* v, const char* cur, OnChange = nullptr);
 
-  Option& operator=(const std::string&);
-  void operator<<(const Option&);
-  operator double() const;
-  operator std::string() const;
-  bool operator==(const char*) const;
+    Option& operator=(const std::string&);
+    void    operator<<(const Option&);
+            operator double() const;
+            operator std::string() const;
+    bool    operator==(const char*) const;
 
 private:
-  friend std::ostream& operator<<(std::ostream&, const OptionsMap&);
+    friend std::ostream& operator<<(std::ostream&, const OptionsMap&);
 
-  std::string defaultValue, currentValue, type;
-  int min, max;
-  size_t idx;
-  OnChange on_change;
+    std::string defaultValue, currentValue, type;
+    int         min, max;
+    size_t      idx;
+    OnChange    on_change;
 };
-
 
 // Initialize all options.
 void init(OptionsMap&);
 
 extern UCI::OptionsMap Options;
 
-}
-
+}  // namespace goldfish::UCI

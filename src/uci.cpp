@@ -21,48 +21,55 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
    */
 
+#include "uci.hpp"
+
+#include "tb.hpp"
+#include "tt.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <ostream>
 #include <sstream>
 #include <string>
 
-#include "uci.hpp"
-#include "tt.hpp"
-#include "tb.hpp"
-
 namespace goldfish::UCI
 {
-
-UCI::OptionsMap Options; // Global object
+UCI::OptionsMap Options;  // Global object
 
 /// 'On change' actions, triggered by an option's value change
-void on_hash_size(const Option& o) { TT.resize(o); }
-void on_tb_path(const Option& o) { tb::initialize(o); }
-
-/// Our case insensitive less() function as required by UCI protocol
-bool CaseInsensitiveLess::operator() (const std::string& s1, const std::string& s2) const {
-
-    return std::lexicographical_compare(s1.begin(), s1.end(), s2.begin(), s2.end(),
-            [](char c1, char c2) { return tolower(c1) < tolower(c2); });
+void on_hash_size(const Option& o)
+{
+    TT.resize(o);
+}
+void on_tb_path(const Option& o)
+{
+    tb::initialize(o);
 }
 
+/// Our case insensitive less() function as required by UCI protocol
+bool CaseInsensitiveLess::operator()(const std::string& s1, const std::string& s2) const
+{
+    return std::lexicographical_compare(
+        s1.begin(), s1.end(), s2.begin(), s2.end(), [](char c1, char c2) {
+            return tolower(c1) < tolower(c2);
+        });
+}
 
 /// init() initializes the UCI options to their hard-coded default values
 
-void init(OptionsMap& o) {
+void init(OptionsMap& o)
+{
     constexpr size_t MaxHashMB = 1024 * 1024;  // A terrabyte.
-    o["Contempt"]              << Option(0, -100, 100);
-    o["Hash"]                  << Option(16, 1, MaxHashMB, on_hash_size);
-    o["SyzygyPath"]            << Option("<empty>", on_tb_path);
+    o["Contempt"] << Option(0, -100, 100);
+    o["Hash"] << Option(16, 1, MaxHashMB, on_hash_size);
+    o["SyzygyPath"] << Option("<empty>", on_tb_path);
 }
-
 
 /// operator<<() is used to print all the options default values in chronological
 /// insertion order (the idx field) and in the format defined by the UCI protocol.
 
-std::ostream& operator<<(std::ostream& os, const OptionsMap& om) {
-
+std::ostream& operator<<(std::ostream& os, const OptionsMap& om)
+{
     for (size_t idx = 0; idx < om.size(); ++idx)
         for (const auto& it : om)
             if (it.second.idx == idx)
@@ -74,9 +81,8 @@ std::ostream& operator<<(std::ostream& os, const OptionsMap& om) {
                     os << " default " << o.defaultValue;
 
                 if (o.type == "spin")
-                    os << " default " << int(stof(o.defaultValue))
-                        << " min "     << o.min
-                        << " max "     << o.max;
+                    os << " default " << int(stof(o.defaultValue)) << " min " << o.min
+                       << " max " << o.max;
 
                 break;
             }
@@ -84,68 +90,79 @@ std::ostream& operator<<(std::ostream& os, const OptionsMap& om) {
     return os;
 }
 
-
 /// Option class constructors and conversion operators
 
 Option::Option(const char* v, OnChange f) : type("string"), min(0), max(0), on_change(f)
-{ defaultValue = currentValue = v; }
+{
+    defaultValue = currentValue = v;
+}
 
 Option::Option(bool v, OnChange f) : type("check"), min(0), max(0), on_change(f)
-{ defaultValue = currentValue = (v ? "true" : "false"); }
+{
+    defaultValue = currentValue = (v ? "true" : "false");
+}
 
-Option::Option(OnChange f) : type("button"), min(0), max(0), on_change(f)
-{}
+Option::Option(OnChange f) : type("button"), min(0), max(0), on_change(f) {}
 
-Option::Option(double v, int minv, int maxv, OnChange f) : type("spin"), min(minv), max(maxv), on_change(f)
-{ defaultValue = currentValue = std::to_string(v); }
+Option::Option(double v, int minv, int maxv, OnChange f)
+    : type("spin"), min(minv), max(maxv), on_change(f)
+{
+    defaultValue = currentValue = std::to_string(v);
+}
 
-Option::Option(const char* v, const char* cur, OnChange f) : type("combo"), min(0), max(0), on_change(f)
-{ defaultValue = v; currentValue = cur; }
+Option::Option(const char* v, const char* cur, OnChange f)
+    : type("combo"), min(0), max(0), on_change(f)
+{
+    defaultValue = v;
+    currentValue = cur;
+}
 
-Option::operator double() const {
+Option::operator double() const
+{
     assert(type == "check" || type == "spin");
     return (type == "spin" ? stof(currentValue) : currentValue == "true");
 }
 
-Option::operator std::string() const {
+Option::operator std::string() const
+{
     assert(type == "string");
     return currentValue;
 }
 
-bool Option::operator==(const char* s) const {
+bool Option::operator==(const char* s) const
+{
     assert(type == "combo");
-    return   !CaseInsensitiveLess()(currentValue, s)
-        && !CaseInsensitiveLess()(s, currentValue);
+    return !CaseInsensitiveLess()(currentValue, s)
+           && !CaseInsensitiveLess()(s, currentValue);
 }
-
 
 /// operator<<() inits options and assigns idx in the correct printing order
 
-void Option::operator<<(const Option& o) {
-
+void Option::operator<<(const Option& o)
+{
     static size_t insert_order = 0;
 
     *this = o;
-    idx = insert_order++;
+    idx   = insert_order++;
 }
-
 
 /// operator=() updates currentValue and triggers on_change() action. It's up to
 /// the GUI to check for option's limits, but we could receive the new value
 /// from the user by console window, so let's check the bounds anyway.
 
-Option& Option::operator=(const std::string& v) {
+Option& Option::operator=(const std::string& v)
+{
     assert(!type.empty());
 
-    if (   (type != "button" && v.empty())
-            || (type == "check" && v != "true" && v != "false")
-            || (type == "spin" && (stof(v) < min || stof(v) > max)))
+    if ((type != "button" && v.empty())
+        || (type == "check" && v != "true" && v != "false")
+        || (type == "spin" && (stof(v) < min || stof(v) > max)))
         return *this;
 
     if (type == "combo")
     {
-        OptionsMap comboMap; // To have case insensitive compare
-        std::string token;
+        OptionsMap         comboMap;  // To have case insensitive compare
+        std::string        token;
         std::istringstream ss(defaultValue);
         while (ss >> token)
             comboMap[token] << Option();
@@ -162,4 +179,4 @@ Option& Option::operator=(const std::string& v) {
     return *this;
 }
 
-} // namespace UCI
+}  // namespace goldfish::UCI

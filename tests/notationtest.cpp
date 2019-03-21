@@ -1,4 +1,5 @@
 #include "notation.hpp"
+
 #include "file.hpp"
 #include "rank.hpp"
 
@@ -6,13 +7,17 @@
 
 using namespace goldfish;
 
-TEST(notationtest, test_standard_position) {
+TEST(notationtest, test_standard_position)
+{
     Position position(Notation::to_position(Notation::STANDARDPOSITION));
 
     // Test pawns
-    for ( auto file : Files::values) {
-        EXPECT_EQ(Piece::WHITE_PAWN, position.board[Squares::value_of(file, Rank::RANK_2)]);
-        EXPECT_EQ(Piece::BLACK_PAWN, position.board[Squares::value_of(file, Rank::RANK_7)]);
+    for (auto file : Files::values)
+    {
+        EXPECT_EQ(Piece::WHITE_PAWN,
+                  position.board[Squares::value_of(file, Rank::RANK_2)]);
+        EXPECT_EQ(Piece::BLACK_PAWN,
+                  position.board[Squares::value_of(file, Rank::RANK_7)]);
     }
 
     // Test knights
@@ -41,26 +46,22 @@ TEST(notationtest, test_standard_position) {
     EXPECT_EQ(Piece::WHITE_KING, position.board[Square::E1]);
     EXPECT_EQ(Piece::BLACK_KING, position.board[Square::E8]);
 
-    EXPECT_EQ(8 * Value::PAWN_VALUE
-            + 2 * Value::KNIGHT_VALUE
-            + 2 * Value::BISHOP_VALUE
-            + 2 * Value::ROOK_VALUE
-            + Value::QUEEN_VALUE
-            + Value::KING_VALUE,
-            position.material[Color::WHITE]);
-    EXPECT_EQ(8 * Value::PAWN_VALUE
-            + 2 * Value::KNIGHT_VALUE
-            + 2 * Value::BISHOP_VALUE
-            + 2 * Value::ROOK_VALUE
-            + Value::QUEEN_VALUE
-            + Value::KING_VALUE,
-            position.material[Color::BLACK]);
+    EXPECT_EQ(8 * Value::PAWN_VALUE + 2 * Value::KNIGHT_VALUE + 2 * Value::BISHOP_VALUE
+                  + 2 * Value::ROOK_VALUE + Value::QUEEN_VALUE + Value::KING_VALUE,
+              position.material[Color::WHITE]);
+    EXPECT_EQ(8 * Value::PAWN_VALUE + 2 * Value::KNIGHT_VALUE + 2 * Value::BISHOP_VALUE
+                  + 2 * Value::ROOK_VALUE + Value::QUEEN_VALUE + Value::KING_VALUE,
+              position.material[Color::BLACK]);
 
     // Test castling
-    EXPECT_NE(Castling::NO_CASTLING, position.castling_rights &Castling::WHITE_KING_SIDE);
-    EXPECT_NE(Castling::NO_CASTLING, position.castling_rights &Castling::WHITE_QUEEN_SIDE);
-    EXPECT_NE(Castling::NO_CASTLING, position.castling_rights &Castling::BLACK_KING_SIDE);
-    EXPECT_NE(Castling::NO_CASTLING, position.castling_rights &Castling::BLACK_QUEEN_SIDE);
+    EXPECT_NE(Castling::NO_CASTLING,
+              position.castling_rights & Castling::WHITE_KING_SIDE);
+    EXPECT_NE(Castling::NO_CASTLING,
+              position.castling_rights & Castling::WHITE_QUEEN_SIDE);
+    EXPECT_NE(Castling::NO_CASTLING,
+              position.castling_rights & Castling::BLACK_KING_SIDE);
+    EXPECT_NE(Castling::NO_CASTLING,
+              position.castling_rights & Castling::BLACK_QUEEN_SIDE);
 
     // Test en passant
     EXPECT_EQ(Square::NO_SQUARE, position.enpassant_square);
@@ -75,11 +76,14 @@ TEST(notationtest, test_standard_position) {
     EXPECT_EQ(1, position.get_fullmove_number());
 }
 
-TEST(notationtest, to_square) {
-    for (char file = 'a'; file <= 'h'; ++file) {
-        for (char rank = '1'; rank <= '8'; ++rank) {
+TEST(notationtest, to_square)
+{
+    for (char file = 'a'; file <= 'h'; ++file)
+    {
+        for (char rank = '1'; rank <= '8'; ++rank)
+        {
             Square sq = Notation::to_square(std::string() + file + rank);
-            ASSERT_EQ(Squares::values[(file-'a') + 8 * (rank - '1')], sq);
+            ASSERT_EQ(Squares::values[(file - 'a') + 8 * (rank - '1')], sq);
         }
     }
     ASSERT_EQ(Square::NO_SQUARE, Notation::to_square("a9"));

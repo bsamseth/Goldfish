@@ -1,18 +1,19 @@
 #pragma once
 
-#include <array>
-
 #include "position.hpp"
 
-namespace goldfish {
+#include <array>
 
-class Notation {
+namespace goldfish
+{
+class Notation
+{
 public:
     static const std::string STANDARDPOSITION;
 
-    static Position to_position(const std::string &fen);
+    static Position to_position(const std::string& fen);
 
-    static std::string from_position(const Position &position);
+    static std::string from_position(const Position& position);
 
     static Color to_color(char notation);
 
@@ -42,7 +43,7 @@ public:
 
     static char from_rank(Rank rank);
 
-    static Square to_square(const std::string &notation);
+    static Square to_square(const std::string& notation);
 
     static std::string from_square(Square square);
 
@@ -56,14 +57,14 @@ private:
     static const char WHITE_NOTATION = 'w';
     static const char BLACK_NOTATION = 'b';
 
-    static const char PAWN_NOTATION = 'P';
+    static const char PAWN_NOTATION   = 'P';
     static const char KNIGHT_NOTATION = 'N';
     static const char BISHOP_NOTATION = 'B';
-    static const char ROOK_NOTATION = 'R';
-    static const char QUEEN_NOTATION = 'Q';
-    static const char KING_NOTATION = 'K';
+    static const char ROOK_NOTATION   = 'R';
+    static const char QUEEN_NOTATION  = 'Q';
+    static const char KING_NOTATION   = 'K';
 
-    static const char KING_SIDE_NOTATION = 'K';
+    static const char KING_SIDE_NOTATION  = 'K';
     static const char QUEEN_SIDE_NOTATION = 'Q';
 
     static const char A_NOTATION = 'a';
@@ -89,5 +90,4 @@ private:
     static char transform(char notation, Color color);
 };
 
-}
-
+}  // namespace goldfish

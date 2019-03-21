@@ -1,12 +1,13 @@
-#include "uci.hpp"
 #include "tt.hpp"
-#include <string>
+#include "uci.hpp"
 
 #include "gtest/gtest.h"
+#include <string>
 
 using namespace goldfish;
 
-TEST(ucioptions, init_and_update) {
+TEST(ucioptions, init_and_update)
+{
     UCI::init(UCI::Options);
 
     // Check for default value and correct init.
@@ -14,6 +15,6 @@ TEST(ucioptions, init_and_update) {
     ASSERT_EQ(16U, TT.size());
 
     // Updating the Hash should trigger the resize of the table.
-    UCI::Options["Hash"] = std::string{"10"};
+    UCI::Options["Hash"] = std::string {"10"};
     ASSERT_EQ(10U, TT.size());
 }
