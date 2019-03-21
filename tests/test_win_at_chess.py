@@ -326,9 +326,20 @@ b2b1r1k/3R1ppp/4qP2/4p1PQ/4P3/5B2/4N1K1/8 w - - bm g6; id "WAC.300";
 
 engine = chess.engine.SimpleEngine.popen_uci("build-release/goldfish.x")
 total = 0
-for epd in WIN_AT_CHESS_NEW:
+failed = []
+for i, epd in enumerate(WIN_AT_CHESS_NEW, start=1):
     passed = solve(engine, epd)
     total += passed
-    print(passed)
-print(f"{total} / {len(WIN_AT_CHESS_NEW)} = {total / len(WIN_AT_CHESS_NEW) * 100} %")
+    if not passed:
+        failed.append(f"#{i:3d}: {epd}")
+    print(
+        f"{i:3d} GRADE {epd}".replace(
+            "GRADE", (["\033[0;31mFAIL", "\033[0;32mPASS"][passed] + "\033[0m")
+        )
+    )
+print("\033[0;31mFailed positions:\033[0m\n", "\n".join(failed))
+print(
+    "\033[0;33mTotal Score:\033[0m "
+    + f"{total}/{len(WIN_AT_CHESS_NEW)} = {total / len(WIN_AT_CHESS_NEW) * 100} %"
+)
 engine.quit()
