@@ -87,7 +87,7 @@ class TestSearch(unittest.TestCase):
     def test_play_with_clock(self):
         """Play a timed game to completion without error (losing is fine)."""
         game = play_match(goldfish_path, "stockfish", TimeControl(1, increment=0.0))
-        self.assertNotEqual('*', game.headers['Result'])  # Just demand _a_ result.
+        self.assertNotEqual("*", game.headers["Result"])  # Just demand _a_ result.
 
     def test_puzzles(self):
         """Solve each of the following puzzles: \n{test_cases}."""
