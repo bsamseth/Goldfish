@@ -244,6 +244,18 @@ void Goldfish::receive_bench() {
     int count = 1;
     uint64_t total_nodes = 0;
 
+    {
+        std::istringstream hash_options("name Hash value 128");
+        hash_options >> std::skipws;
+        receive_setoption(hash_options);
+        if (UCI::Options["SyzygyPath"] == "<empty>")
+        {
+            std::istringstream syzygy_options("name SyzygyPath value ../syzygy");
+            syzygy_options >> std::skipws;
+            receive_setoption(syzygy_options);
+        }
+    }
+
     auto start_time = std::chrono::high_resolution_clock::now();
     for (const auto& cmd : list) {
         std::string token;
