@@ -564,18 +564,20 @@ Value Search::quiescent(Value alpha, Value beta, int ply)
                 return best_value;
             }
         }
+
+        // Delta pruning:
+        // Test if alpha can be improved by greatest
+        // possible material swing. If not, then don't bother.
+        //
+        // Best possible single move is to capture a queen while promoting a pawn.
+        Value delta = Value::QUEEN_VALUE;
+        if (position.promoting_pawns(position.active_color))
+            delta += Value::QUEEN_VALUE - Value::PAWN_VALUE;
+
+        if (best_value + delta < alpha)
+            return best_value;
     }
     //### ENDOF Stand pat
-
-    // Delta pruning:
-    // Test if alpha can be improved by greatest
-    // possible material swing. If not, then don't bother.
-    //
-    // Best possible single move is to capture a queen while promoting a pawn.
-    // Make sure we're not in check, as then the stand pat is -INFINITE.
-    Value delta = 2 * Value::QUEEN_VALUE - Value::PAWN_VALUE;
-    if (!is_check and best_value + delta < alpha)
-        return best_value;
 
     MoveList<MoveEntry>& moves
         = move_generators[ply].get_moves(position, Depth::DEPTH_ZERO, is_check);
