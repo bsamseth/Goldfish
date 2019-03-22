@@ -571,7 +571,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply)
         //
         // Best possible single move is to capture a queen while promoting a pawn.
         Value delta = Value::QUEEN_VALUE;
-        if (position.promoting_pawns(position.active_color))
+        if (position.promoting_capture_pawns(position.active_color))
             delta += Value::QUEEN_VALUE - Value::PAWN_VALUE;
 
         if (best_value + delta < alpha)
