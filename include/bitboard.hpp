@@ -1,7 +1,11 @@
 #pragma once
 
+#include "color.hpp"
+#include "square.hpp"
+
 #include <array>
 #include <cstdint>
+#include <string>
 
 namespace goldfish
 {
@@ -9,6 +13,29 @@ using U64 = uint64_t;
 
 namespace Bitboard
 {
+const std::string pretty(U64 b);
+
+constexpr U64 AllSquares  = ~U64(0);
+constexpr U64 DarkSquares = 0xAA55AA55AA55AA55ULL;
+
+constexpr U64 FileABB = 0x0101010101010101ULL;
+constexpr U64 FileBBB = FileABB << 1;
+constexpr U64 FileCBB = FileABB << 2;
+constexpr U64 FileDBB = FileABB << 3;
+constexpr U64 FileEBB = FileABB << 4;
+constexpr U64 FileFBB = FileABB << 5;
+constexpr U64 FileGBB = FileABB << 6;
+constexpr U64 FileHBB = FileABB << 7;
+
+constexpr U64 Rank1BB = 0xFF;
+constexpr U64 Rank2BB = Rank1BB << (8 * 1);
+constexpr U64 Rank3BB = Rank1BB << (8 * 2);
+constexpr U64 Rank4BB = Rank1BB << (8 * 3);
+constexpr U64 Rank5BB = Rank1BB << (8 * 4);
+constexpr U64 Rank6BB = Rank1BB << (8 * 5);
+constexpr U64 Rank7BB = Rank1BB << (8 * 6);
+constexpr U64 Rank8BB = Rank1BB << (8 * 7);
+
 constexpr U64 DEBRUIJN64 = 0x03F79D71B4CB0A89ULL;
 
 constexpr std::array<int, 64> lsb_table
@@ -63,6 +90,36 @@ constexpr U64 remainder(U64 bitboard)
 constexpr int size(U64 bitboard)
 {
     return bit_count(bitboard);
+}
+
+template <Direction D>
+constexpr U64 shift(U64 b)
+{
+    return D == NORTH
+               ? b << 8
+               : D == SOUTH
+                     ? b >> 8
+                     : D == EAST
+                           ? (b & ~FileHBB) << 1
+                           : D == WEST ? (b & ~FileABB) >> 1
+                                       : D == NORTH_EAST
+                                             ? (b & ~FileHBB) << 9
+                                             : D == NORTH_WEST
+                                                   ? (b & ~FileABB) << 7
+                                                   : D == SOUTH_EAST
+                                                         ? (b & ~FileHBB) >> 7
+                                                         : D == SOUTH_WEST
+                                                               ? (b & ~FileABB) >> 9
+                                                               : 0;
+}
+//
+/// pawn_attacks_bb() returns the squares attacked by pawns of the given color
+/// from the squares in the given bitboard.
+template <Color C>
+constexpr U64 pawn_attacks_bb(U64 b)
+{
+    return C == WHITE ? shift<NORTH_WEST>(b) | shift<NORTH_EAST>(b)
+                      : shift<SOUTH_WEST>(b) | shift<SOUTH_EAST>(b);
 }
 
 }  // namespace Bitboard
