@@ -362,3 +362,21 @@ TEST(positiontest, test_bitboard_fetchers)
     ASSERT_EQ(wpawn | bpawn, (pos.get_pieces(PieceType::PAWN)));
     ASSERT_EQ(wknight, (pos.get_pieces(PieceType::KNIGHT)));
 }
+
+TEST(positiontest, test_promoting_pawns)
+{
+    const Position pos(
+        Notation::to_position("Rr1n2RR/P2PP2P/8/2kp4/5KP1/8/p2pp2p/rR1N2rr w - - 0 1"));
+    const U64 w_promotions = 0x11000000000000;
+    const U64 b_promotions = 0x1100;
+
+    const U64 w_res = pos.promoting_pawns(Color::WHITE);
+    const U64 b_res = pos.promoting_pawns(Color::BLACK);
+
+    ASSERT_EQ(w_promotions, w_res) << "Expected:\n"
+                                   << Bitboard::pretty(w_promotions) << "\nGot:\n"
+                                   << Bitboard::pretty(w_res);
+    ASSERT_EQ(b_promotions, b_res) << "Expected:\n"
+                                   << Bitboard::pretty(b_promotions) << "\nGot:\n"
+                                   << Bitboard::pretty(b_res);
+}

@@ -10,6 +10,7 @@
 #include "square.hpp"
 #include "value.hpp"
 
+#include <iostream>
 #include <random>
 
 namespace goldfish
@@ -89,6 +90,33 @@ public:
     constexpr uint64_t get_pieces(PieceType pt) const
     {
         return get_pieces(Color::WHITE, pt) | get_pieces(Color::BLACK, pt);
+    }
+
+    template <Color Us>
+    constexpr uint64_t promoting_pawns() const
+    {
+        constexpr uint64_t Rank8BB
+            = Us == Color::WHITE ? Bitboard::Rank8BB : Bitboard::Rank1BB;
+        constexpr uint64_t Rank7BB = Bitboard::shift < Us == Color::WHITE
+                                         ? Direction::SOUTH
+                                         : Direction::NORTH > (Rank8BB);
+        const uint64_t rank8_us    = Rank8BB & get_pieces(Us);
+        const uint64_t rank8_them  = Rank8BB & get_pieces(~Us);
+        const uint64_t rank8_occ   = rank8_us | rank8_them;
+        const uint64_t rank7_pawns = Rank7BB & get_pieces(Us, PieceType::PAWN);
+
+        const uint64_t push_squares = ~Bitboard::shift < Us == Color::WHITE
+                                          ? Direction::SOUTH
+                                          : Direction::NORTH > (rank8_occ);
+        const uint64_t capt_squares = Bitboard::pawn_attacks_bb<~Us>(rank8_them);
+
+        return rank7_pawns & (push_squares | capt_squares);
+    }
+
+    constexpr uint64_t promoting_pawns(Color us) const
+    {
+        return us == Color::WHITE ? promoting_pawns<Color::WHITE>()
+                                  : promoting_pawns<Color::BLACK>();
     }
 
 private:
