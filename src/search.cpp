@@ -7,6 +7,12 @@
 
 namespace goldfish
 {
+// Dynamic futility margin based on depth
+constexpr Value futility_margin(Depth d, bool improving)
+{
+    return Value((static_cast<int>(Value::FUTILITY_MARGIN - 50 * improving)) * d);
+}
+
 void Search::check_stop_conditions()
 {
     // We will check the stop conditions only if we are using time management,
@@ -124,7 +130,7 @@ void Search::run()
                                  current_move,
                                  current_move_number);
 
-            search_root(depth, -Value::INFINITE, Value::INFINITE);
+            search_root(depth, &stacks[2], -Value::INFINITE, Value::INFINITE);
 
             // Sort the root move list, so that the next iteration begins with the
             // best move first.
@@ -183,20 +189,25 @@ void Search::run()
  properly to find its value. The idea is that this drawback is smaller than
  the improvements gained.
 */
-Value Search::pv_search(Depth depth, Value alpha, Value beta, int ply, int move_number)
+Value Search::pv_search(Depth  depth,
+                        Stack* ss,
+                        Value  alpha,
+                        Value  beta,
+                        int    ply,
+                        int    move_number)
 {
     if (depth > 1 and move_number > 0)
     {
-        Value value = -search(depth - 1, -alpha - 1, -alpha, ply + 1);
+        Value value = -search(depth - 1, ss + 1, -alpha - 1, -alpha, ply + 1);
 
         if (value <= alpha)
             return value;
     }
 
-    return -search(depth - 1, -beta, -alpha, ply + 1);
+    return -search(depth - 1, ss + 1, -beta, -alpha, ply + 1);
 }
 
-Value Search::search_root(Depth depth, Value alpha, Value beta)
+Value Search::search_root(Depth depth, Stack* ss, Value alpha, Value beta)
 {
     int ply = 0;
 
@@ -240,7 +251,7 @@ Value Search::search_root(Depth depth, Value alpha, Value beta)
 
         position.make_move(move);
 
-        Value value = pv_search(depth, alpha, beta, ply, i);
+        Value value = pv_search(depth, ss, alpha, beta, ply, i);
 
         position.undo_move(move);
 
@@ -275,7 +286,7 @@ Value Search::search_root(Depth depth, Value alpha, Value beta)
     return best_value;
 }
 
-Value Search::search(Depth depth, Value alpha, Value beta, int ply)
+Value Search::search(Depth depth, Stack* ss, Value alpha, Value beta, int ply)
 {
     // Abort conditions
     if (abort || ply == Depth::MAX_PLY)
@@ -317,16 +328,11 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply)
         }
     }
 
-    // Initialize
-    Value best_value     = -Value::INFINITE;
-    Move  best_move      = Move::NO_MOVE;
-    int   searched_moves = 0;
-
     // We are at a leaf/horizon. So calculate that value.
     if (depth <= 0)
     {
         // Descend into quiescent
-        return quiescent(alpha, beta, ply);
+        return quiescent(ss, alpha, beta, ply);
     }
 
     update_search(ply);
@@ -342,6 +348,11 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply)
     beta  = std::min(Value::CHECKMATE - (ply + 1), beta);
     if (alpha >= beta)
         return alpha;
+
+    // Initialize
+    Value best_value     = -Value::INFINITE;
+    Move  best_move      = Move::NO_MOVE;
+    int   searched_moves = 0;
 
     // Next we check the tablebases:
     const tb::Outcome tb_outcome = tb::probe_outcome(position);
@@ -380,60 +391,93 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply)
     }
 
     bool is_check = position.is_check();
-
-    // Null move pruning.
-    //
-    // Idea is that if we have a position that is so strong that even if we
-    // don't move (i.e. pass), we still exceed beta. Only started if we have reason
-    // to belive that NMP will be useful, which here is check by eval >= beta.
-    //
-    // Only used when the following is _NOT_ true:
-    //
-    //  1. We are in check (NM would be illegal)
-    //  2. The last move made was a null move (double null move has no effect other than
-    //  reduced depth)
-    //  3. A beta-cutoff must be by finding a mate score (mates with NM is not proven)
-    //  4. We are in zugzwang (not moving is better than any other move)
-    //
-    // Number 4 is hard to guarantee (but possible with verification search, see SF).
-    // But by not using null move when we only have K and P we escape most cases.
-    if (!is_check && beta < Value::CHECKMATE_THRESHOLD
-        && !position.last_move_was_null_move()
-        && (position.pieces[position.active_color][PieceType::QUEEN]
-            || position.pieces[position.active_color][PieceType::ROOK]
-            || position.pieces[position.active_color][PieceType::BISHOP]
-            || position.pieces[position.active_color][PieceType::KNIGHT])
-        && Evaluation::evaluate(position) >= beta)
-    {
-        position.make_null_move();
-        assert(position.last_move_was_null_move());
-
-        // We do recursive null move, with depth reduction factor 3.
-        // Why 3? Because this is common, for instance in sunfish.
-        constexpr Depth R     = Depth(3);
-        Value           value = -search(depth - R, -beta, -beta + 1, ply + 1);
-
-        position.undo_null_move();
-        assert(!position.last_move_was_null_move());
-
-        // Beta cutoff?
-        if (value >= beta)
-        {
-            // Do not return unproven mate scores
-            if (value >= Value::CHECKMATE_THRESHOLD)
-                value = beta;
-
-            TT.store(position.zobrist_key,
-                     tt::value_to_tt(value, ply),
-                     Bound::LOWER,
-                     std::max(Depth::DEPTH_ZERO, depth - R + 1),
-                     Move::NO_MOVE);
-            return value;
-        }
-    }
+    bool improving;
 
     if (is_check)
-        depth += 1;
+    {
+        depth += 1;  // Extension for checks.
+        ss->staticEval = Value::NO_VALUE;
+        improving      = false;
+    }
+    else  // Speculative pruning available when not in check:
+    {
+        ss->staticEval = Evaluation::evaluate(position);
+
+        // Razoring
+        //
+        // If we are close to the horizon and we seem to be doing very bad,
+        // skip straight to quiescent search instead of doing so for every move.
+        if (depth < 2 && alpha + 1 == beta
+            && ss->staticEval + Value::RAZOR_MARGIN <= alpha)
+            return quiescent(ss, alpha, beta, ply);
+
+        // Improving is true if we have a better static eval than we did on our last
+        // move (2 ply ago). Special case for when we have no defined static eval for
+        // last move, where we let improving = true.
+        improving = ss->staticEval >= (ss - 2)->staticEval
+                    || (ss - 2)->staticEval == Value::NO_VALUE;
+
+        // Futility Pruning
+        //
+        // If we are near the horizon and the static eval is sufficiently larger than
+        // beta, then we can assume that we won't lose the advantage and exit
+        // immediately.
+        if (depth < 3 && ss->staticEval - futility_margin(depth, improving) >= beta
+            && ss->staticEval < Value::KNOWN_WIN)  // Don't trust unproven wins.
+            return ss->staticEval;
+
+        // Null move pruning.
+        //
+        // Idea is that if we have a position that is so strong that even if we
+        // don't move (i.e. pass), we still exceed beta. Only started if we have reason
+        // to belive that NMP will be useful, which here is check by eval >= beta.
+        //
+        // Only used when the following is _NOT_ true:
+        //
+        //  1. We are in check (NM would be illegal) (already tested for)
+        //  2. The last move made was a null move (double null move has no effect other
+        //  than reduced depth)
+        //  3. A beta-cutoff must be by finding a mate score (mates with NM is not
+        //  proven)
+        //  4. We are in zugzwang (not moving is better than any other move)
+        //
+        // Number 4 is hard to guarantee (but possible with verification search, see
+        // SF). But by not using null move when we only have K and P we escape most
+        // cases.
+        if (beta < Value::CHECKMATE_THRESHOLD && !position.last_move_was_null_move()
+            && (position.pieces[position.active_color][PieceType::QUEEN]
+                || position.pieces[position.active_color][PieceType::ROOK]
+                || position.pieces[position.active_color][PieceType::BISHOP]
+                || position.pieces[position.active_color][PieceType::KNIGHT])
+            && Evaluation::evaluate(position) >= beta)
+        {
+            position.make_null_move();
+            assert(position.last_move_was_null_move());
+
+            // We do recursive null move, with depth reduction factor 3.
+            // Why 3? Because this is common, for instance in sunfish.
+            constexpr Depth R = Depth(3);
+            Value value       = -search(depth - R, ss + 1, -beta, -beta + 1, ply + 1);
+
+            position.undo_null_move();
+            assert(!position.last_move_was_null_move());
+
+            // Beta cutoff?
+            if (value >= beta)
+            {
+                // Do not return unproven mate scores
+                if (value >= Value::CHECKMATE_THRESHOLD)
+                    value = beta;
+
+                TT.store(position.zobrist_key,
+                         tt::value_to_tt(value, ply),
+                         Bound::LOWER,
+                         std::max(Depth::DEPTH_ZERO, depth - R + 1),
+                         Move::NO_MOVE);
+                return value;
+            }
+        }
+    }
 
     MoveList<MoveEntry>& moves
         = move_generators[ply].get_moves(position, depth, is_check);
@@ -448,7 +492,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply)
              or (entry->move() == Move::NO_MOVE
                  and entry->depth() < depth - iid_reduction)))
     {
-        search(depth - iid_reduction, alpha, beta, ply);
+        search(depth - iid_reduction, ss + 1, alpha, beta, ply);
         entry = TT.probe(position.zobrist_key);
     }
 
@@ -469,7 +513,7 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply)
         position.make_move(move);
         if (!position.is_check(~position.active_color))
         {
-            value = pv_search(depth, alpha, beta, ply, searched_moves);
+            value = pv_search(depth, ss, alpha, beta, ply, searched_moves);
 
             searched_moves++;
         }
@@ -522,9 +566,9 @@ Value Search::search(Depth depth, Value alpha, Value beta, int ply)
     return best_value;
 }
 
-Value Search::quiescent(Value alpha, Value beta, int ply)
+Value Search::quiescent(Stack* ss, Value alpha, Value beta, int ply)
 {
-    // No need to check the TT, as we only decend to quiescense if there is
+    // No need to check the TT, as we only descend to quiescence if there is
     // no entry in the table.
 
     update_search(ply);
@@ -593,7 +637,7 @@ Value Search::quiescent(Value alpha, Value beta, int ply)
             // Note that we do not use PVS here, as we have no
             // reason to believe move ordering works very well here, and
             // we know we don't have a killer move from TT.
-            value = -quiescent(-beta, -alpha, ply + 1);
+            value = -quiescent(ss + 1, -beta, -alpha, ply + 1);
         }
         position.undo_move(move);
 
