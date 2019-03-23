@@ -10,7 +10,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set project name here.
-project(Goldfish VERSION 1.11.2 LANGUAGES C CXX)
+project(Goldfish VERSION 1.12.0 LANGUAGES C CXX)
 
 # Include stuff. No change needed.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
