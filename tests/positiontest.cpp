@@ -370,8 +370,8 @@ TEST(positiontest, test_promoting_pawns)
     const U64 w_promotions = 0x11000000000000;
     const U64 b_promotions = 0x1100;
 
-    const U64 w_res = pos.promoting_pawns(Color::WHITE);
-    const U64 b_res = pos.promoting_pawns(Color::BLACK);
+    const U64 w_res = pos.promoting_capture_pawns(Color::WHITE);
+    const U64 b_res = pos.promoting_capture_pawns(Color::BLACK);
 
     ASSERT_EQ(w_promotions, w_res) << "Expected:\n"
                                    << Bitboard::pretty(w_promotions) << "\nGot:\n"
