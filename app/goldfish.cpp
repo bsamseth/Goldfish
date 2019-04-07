@@ -2,6 +2,6 @@
 #include <iostream>
 
 int main() {
-    std::unique_ptr<goldfish::Goldfish> engine(new goldfish::Goldfish());
-    engine->run();
+    goldfish::Goldfish engine;
+    engine.run();
 }

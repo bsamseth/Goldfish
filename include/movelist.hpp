@@ -4,7 +4,6 @@
 #include "value.hpp"
 
 #include <array>
-#include <memory>
 
 namespace goldfish
 {

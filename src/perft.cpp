@@ -11,15 +11,14 @@ namespace goldfish
 {
 void Perft::run()
 {
-    std::unique_ptr<Position> position(
-        new Position(Notation::to_position(Notation::STANDARDPOSITION)));
+    Position position(Notation::to_position(Notation::STANDARDPOSITION));
     int depth = MAX_DEPTH;
 
-    std::cout << "Testing " << Notation::from_position(*position) << " at depth "
+    std::cout << "Testing " << Notation::from_position(position) << " at depth "
               << depth << std::endl;
 
     auto     start_time = std::chrono::system_clock::now();
-    uint64_t result     = mini_max(depth, *position, 0);
+    uint64_t result     = mini_max(depth, position, 0);
     auto     end_time   = std::chrono::system_clock::now();
 
     auto duration = end_time - start_time;

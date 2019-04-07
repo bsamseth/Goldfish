@@ -83,12 +83,12 @@ void Goldfish::receive_quit()
 {
     // We received a quit command. Stop calculating now and
     // cleanup!
-    search->quit();
+    search.quit();
 }
 
 void Goldfish::receive_initialize()
 {
-    search->stop();
+    search.stop();
 
     // We received an initialization request.
 
@@ -117,17 +117,17 @@ void Goldfish::receive_ready()
 
 void Goldfish::receive_new_game()
 {
-    search->stop();
+    search.stop();
 
     // We received a new game command.
 
     // Initialize per-game settings here.
-    *current_position = Notation::to_position(Notation::STANDARDPOSITION);
+    current_position = Notation::to_position(Notation::STANDARDPOSITION);
 }
 
 void Goldfish::receive_position(std::istringstream& input)
 {
-    search->stop();
+    search.stop();
 
     // We received an position command. Just setup the position.
 
@@ -135,7 +135,7 @@ void Goldfish::receive_position(std::istringstream& input)
     input >> token;
     if (token == "startpos")
     {
-        *current_position = Notation::to_position(Notation::STANDARDPOSITION);
+        current_position = Notation::to_position(Notation::STANDARDPOSITION);
 
         if (input >> token)
         {
@@ -161,7 +161,7 @@ void Goldfish::receive_position(std::istringstream& input)
             }
         }
 
-        *current_position = Notation::to_position(fen);
+        current_position = Notation::to_position(fen);
     }
     else
     {
@@ -174,14 +174,14 @@ void Goldfish::receive_position(std::istringstream& input)
     {
         // Verify moves
         MoveList<MoveEntry>& moves = move_generator.get_legal_moves(
-            *current_position, 1, current_position->is_check());
+            current_position, 1, current_position.is_check());
         bool found = false;
         for (int i = 0; i < moves.size; i++)
         {
             Move move = moves.entries[i].move;
             if (Notation::from_move(move) == token)
             {
-                current_position->make_move(move);
+                current_position.make_move(move);
                 found = true;
                 break;
             }
@@ -198,7 +198,7 @@ void Goldfish::receive_position(std::istringstream& input)
 
 void Goldfish::receive_go(std::istringstream& input)
 {
-    search->stop();
+    search.stop();
 
     // We received a start command. Extract all parameters from the
     // command and start the search.
@@ -209,7 +209,7 @@ void Goldfish::receive_go(std::istringstream& input)
         int search_depth;
         if (input >> search_depth)
         {
-            search->new_depth_search(*current_position, Depth(search_depth));
+            search.new_depth_search(current_position, Depth(search_depth));
         }
         else
         {
@@ -221,7 +221,7 @@ void Goldfish::receive_go(std::istringstream& input)
         uint64_t search_nodes;
         if (input >> search_nodes)
         {
-            search->new_nodes_search(*current_position, search_nodes);
+            search.new_nodes_search(current_position, search_nodes);
         }
     }
     else if (token == "movetime")
@@ -229,12 +229,12 @@ void Goldfish::receive_go(std::istringstream& input)
         uint64_t search_time;
         if (input >> search_time)
         {
-            search->new_time_search(*current_position, search_time);
+            search.new_time_search(current_position, search_time);
         }
     }
     else if (token == "infinite")
     {
-        search->new_infinite_search(*current_position);
+        search.new_infinite_search(current_position);
     }
     else
     {
@@ -290,7 +290,7 @@ void Goldfish::receive_go(std::istringstream& input)
 
         if (ponder)
         {
-            search->new_ponder_search(*current_position,
+            search.new_ponder_search(current_position,
                                       white_time_left,
                                       white_time_increment,
                                       black_time_left,
@@ -299,7 +299,7 @@ void Goldfish::receive_go(std::istringstream& input)
         }
         else
         {
-            search->new_clock_search(*current_position,
+            search.new_clock_search(current_position,
                                      white_time_left,
                                      white_time_increment,
                                      black_time_left,
@@ -309,7 +309,7 @@ void Goldfish::receive_go(std::istringstream& input)
     }
 
     // Go...
-    search->start();
+    search.start();
     start_time        = std::chrono::system_clock::now();
     status_start_time = start_time;
 }
@@ -317,13 +317,13 @@ void Goldfish::receive_go(std::istringstream& input)
 void Goldfish::receive_ponder_hit()
 {
     // We received a ponder hit command. Just call ponderhit().
-    search->ponderhit();
+    search.ponderhit();
 }
 
 void Goldfish::receive_stop()
 {
     // We received a stop command. If a search is running, stop it.
-    search->stop();
+    search.stop();
 }
 
 void Goldfish::receive_bench()
@@ -358,8 +358,8 @@ void Goldfish::receive_bench()
             std::cerr << "\nPosition: " << count++ << '/' << num_positions << std::endl;
 
             receive_go(is);
-            search->wait_for_finished();
-            total_nodes += search->get_total_nodes();
+            search.wait_for_finished();
+            total_nodes += search.get_total_nodes();
         }
         else if (token == "position")
             receive_position(is);

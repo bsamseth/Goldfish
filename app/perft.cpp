@@ -3,6 +3,6 @@
 #include <iostream>
 
 int main() {
-    std::unique_ptr<goldfish::Perft> perft(new goldfish::Perft());
-    perft->run();
+    goldfish::Perft perft;
+    perft.run();
 }
