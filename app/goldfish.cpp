@@ -1,7 +1,9 @@
 #include "goldfish.hpp"
+
 #include <iostream>
 
-int main() {
+int main()
+{
     goldfish::Goldfish engine;
     engine.run();
 }

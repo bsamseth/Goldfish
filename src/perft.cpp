@@ -12,7 +12,7 @@ namespace goldfish
 void Perft::run()
 {
     Position position(Notation::to_position(Notation::STANDARDPOSITION));
-    int depth = MAX_DEPTH;
+    int      depth = MAX_DEPTH;
 
     std::cout << "Testing " << Notation::from_position(position) << " at depth "
               << depth << std::endl;

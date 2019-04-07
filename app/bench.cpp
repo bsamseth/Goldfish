@@ -1,7 +1,9 @@
 #include "goldfish.hpp"
+
 #include <iostream>
 
-int main() {
+int main()
+{
     goldfish::Goldfish engine;
     engine.receive_initialize();
     engine.receive_bench();

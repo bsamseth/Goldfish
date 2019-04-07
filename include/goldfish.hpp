@@ -38,7 +38,7 @@ private:
     std::chrono::system_clock::time_point start_time;
     std::chrono::system_clock::time_point status_start_time;
 
-    Search search;
+    Search   search;
     Position current_position = Notation::to_position(Notation::STANDARDPOSITION);
 
     void receive_ready();

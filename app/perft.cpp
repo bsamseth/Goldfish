@@ -1,8 +1,11 @@
-#include "goldfish.hpp"
 #include "perft.hpp"
+
+#include "goldfish.hpp"
+
 #include <iostream>
 
-int main() {
+int main()
+{
     goldfish::Perft perft;
     perft.run();
 }

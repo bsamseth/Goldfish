@@ -291,20 +291,20 @@ void Goldfish::receive_go(std::istringstream& input)
         if (ponder)
         {
             search.new_ponder_search(current_position,
-                                      white_time_left,
-                                      white_time_increment,
-                                      black_time_left,
-                                      black_time_increment,
-                                      search_moves_toGo);
-        }
-        else
-        {
-            search.new_clock_search(current_position,
                                      white_time_left,
                                      white_time_increment,
                                      black_time_left,
                                      black_time_increment,
                                      search_moves_toGo);
+        }
+        else
+        {
+            search.new_clock_search(current_position,
+                                    white_time_left,
+                                    white_time_increment,
+                                    black_time_left,
+                                    black_time_increment,
+                                    search_moves_toGo);
         }
     }
 
