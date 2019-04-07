@@ -9,6 +9,8 @@ namespace goldfish
 class Goldfish : public Protocol
 {
 public:
+    Goldfish() : search(*this) {}
+
     void run();
 
     void send_best_move(Move best_move, Move ponder_move) final;
