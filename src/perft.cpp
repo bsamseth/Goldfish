@@ -11,15 +11,14 @@ namespace goldfish
 {
 void Perft::run()
 {
-    std::unique_ptr<Position> position(
-        new Position(Notation::to_position(Notation::STANDARDPOSITION)));
-    int depth = MAX_DEPTH;
+    Position position(Notation::to_position(Notation::STANDARDPOSITION));
+    int      depth = MAX_DEPTH;
 
-    std::cout << "Testing " << Notation::from_position(*position) << " at depth "
+    std::cout << "Testing " << Notation::from_position(position) << " at depth "
               << depth << std::endl;
 
     auto     start_time = std::chrono::system_clock::now();
-    uint64_t result     = mini_max(depth, *position, 0);
+    uint64_t result     = mini_max(depth, position, 0);
     auto     end_time   = std::chrono::system_clock::now();
 
     auto duration = end_time - start_time;
@@ -70,7 +69,7 @@ uint64_t Perft::mini_max(int depth, Position& position, int ply)
     MoveList<MoveEntry>& moves = move_generator.get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++)
     {
-        Move move = moves.entries[i]->move;
+        Move move = moves.entries[i].move;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color))

@@ -4,13 +4,13 @@
 #include "protocol.hpp"
 #include "search.hpp"
 
-#include <memory>
-
 namespace goldfish
 {
 class Goldfish : public Protocol
 {
 public:
+    Goldfish() : search(*this) {}
+
     void run();
 
     void send_best_move(Move best_move, Move ponder_move) final;
@@ -37,12 +37,11 @@ public:
                    uint64_t         tb_hits) final;
 
 private:
-    std::unique_ptr<Search>               search = std::make_unique<Search>(*this);
     std::chrono::system_clock::time_point start_time;
     std::chrono::system_clock::time_point status_start_time;
 
-    std::unique_ptr<Position> current_position
-        = std::make_unique<Position>(Notation::to_position(Notation::STANDARDPOSITION));
+    Search   search;
+    Position current_position = Notation::to_position(Notation::STANDARDPOSITION);
 
     void receive_ready();
 

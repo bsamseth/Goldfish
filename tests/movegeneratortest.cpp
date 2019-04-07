@@ -301,13 +301,14 @@ uint64_t mini_max(Depth depth, Position& position, int ply)
 
     uint64_t total_nodes = 0;
 
-    bool                 is_check = position.is_check();
+    bool is_check = position.is_check();
+
+    auto                 temp = move_generators[ply];
     MoveList<MoveEntry>& moves
         = move_generators[ply].get_moves(position, depth, is_check);
-
     for (int i = 0; i < moves.size; i++)
     {
-        Move move = moves.entries[i]->move;
+        Move move = moves.entries[i].move;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color))
@@ -334,7 +335,7 @@ TEST(movegeneratortest, test_perft)
                 Position position(Notation::to_position(p.fen));
 
                 uint64_t result = mini_max(depth, position, 0);
-                EXPECT_EQ(nodes, result)
+                ASSERT_EQ(nodes, result)
                     << Notation::from_position(position) << ", depth " << i
                     << ": expected " << nodes << ", actual " << result;
             }

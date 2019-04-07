@@ -1,8 +1,11 @@
-#include "goldfish.hpp"
 #include "perft.hpp"
+
+#include "goldfish.hpp"
+
 #include <iostream>
 
-int main() {
-    std::unique_ptr<goldfish::Perft> perft(new goldfish::Perft());
-    perft->run();
+int main()
+{
+    goldfish::Perft perft;
+    perft.run();
 }

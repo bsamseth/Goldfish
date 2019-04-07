@@ -33,9 +33,9 @@ void Search::check_stop_conditions()
             else
 
                 // Check if we have a checkmate
-                if (Values::is_checkmate(root_moves.entries[0]->value)
+                if (Values::is_checkmate(root_moves.entries[0].value)
                     && current_depth >= Depth(Value::CHECKMATE
-                                              - std::abs(root_moves.entries[0]->value)))
+                                              - std::abs(root_moves.entries[0].value)))
             {
                 abort = true;
             }
@@ -90,10 +90,10 @@ void Search::run()
             = move_generators[0].get_legal_moves(position, 1, position.is_check());
         for (int i = 0; i < moves.size; i++)
         {
-            Move move                                        = moves.entries[i]->move;
-            root_moves.entries[root_moves.size]->move        = move;
-            root_moves.entries[root_moves.size]->pv.moves[0] = move;
-            root_moves.entries[root_moves.size]->pv.size     = 1;
+            Move move                                       = moves.entries[i].move;
+            root_moves.entries[root_moves.size].move        = move;
+            root_moves.entries[root_moves.size].pv.moves[0] = move;
+            root_moves.entries[root_moves.size].pv.size     = 1;
             root_moves.size++;
         }
 
@@ -159,10 +159,10 @@ void Search::run()
         Move ponder_move = Move::NO_MOVE;
         if (root_moves.size > 0)
         {
-            best_move = root_moves.entries[0]->move;
-            if (root_moves.entries[0]->pv.size >= 2)
+            best_move = root_moves.entries[0].move;
+            if (root_moves.entries[0].pv.size >= 2)
             {
-                ponder_move = root_moves.entries[0]->pv.moves[1];
+                ponder_move = root_moves.entries[0].pv.moves[1];
             }
         }
 
@@ -232,12 +232,12 @@ Value Search::search_root(Depth depth, Stack* ss, Value alpha, Value beta)
     // Reset all values, so the best move is pushed to the front
     for (int i = 0; i < root_moves.size; i++)
     {
-        root_moves.entries[i]->value = -Value::INFINITE;
+        root_moves.entries[i].value = -Value::INFINITE;
     }
 
     for (int i = 0; i < root_moves.size; i++)
     {
-        Move move = root_moves.entries[i]->move;
+        Move move = root_moves.entries[i].move;
 
         current_move        = move;
         current_move_number = i + 1;
@@ -268,10 +268,10 @@ Value Search::search_root(Depth depth, Stack* ss, Value alpha, Value beta)
             alpha = value;
 
             // We found a new best move
-            root_moves.entries[i]->value = value;
-            save_pv(move, pv[ply + 1], root_moves.entries[i]->pv);
+            root_moves.entries[i].value = value;
+            save_pv(move, pv[ply + 1], root_moves.entries[i].pv);
 
-            protocol.send_move(*root_moves.entries[i],
+            protocol.send_move(root_moves.entries[i],
                                current_depth,
                                current_max_depth,
                                total_nodes,
@@ -507,7 +507,7 @@ Value Search::search(Depth depth, Stack* ss, Value alpha, Value beta, int ply)
 
     for (int i = 0; i < moves.size; i++)
     {
-        Move  move  = moves.entries[i]->move;
+        Move  move  = moves.entries[i].move;
         Value value = best_value;
 
         position.make_move(move);
@@ -625,7 +625,7 @@ Value Search::quiescent(Stack* ss, Value alpha, Value beta, int ply)
         = move_generators[ply].get_moves(position, Depth::DEPTH_ZERO, is_check);
     for (int i = 0; i < moves.size; i++)
     {
-        Move  move  = moves.entries[i]->move;
+        Move  move  = moves.entries[i].move;
         Value value = best_value;
 
         position.make_move(move);
