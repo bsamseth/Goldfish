@@ -13,7 +13,7 @@ void MoveList<T>::sort()
 {
     for (int i = 1; i < size; i++)
     {
-        const T& entry = entries[i];
+        const T entry = std::move(entries[i]);
 
         int j = i;
         while ((j > 0) && (entries[j - 1].value < entry.value))
@@ -22,7 +22,7 @@ void MoveList<T>::sort()
             j--;
         }
 
-        entries[j] = entry;
+        entries[j] = std::move(entry);
     }
 }
 
