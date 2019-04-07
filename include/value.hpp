@@ -29,7 +29,7 @@ enum Value : int
 
     TEMPO = 1,
 
-    RAZOR_MARGIN = 600,
+    RAZOR_MARGIN    = 600,
     FUTILITY_MARGIN = 200,
 };
 

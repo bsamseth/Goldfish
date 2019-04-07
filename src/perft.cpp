@@ -70,7 +70,7 @@ uint64_t Perft::mini_max(int depth, Position& position, int ply)
     MoveList<MoveEntry>& moves = move_generator.get_moves(position, depth, is_check);
     for (int i = 0; i < moves.size; i++)
     {
-        Move move = moves.entries[i]->move;
+        Move move = moves.entries[i].move;
 
         position.make_move(move);
         if (!position.is_check(~position.active_color))

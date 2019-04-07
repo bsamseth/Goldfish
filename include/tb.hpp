@@ -200,7 +200,7 @@ inline TableResult probe_root(const Position& pos, MoveList<Entry>& moves)
         {
             for (int j = optimal_move_count; j < moves.size; ++j)
             {
-                if (tbres.move_equal_to(moves.entries[j]->move))
+                if (tbres.move_equal_to(moves.entries[j].move))
                 {
                     std::swap(moves.entries[optimal_move_count], moves.entries[j]);
                     ++optimal_move_count;

@@ -19,10 +19,10 @@ private:
     static const int MAX_MOVES = 256;
 
 public:
-    std::array<std::shared_ptr<T>, MAX_MOVES> entries;
-    int                                       size = 0;
+    std::array<T, MAX_MOVES> entries;
+    int                      size = 0;
 
-    MoveList();
+    MoveList() = default;
 
     void sort();
 

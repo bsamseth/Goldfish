@@ -13,12 +13,12 @@ MoveList<MoveEntry>&
     legal_moves.size = 0;
     for (int i = 0; i < size; i++)
     {
-        Move move = legal_moves.entries[i]->move;
+        Move move = legal_moves.entries[i].move;
 
         const_cast<Position&>(position).make_move(move);
         if (!position.is_check(~position.active_color))
         {
-            legal_moves.entries[legal_moves.size++]->move = move;
+            legal_moves.entries[legal_moves.size++].move = move;
         }
         const_cast<Position&>(position).undo_move(move);
     }
@@ -56,10 +56,10 @@ MoveList<MoveEntry>&
             moves.size = 0;
             for (int i = 0; i < size; i++)
             {
-                if (Moves::get_target_piece(moves.entries[i]->move) != Piece::NO_PIECE)
+                if (Moves::get_target_piece(moves.entries[i].move) != Piece::NO_PIECE)
                 {
                     // Add only capturing moves
-                    moves.entries[moves.size++]->move = moves.entries[i]->move;
+                    moves.entries[moves.size++].move = moves.entries[i].move;
                 }
             }
         }
@@ -132,7 +132,7 @@ void MoveGenerator::add_moves(MoveList<MoveEntry>&          list,
             if (target_piece == Piece::NO_PIECE)
             {
                 // quiet move
-                list.entries[list.size++]->move
+                list.entries[list.size++].move
                     = Moves::value_of(MoveType::NORMAL,
                                       origin_square,
                                       target_square,
@@ -152,7 +152,7 @@ void MoveGenerator::add_moves(MoveList<MoveEntry>&          list,
                 if (Pieces::get_color(target_piece) == opposite_color)
                 {
                     // capturing move
-                    list.entries[list.size++]->move
+                    list.entries[list.size++].move
                         = Moves::value_of(MoveType::NORMAL,
                                           origin_square,
                                           target_square,
@@ -197,28 +197,28 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry>& list,
                     {
                         // Pawn promotion capturing move
 
-                        list.entries[list.size++]->move
+                        list.entries[list.size++].move
                             = Moves::value_of(MoveType::PAWN_PROMOTION,
                                               pawn_square,
                                               target_square,
                                               pawn_piece,
                                               target_piece,
                                               PieceType::QUEEN);
-                        list.entries[list.size++]->move
+                        list.entries[list.size++].move
                             = Moves::value_of(MoveType::PAWN_PROMOTION,
                                               pawn_square,
                                               target_square,
                                               pawn_piece,
                                               target_piece,
                                               PieceType::ROOK);
-                        list.entries[list.size++]->move
+                        list.entries[list.size++].move
                             = Moves::value_of(MoveType::PAWN_PROMOTION,
                                               pawn_square,
                                               target_square,
                                               pawn_piece,
                                               target_piece,
                                               PieceType::BISHOP);
-                        list.entries[list.size++]->move
+                        list.entries[list.size++].move
                             = Moves::value_of(MoveType::PAWN_PROMOTION,
                                               pawn_square,
                                               target_square,
@@ -230,7 +230,7 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry>& list,
                     {
                         // Normal capturing move
 
-                        list.entries[list.size++]->move
+                        list.entries[list.size++].move
                             = Moves::value_of(MoveType::NORMAL,
                                               pawn_square,
                                               target_square,
@@ -249,7 +249,7 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry>& list,
                                                     : Direction::NORTH);
                 target_piece = position.board[capture_square];
 
-                list.entries[list.size++]->move
+                list.entries[list.size++].move
                     = Moves::value_of(MoveType::EN_PASSANT,
                                       pawn_square,
                                       target_square,
@@ -275,41 +275,41 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry>& list,
         {
             // Pawn promotion move
 
-            list.entries[list.size++]->move = Moves::value_of(MoveType::PAWN_PROMOTION,
-                                                              pawn_square,
-                                                              target_square,
-                                                              pawn_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::QUEEN);
-            list.entries[list.size++]->move = Moves::value_of(MoveType::PAWN_PROMOTION,
-                                                              pawn_square,
-                                                              target_square,
-                                                              pawn_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::ROOK);
-            list.entries[list.size++]->move = Moves::value_of(MoveType::PAWN_PROMOTION,
-                                                              pawn_square,
-                                                              target_square,
-                                                              pawn_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::BISHOP);
-            list.entries[list.size++]->move = Moves::value_of(MoveType::PAWN_PROMOTION,
-                                                              pawn_square,
-                                                              target_square,
-                                                              pawn_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::KNIGHT);
+            list.entries[list.size++].move = Moves::value_of(MoveType::PAWN_PROMOTION,
+                                                             pawn_square,
+                                                             target_square,
+                                                             pawn_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::QUEEN);
+            list.entries[list.size++].move = Moves::value_of(MoveType::PAWN_PROMOTION,
+                                                             pawn_square,
+                                                             target_square,
+                                                             pawn_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::ROOK);
+            list.entries[list.size++].move = Moves::value_of(MoveType::PAWN_PROMOTION,
+                                                             pawn_square,
+                                                             target_square,
+                                                             pawn_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::BISHOP);
+            list.entries[list.size++].move = Moves::value_of(MoveType::PAWN_PROMOTION,
+                                                             pawn_square,
+                                                             target_square,
+                                                             pawn_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::KNIGHT);
         }
         else
         {
             // Normal move
 
-            list.entries[list.size++]->move = Moves::value_of(MoveType::NORMAL,
-                                                              pawn_square,
-                                                              target_square,
-                                                              pawn_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::NO_PIECE_TYPE);
+            list.entries[list.size++].move = Moves::value_of(MoveType::NORMAL,
+                                                             pawn_square,
+                                                             target_square,
+                                                             pawn_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::NO_PIECE_TYPE);
 
             // Move another rank forward
             target_square += direction;
@@ -323,7 +323,7 @@ void MoveGenerator::add_pawn_moves(MoveList<MoveEntry>& list,
                 {
                     // Pawn double move
 
-                    list.entries[list.size++]->move
+                    list.entries[list.size++].move
                         = Moves::value_of(MoveType::PAWN_DOUBLE,
                                           pawn_square,
                                           target_square,
@@ -351,12 +351,12 @@ void MoveGenerator::add_castling_moves(MoveList<MoveEntry>& list,
             && position.board[Square::G1] == Piece::NO_PIECE
             && !position.is_attacked(Square::F1, Color::BLACK))
         {
-            list.entries[list.size++]->move = Moves::value_of(MoveType::CASTLING,
-                                                              king_square,
-                                                              Square::G1,
-                                                              king_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::NO_PIECE_TYPE);
+            list.entries[list.size++].move = Moves::value_of(MoveType::CASTLING,
+                                                             king_square,
+                                                             Square::G1,
+                                                             king_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::NO_PIECE_TYPE);
         }
         // Do not test c1 whether it is attacked as we will test it in is_legal()
         if ((position.castling_rights & Castling::WHITE_QUEEN_SIDE)
@@ -366,12 +366,12 @@ void MoveGenerator::add_castling_moves(MoveList<MoveEntry>& list,
             && position.board[Square::D1] == Piece::NO_PIECE
             && !position.is_attacked(Square::D1, Color::BLACK))
         {
-            list.entries[list.size++]->move = Moves::value_of(MoveType::CASTLING,
-                                                              king_square,
-                                                              Square::C1,
-                                                              king_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::NO_PIECE_TYPE);
+            list.entries[list.size++].move = Moves::value_of(MoveType::CASTLING,
+                                                             king_square,
+                                                             Square::C1,
+                                                             king_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::NO_PIECE_TYPE);
         }
     }
     else
@@ -383,12 +383,12 @@ void MoveGenerator::add_castling_moves(MoveList<MoveEntry>& list,
             && position.board[Square::G8] == Piece::NO_PIECE
             && !position.is_attacked(Square::F8, Color::WHITE))
         {
-            list.entries[list.size++]->move = Moves::value_of(MoveType::CASTLING,
-                                                              king_square,
-                                                              Square::G8,
-                                                              king_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::NO_PIECE_TYPE);
+            list.entries[list.size++].move = Moves::value_of(MoveType::CASTLING,
+                                                             king_square,
+                                                             Square::G8,
+                                                             king_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::NO_PIECE_TYPE);
         }
         // Do not test c8 whether it is attacked as we will test it in is_legal()
         if ((position.castling_rights & Castling::BLACK_QUEEN_SIDE)
@@ -398,12 +398,12 @@ void MoveGenerator::add_castling_moves(MoveList<MoveEntry>& list,
             && position.board[Square::D8] == Piece::NO_PIECE
             && !position.is_attacked(Square::D8, Color::WHITE))
         {
-            list.entries[list.size++]->move = Moves::value_of(MoveType::CASTLING,
-                                                              king_square,
-                                                              Square::C8,
-                                                              king_piece,
-                                                              Piece::NO_PIECE,
-                                                              PieceType::NO_PIECE_TYPE);
+            list.entries[list.size++].move = Moves::value_of(MoveType::CASTLING,
+                                                             king_square,
+                                                             Square::C8,
+                                                             king_piece,
+                                                             Piece::NO_PIECE,
+                                                             PieceType::NO_PIECE_TYPE);
         }
     }
 }

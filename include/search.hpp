@@ -15,7 +15,6 @@
 
 namespace goldfish
 {
-
 // Stack struct keeps track of the information we need to remember from nodes
 // shallower and deeper in the tree during the search. The number of entries here
 // will likely grow as search becomes more sophisticated.
@@ -174,7 +173,12 @@ private:
 
     void save_pv(const Move move, const MoveVariation& src, MoveVariation& dest);
 
-    Value pv_search(Depth depth, Stack* ss, Value alpha, Value beta, int ply, int move_number);
+    Value pv_search(Depth  depth,
+                    Stack* ss,
+                    Value  alpha,
+                    Value  beta,
+                    int    ply,
+                    int    move_number);
 
     Value search_root(Depth depth, Stack* ss, Value alpha, Value beta);
 

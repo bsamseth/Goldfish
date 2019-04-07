@@ -178,7 +178,7 @@ void Goldfish::receive_position(std::istringstream& input)
         bool found = false;
         for (int i = 0; i < moves.size; i++)
         {
-            Move move = moves.entries[i]->move;
+            Move move = moves.entries[i].move;
             if (Notation::from_move(move) == token)
             {
                 current_position->make_move(move);
