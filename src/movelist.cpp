@@ -9,9 +9,9 @@ namespace goldfish
  * Sorts the move list using a stable insertion sort.
  */
 template <class T>
-void MoveList<T>::sort()
+void MoveList<T>::sort(int first_n_sorted)
 {
-    for (int i = 1; i < size; i++)
+    for (int i = first_n_sorted; i < size; i++)
     {
         const T entry = std::move(entries[i]);
 

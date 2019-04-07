@@ -23,7 +23,7 @@ public:
 
     MoveList() = default;
 
-    void sort();
+    void sort(int first_n_sorted = 1);
 
     void rate_from_Mvvlva();
 
