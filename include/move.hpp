@@ -99,5 +99,10 @@ constexpr PieceType get_promotion(Move move)
 {
     return PieceType((move & PROMOTION_MASK) >> PROMOTION_SHIFT);
 }
+
+constexpr bool is_capture(Move m)
+{
+    return get_target_piece(m) != Piece::NO_PIECE;
+}
 }  // namespace Moves
 }  // namespace goldfish
