@@ -47,6 +47,12 @@ enum Move : int
 
 namespace Moves
 {
+
+constexpr bool is_valid(Move move)
+{
+    return move != Move::NO_MOVE;
+}
+
 constexpr Move value_of(MoveType  type,
                         Square    origin_square,
                         Square    target_square,
