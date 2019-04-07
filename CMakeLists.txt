@@ -65,7 +65,7 @@ set(TEST_MAIN unit_tests.x)
 # --------------------------------------------------------------------------------
 #                            Build! 
 # --------------------------------------------------------------------------------
-add_library(engine ${SOURCES} ${FATHOM_SOURCES})
+add_library(engine STATIC ${SOURCES} ${FATHOM_SOURCES})
 target_include_directories(engine 
     PUBLIC ${PROJECT_SOURCE_DIR}/include 
            ${PROJECT_SOURCE_DIR}/external
