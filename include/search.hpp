@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <array>
 
 namespace goldfish
 {
@@ -20,6 +21,7 @@ namespace goldfish
 struct Stack
 {
     Value staticEval;
+    std::array<Move, 2> killers = {Move::NO_MOVE, Move::NO_MOVE};
 
     explicit Stack(Value v = Value::NO_VALUE) : staticEval(v) {}
 };
