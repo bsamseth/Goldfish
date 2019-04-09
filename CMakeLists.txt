@@ -7,7 +7,7 @@
 #
 # For many purposes, you may not need to change anything about this file.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.8.2)
 
 # Set project name here.
 project(Goldfish VERSION 1.13.0 LANGUAGES C CXX)
