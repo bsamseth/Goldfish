@@ -73,13 +73,18 @@ target_include_directories(engine
 
 target_compile_options(engine PRIVATE # clang/GCC warnings
                       $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>: 
-                      "-Wall" "-Wextra" >
-                      # MSVC warnings
-                      $<$<CXX_COMPILER_ID:MSVC>: 
-                      "/Wall" >)
+                      "-Wall" "-Wextra" >)
+
 if(UNIX)
     target_link_libraries(engine PUBLIC pthread)
 endif()
+
+option(STATIC_BUILD "Use static linking for executables." OFF)
+if(STATIC_BUILD)
+    # Simply enabled globally. Not using this for other things than distributing a stable Windows build.
+    set(CMAKE_EXE_LINKER_FLAGS "-static")
+endif()
+
 
 add_executable(goldfish.x app/goldfish.cpp)
 target_link_libraries(goldfish.x PRIVATE engine)
