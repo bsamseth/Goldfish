@@ -43,27 +43,12 @@ constexpr std::array<Piece, VALUES_SIZE> values = {WHITE_PAWN,
 
 constexpr int MASK = 0x1F;
 
-inline constexpr bool is_valid(Piece piece)
+constexpr bool is_valid(Piece piece)
 {
-    switch (piece)
-    {
-        case WHITE_PAWN:
-        case WHITE_KNIGHT:
-        case WHITE_BISHOP:
-        case WHITE_ROOK:
-        case WHITE_QUEEN:
-        case WHITE_KING:
-        case BLACK_PAWN:
-        case BLACK_KNIGHT:
-        case BLACK_BISHOP:
-        case BLACK_ROOK:
-        case BLACK_QUEEN:
-        case BLACK_KING: return true;
-        default: return false;
-    }
+    return piece != Piece::NO_PIECE;
 }
 
-inline constexpr Piece value_of(Color color, PieceType piecetype)
+constexpr Piece value_of(Color color, PieceType piecetype)
 {
     switch (color)
     {

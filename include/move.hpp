@@ -47,6 +47,12 @@ enum Move : int
 
 namespace Moves
 {
+
+constexpr bool is_valid(Move move)
+{
+    return move != Move::NO_MOVE;
+}
+
 constexpr Move value_of(MoveType  type,
                         Square    origin_square,
                         Square    target_square,
@@ -92,6 +98,11 @@ constexpr Piece get_target_piece(Move move)
 constexpr PieceType get_promotion(Move move)
 {
     return PieceType((move & PROMOTION_MASK) >> PROMOTION_SHIFT);
+}
+
+constexpr bool is_capture(Move m)
+{
+    return get_target_piece(m) != Piece::NO_PIECE;
 }
 }  // namespace Moves
 }  // namespace goldfish

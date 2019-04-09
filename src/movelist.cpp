@@ -9,9 +9,9 @@ namespace goldfish
  * Sorts the move list using a stable insertion sort.
  */
 template <class T>
-void MoveList<T>::sort()
+void MoveList<T>::sort(int first_n_sorted)
 {
-    for (int i = 1; i < size; i++)
+    for (int i = first_n_sorted; i < size; i++)
     {
         const T entry = std::move(entries[i]);
 
@@ -26,12 +26,31 @@ void MoveList<T>::sort()
     }
 }
 
+template <class T>
+bool MoveList<T>::add_killer(Move m)
+{
+    if (m == Move::NO_MOVE || entries[0].move == m)
+        return false;
+
+    for (auto it = entries.begin() + 1; it != entries.end(); ++it)
+    {
+        if (it->move == m)
+        {
+            it->value += 1;  // Break ties (quiets affected most), propagate forward in list.
+            sort(std::distance(entries.begin(), it));
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /**
  * Move the given move to the front of the array, keeping
  * all others in the same order.
  */
-template <class T>
-void MoveList<T>::add_killer(Move m)
+template<class T>
+void MoveList<T>::sort_as_best(Move m)
 {
     for (auto killer = entries.rbegin(); killer != entries.rend(); ++killer)
     {
@@ -42,8 +61,7 @@ void MoveList<T>::add_killer(Move m)
             return;
         }
     }
-    // The move should always be in the list.
-    assert(false);
+    assert(false && "Best move must be in movelist!");
 }
 
 /**
@@ -58,14 +76,12 @@ void MoveList<T>::rate_from_Mvvlva()
         Move  move  = entries[i].move;
         Value value = Value::ZERO;
 
-        Value piece_type_value
-            = PieceTypes::get_value(Pieces::get_type(Moves::get_origin_piece(move)));
-        value += Value::KING_VALUE / piece_type_value;
-
         Piece target = Moves::get_target_piece(move);
         if (Pieces::is_valid(target))
         {
-            value += 10 * PieceTypes::get_value(Pieces::get_type(target));
+            // If this is a capture, score according to how valuable the target is,
+            // while giving preference to captures using a less valuable attacker.
+            value += 10 * PieceTypes::get_value(Pieces::get_type(target)) + Value::KING_VALUE / PieceTypes::get_value(Pieces::get_type(Moves::get_origin_piece(move)));
         }
 
         entries[i].value = value;

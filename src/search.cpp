@@ -13,6 +13,15 @@ constexpr Value futility_margin(Depth d, bool improving)
     return Value((static_cast<int>(Value::FUTILITY_MARGIN - 50 * improving)) * d);
 }
 
+void update_cutoff(Stack* ss, Move move)
+{
+    if (ss->killers[0] != move && move != Move::NO_MOVE)
+    {
+        ss->killers[1] = ss->killers[0];
+        ss->killers[0] = move;
+    }
+}
+
 void Search::check_stop_conditions()
 {
     // We will check the stop conditions only if we are using time management,
@@ -278,7 +287,10 @@ Value Search::search_root(Depth depth, Stack* ss, Value alpha, Value beta)
                                tb_hits);
 
             if (value >= beta)
+            {
+                update_cutoff(ss, move);
                 return value;
+            }
         }
     }
 
@@ -324,6 +336,7 @@ Value Search::search(Depth depth, Stack* ss, Value alpha, Value beta, int ply)
         if (alpha >= beta)
         {
             update_search(ply);
+            update_cutoff(ss, entry->move());
             return tt_value;
         }
     }
@@ -479,9 +492,6 @@ Value Search::search(Depth depth, Stack* ss, Value alpha, Value beta, int ply)
         }
     }
 
-    MoveList<MoveEntry>& moves
-        = move_generators[ply].get_moves(position, depth, is_check);
-
     // Internal Iterative deepening:
     // When we have no good guess for the best move, do a reduced search
     // first to find a likely candidate. Only do this if a search would
@@ -496,14 +506,22 @@ Value Search::search(Depth depth, Stack* ss, Value alpha, Value beta, int ply)
         entry = TT.probe(position.zobrist_key);
     }
 
+    MoveList<MoveEntry>& moves
+        = move_generators[ply].get_moves(position, depth, is_check);
+
+
     // Killer Move Heuristic:
+    // Search moves that caused cuttoffs in sibling nodes early.
+    // Killers are moved further to the front of the list.
+    moves.add_killer(ss->killers[1]);
+    moves.add_killer(ss->killers[0]);
+
+    // TTable Move Heuristic:
     // If lookup didn't cause a cutoff, including if we don't have the required depth to
-    // use the table entry, lets use the stored move as a killer move, searching it
+    // use the table entry, lets use the stored move as a best move, searching it
     // first in the hopes that it will lead to more cutoffs.
     if (entry != nullptr and entry->move() != Move::NO_MOVE)
-    {
-        moves.add_killer(entry->move());
-    }
+        moves.sort_as_best(entry->move());
 
     for (int i = 0; i < moves.size; i++)
     {
@@ -557,6 +575,8 @@ Value Search::search(Depth depth, Stack* ss, Value alpha, Value beta, int ply)
         best_value       = is_check ? -Value::CHECKMATE + ply : contempt;
         best_value_bound = Bound::EXACT;
     }
+
+    update_cutoff(ss, best_move);
 
     TT.store(position.zobrist_key,
              tt::value_to_tt(best_value, ply),
@@ -659,6 +679,7 @@ Value Search::quiescent(Stack* ss, Value alpha, Value beta, int ply)
                 if (value >= beta)
                 {
                     // Cut-off
+                    update_cutoff(ss, move);
                     break;
                 }
             }
