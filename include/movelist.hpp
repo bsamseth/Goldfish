@@ -23,11 +23,13 @@ public:
 
     MoveList() = default;
 
-    void sort();
+    void sort(int first_n_sorted = 1);
 
     void rate_from_Mvvlva();
 
-    void add_killer(Move m);
+    void sort_as_best(Move m);
+
+    bool add_killer(Move m);
 };
 
 class MoveVariation

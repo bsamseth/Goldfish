@@ -66,7 +66,7 @@ MoveList<MoveEntry>&
     }
 
     moves.rate_from_Mvvlva();
-    moves.sort();
+    moves.sort(1);
 
     return moves;
 }
