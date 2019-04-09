@@ -121,7 +121,9 @@ possible. Recommend building in a separate directory:
 
 ``` bash
 $ mkdir build && cd build
+$ # If CMake fails to locate a suitably modern compiler, you select what to use explicitly.
 $ export CXX=g++-8  # Or some C++17 compliant compiler of choice.
+$ export CC=gcc-8   # If necessary, also specify the C compiler.
 $ cmake .. -DCMAKE_BUILD_TYPE=Release
 $ make
 ```
@@ -130,6 +132,27 @@ After the compiling is done you should have two executables in the build
 directory: `goldfish.x` and `unit_tests.x`. The former is the interface to the
 engine it self.
 
+### Windows 
+
+There are pre-compiled executables available for recent versions, available under [Releases](https://github.com/bsamseth/Goldfish/releases). These are handy if you simply want to run Goldfish locally on a Windows machine.
+
+To build from source, the recommended approach is using
+[Cygwin](https://www.cygwin.com/). Download and run the
+[setup-x86_64.exe](https://www.cygwin.com/setup-x86_64.exe) (64 bit) installer.
+When you get to the `Select Packages` part of the installation, make sure to
+include the latest versions of these packages:
+
+  - `gcc-core`
+  - `gcc-g++`
+  - `cmake`
+  - `make`
+
+In order to see all available packages you might need to select `Full` in the
+`View` pull-down. You select packages by changing the field labeled `Skip` to
+be the latest version available in the menu.
+
+After this, you should be able to follow the steps above (you will not need to do `export ...`).
+
 ## Run
 
 Although it is possible to use the text based interface directly, it's
@@ -137,18 +160,4 @@ recommended to run this through a UCI compatible graphical user interface, such
 as Scid. Or better still, play on [lichess.org](https://lichess.org/@/Goldfish-Engine).
 
 After building the `goldfish.x` executable, you _can_ run it directly. The engine
-speaks using the UCI protocol. An example (Scid is the UI communicating with the engine, or you if you run it directly):
-
-``` text
-Scid  : uci
-Engine: id name Goldfish
-Engine: id author Bendik Samseth
-Engine: uciok
-Scid  : isready
-Engine: readyok
-Scid  : position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 1 9
-Scid  : go infinite
-Engine: info depth 1 score cp -1 time 10 nodes 26 nps 633 pv d7d6
-Engine: bestmove d7d6
-```
-
+speaks using the UCI protocol.
