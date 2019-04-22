@@ -7,7 +7,12 @@
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/bsamseth/Goldfish.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bsamseth/Goldfish/context:python)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/bsamseth/Goldfish.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bsamseth/Goldfish/alerts/)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/bsamseth/Goldfish/blob/master/LICENCE)
+
 [![Play link](https://img.shields.io/badge/Play%20Goldfish-lichess-green.svg)](https://lichess.org/@/Goldfish-Engine)
+[![CCRL 40/40 Rating](http://104.196.164.195/4040/Goldfish?badge=1&label=CCRL+40%2F40+&color=informational&rating_postfix=%20ELO)](http://ccrl.chessdom.com/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Goldfish%201.13.0%2064-bit#Goldfish_1_13_0_64-bit)
+[![CCRL 40/4 Rating](http://104.196.164.195/404/Goldfish?badge=1&label=CCRL+40%2F4+&color=informational&rating_postfix=%20ELO)](http://ccrl.chessdom.com/ccrl/404/cgi/engine_details.cgi?print=Details&each_game=1&eng=Goldfish%201.13.0%2064-bit#Goldfish_1_13_0_64-bit)
+
+
 
 # Goldfish
 > Stockfish's very distant and not so bright cousin
@@ -20,7 +25,7 @@ This is a UCI chess engine. That means it is a program that can analyse chess
 positions and propose best moves.  The program does not have its own UI, but
 rather it implements the text based _Universal Chess Interface (UCI)_, which
 makes it usable in most modern chess applications. This includes a live version
-of Goldfish that you can play on [lichess.org](https://lichess.org/@/Goldfish-Engine). 
+of Goldfish that you can play on [lichess.org](https://lichess.org/@/Goldfish-Engine).
 
 ## Why is this?
 This is not, nor does it attempt to be, the best chess engine out there.
