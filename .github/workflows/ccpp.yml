@@ -9,11 +9,13 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name lcov
+      run: 
     - name: cmake
       run: |
         mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=coverage
+        cmake .. -DCMAKE_BUILD_TYPE=Release
     - name: make
       run: make
-    - name: coverage
-      run: make coverage
+    - name: test
+      run: make gtest
