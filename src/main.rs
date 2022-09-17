@@ -103,7 +103,7 @@ fn engine(gui_rx: mpsc::Receiver<GuiActionRequest>, engine_tx: mpsc::Sender<Engi
         match gui_rx.recv()? {
             GuiActionRequest::AreYouReady => {
                 // Make sure we are ready, then say so.
-                engine_tx.send(EngineResponse::IamReady)?;
+                engine_tx.send(EngineResponse::IamReady).unwrap();
             }
             GuiActionRequest::SetPosition(b) => {
                 board = Some(b);
@@ -125,7 +125,7 @@ fn engine(gui_rx: mpsc::Receiver<GuiActionRequest>, engine_tx: mpsc::Sender<Engi
                     .expect("No legal moves in position!");
 
                 // Failing to send is a crash.
-                engine_tx.send(EngineResponse::BestMove(bestmove))?;
+                engine_tx.send(EngineResponse::BestMove(bestmove)).unwrap();
             }
         }
     }
