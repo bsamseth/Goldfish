@@ -1,10 +1,11 @@
 use rand::seq::IteratorRandom;
-use std::{io, thread, error};
 use std::io::BufRead;
 use std::str::FromStr;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread::JoinHandle;
+use std::{io, thread, time};
 
-use chess::{Board, Game, MoveGen, ChessMove};
+use chess::{Board, ChessMove, Game, MoveGen};
 use vampirc_uci::{parse_one, UciMessage, UciSearchControl, UciTimeControl};
 
 enum GuiActionRequest {
@@ -76,12 +77,10 @@ fn handle_inputs(
             _ => {}
         };
     }
-    return Ok(())
+    Ok(())
 }
 
-fn handle_outputs(
-    engine_rx: mpsc::Receiver<EngineResponse>,
-) -> Result<(), mpsc::RecvError> {
+fn handle_outputs(engine_rx: mpsc::Receiver<EngineResponse>) -> Result<(), mpsc::RecvError> {
     loop {
         let action = engine_rx.recv()?;
 
@@ -96,9 +95,44 @@ fn handle_outputs(
     }
 }
 
-fn engine(gui_rx: mpsc::Receiver<GuiActionRequest>, engine_tx: mpsc::Sender<EngineResponse>) -> std::result::Result<(), Box<dyn error::Error>> {
+fn search(
+    board: Board,
+    _: Option<UciTimeControl>,
+    _: Option<UciSearchControl>,
+    engine_tx: mpsc::Sender<EngineResponse>,
+    stop: Arc<Mutex<bool>>,
+) {
+    loop {
+        {
+            let stop = stop.lock().unwrap();
+
+            if *stop {
+                break;
+            }
+        }
+        thread::sleep(time::Duration::from_millis(50));
+    }
+
+    // Placeholder:
     let mut rng = rand::thread_rng();
+    let bestmove = MoveGen::new_legal(&board)
+        .into_iter()
+        .choose(&mut rng)
+        .expect("No legal moves in position!");
+
+    // Failing to send is a crash.
+    engine_tx.send(EngineResponse::BestMove(bestmove)).unwrap();
+}
+
+fn engine(
+    gui_rx: mpsc::Receiver<GuiActionRequest>,
+    engine_tx: mpsc::Sender<EngineResponse>,
+) -> Result<(), mpsc::RecvError> {
     let mut board = None;
+    let stop = Arc::new(Mutex::new(false));
+    let mut search_thread = None;
+
+    // We loop forever, and only break out if the gui_rx channel is terminated.
     loop {
         match gui_rx.recv()? {
             GuiActionRequest::AreYouReady => {
@@ -109,23 +143,38 @@ fn engine(gui_rx: mpsc::Receiver<GuiActionRequest>, engine_tx: mpsc::Sender<Engi
                 board = Some(b);
                 // Potentially do other required initialization.
             }
-            GuiActionRequest::StartSearching(_, _) => {
-               // Search! 
-               // Dispatch a search thread that has a shared reference to engine_tx and a mutex protected "stop" variable.
+            GuiActionRequest::StartSearching(uci_time_control, uci_search_control) => {
+                // Ensure the stopping marker is not set.
+                {
+                    let mut stop = stop.lock().unwrap();
+                    *stop = false;
+                }
+
+                // Dispatch a search in a new thread. We store the handle to join with it when we stop the search.
+                let stop = stop.clone();
+                let engine_tx = engine_tx.clone();
+                search_thread = Some(thread::spawn(move || {
+                    search(
+                        board.expect(
+                            "Can't start searching without a position being specified first!",
+                        ),
+                        uci_time_control,
+                        uci_search_control,
+                        engine_tx,
+                        stop,
+                    )
+                }));
             }
             GuiActionRequest::StopSearching => {
                 // Set "stop" variable to true, then join with the search thread.
                 // The search thread should ensure to output bestmove
+                {
+                    let mut stop = stop.lock().unwrap();
+                    *stop = true;
+                }
 
-
-                // Placeholder: 
-                let bestmove = MoveGen::new_legal(&board.expect("Stop without running search!"))
-                    .into_iter()
-                    .choose(&mut rng)
-                    .expect("No legal moves in position!");
-
-                // Failing to send is a crash.
-                engine_tx.send(EngineResponse::BestMove(bestmove)).unwrap();
+                // If a stop was sent without a running search, just ignore the command.
+                search_thread.take().map(JoinHandle::join);
             }
         }
     }
@@ -140,4 +189,3 @@ fn main() {
 
     engine(gui_rx, engine_tx).unwrap_or(());
 }
-
