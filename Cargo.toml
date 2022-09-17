@@ -1,8 +1,10 @@
 [package]
 name = "goldfish"
 version = "0.1.0"
+authors = ["Bendik Samseth <b.samseth@gmail.com>"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+rand = "0.8.5"
+chess = "3.2.0"
+vampirc-uci = {version = "0.11.1", features = ["chess"]}
