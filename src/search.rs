@@ -1,37 +1,190 @@
-use rand::seq::IteratorRandom;
 use std::sync::{mpsc, Arc, Mutex};
-use std::{thread, time};
+use std::time::Instant;
 
-use chess::{Board, MoveGen};
-use vampirc_uci::{UciSearchControl, UciTimeControl};
+use chess::{Board, ChessMove, MoveGen};
+use vampirc_uci::{UciInfoAttribute, UciMessage, UciSearchControl, UciTimeControl};
 
-use crate::io::EngineResponse;
+use crate::eval;
 
+const MAX_DEPTH: u8 = u8::MAX - 1;
+
+#[derive(Debug, Clone, Default, PartialEq)]
+struct Pv(Vec<ChessMove>);
+
+    
+impl Pv {
+    fn update(&mut self, m: ChessMove, pv: &Pv) {
+        self.0.clear();
+        self.0.push(m);
+        self.0.extend(&pv.0);
+    }
+}
+
+pub struct Search {
+    stopping_condition: Arc<Mutex<bool>>,
+    engine_tx: mpsc::Sender<UciMessage>,
+
+    last_update: Instant,
+    pvs: Vec<Pv>,
+}
+
+impl Search {
+    fn new(stop: Arc<Mutex<bool>>, engine_tx: mpsc::Sender<UciMessage>) -> Self {
+        let mut pvs = Vec::with_capacity(MAX_DEPTH as usize);
+        for _ in 0..MAX_DEPTH {
+            pvs.push(Pv::default());
+        }
+        
+        Search {
+            stopping_condition: stop,
+            engine_tx,
+
+            last_update: Instant::now(),
+            pvs,
+        }
+    }
+}
+
+impl Search {
+    /// Return true if the stop condition is set.
+    fn check_stop(&self) -> bool {
+        let stop = self.stopping_condition.lock().unwrap();
+        *stop
+    }
+
+    fn save_pv(&mut self, m: ChessMove, depth: u8, score: i32) {
+        let depth = depth as usize;
+        
+        // Save pv at this depth as m followed by the pv at the next depth.
+        // Need to split the pvs vector to be allowed to mutate on pv based on another.
+        let (left, right) = self.pvs.split_at_mut(depth+1);
+        left[depth].update(m, &right[0]);
+
+
+        // Conditionally send info if enough time has elapsed since the last update.
+        if self.last_update.elapsed().as_millis() < 1000 {
+            return;
+        }
+        self.last_update = std::time::Instant::now();
+        self.engine_tx
+            .send(UciMessage::Info(vec![
+                UciInfoAttribute::Depth(depth as u8),
+                eval::score_as_uci_info(score),
+                UciInfoAttribute::Pv(self.pvs[depth].0.clone()),
+            ]))
+            .unwrap();
+    }
+
+    /// Run a depth-bound search.
+    fn search_to_depth(
+        &mut self,
+        board: &Board,
+        depth: u8,
+        current_depth: u8,
+        alpha: i32,
+        beta: i32,
+    ) -> i32 {
+        let moves = MoveGen::new_legal(&board);
+
+        // Check for checkmate or stalemate.
+        match moves.len() {
+            0 => {
+                if board.checkers().to_size(0) == 0 {
+                    return 0;
+                } else {
+                    return -eval::VALUE_MATE + (current_depth as i32) + 1;
+                }
+            }
+            _ => {}
+        }
+
+        // Check for depth limit.
+        if current_depth == depth {
+            return eval::eval(board);
+        }
+
+        // Search each move recursively.
+        let next_board = &mut Board::default();
+        let mut best_score = i32::MIN + 1;
+        let mut alpha = alpha;
+        for m in moves {
+            // Check for stop condition.
+            if self.check_stop() {
+                break;
+            }
+
+            board.make_move(m, next_board);
+            let value = -self.search_to_depth(next_board, depth, current_depth + 1, -beta, -alpha);
+
+            if value > best_score {
+                best_score = value;
+
+                if value > alpha {
+                    alpha = value;
+
+                    self.save_pv(
+                        m,
+                        current_depth,
+                        normalize_score(value, board.side_to_move()),
+                    );
+
+                    if value >= beta {
+                        break;
+                    }
+                }
+            }
+        }
+
+        best_score
+    }
+}
+
+fn normalize_score(score: i32, side_to_move: chess::Color) -> i32 {
+    if side_to_move == chess::Color::White {
+        score
+    } else {
+        -score
+    }
+}
+
+/// Search the given board for the best move.
+///
+/// The search is stopped when the stop condition is set, or when stopping is suitable based on the
+/// time control or search control.
+///
+/// Search information, including the bestmove output, is sent to the engine_tx channel.
 pub fn search(
     board: Board,
     _: Option<UciTimeControl>,
-    _: Option<UciSearchControl>,
-    engine_tx: mpsc::Sender<EngineResponse>,
+    search_control: Option<UciSearchControl>,
+    engine_tx: mpsc::Sender<UciMessage>,
     stop: Arc<Mutex<bool>>,
 ) {
-    loop {
-        {
-            let stop = stop.lock().unwrap();
+    let mut search_controller = Search::new(stop, engine_tx.clone());
 
-            if *stop {
-                break;
-            }
+    let max_depth = search_control
+        .map(|c| c.depth.unwrap_or(MAX_DEPTH))
+        .unwrap_or(MAX_DEPTH);
+
+    for depth in 1..=max_depth {
+        let score = normalize_score(
+            search_controller.search_to_depth(&board, depth, 0, i32::MIN + 1, i32::MAX - 1),
+            board.side_to_move(),
+        );
+
+        engine_tx
+            .send(UciMessage::Info(vec![
+                UciInfoAttribute::Depth(depth as u8),
+                eval::score_as_uci_info(score),
+                UciInfoAttribute::Pv(search_controller.pvs[0].0.clone()),
+            ]))
+            .unwrap();
+
+        if search_controller.check_stop() {
+            break;
         }
-        thread::sleep(time::Duration::from_millis(50));
     }
-
-    // Placeholder:
-    let mut rng = rand::thread_rng();
-    let bestmove = MoveGen::new_legal(&board)
-        .into_iter()
-        .choose(&mut rng)
-        .expect("No legal moves in position!");
-
-    // Failing to send is a crash.
-    engine_tx.send(EngineResponse::BestMove(bestmove)).unwrap();
+    engine_tx
+        .send(UciMessage::best_move(search_controller.pvs[0].0[0]))
+        .unwrap();
 }

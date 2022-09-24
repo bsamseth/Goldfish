@@ -1,3 +1,5 @@
-pub mod driver;
-pub mod io;
-pub mod search;
+mod driver;
+mod search;
+mod eval;
+
+pub use driver::driver;
