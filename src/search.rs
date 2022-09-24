@@ -1,4 +1,5 @@
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::atomic::AtomicBool;
+use std::sync::{mpsc, Arc};
 use std::time::Instant;
 
 use chess::{Board, ChessMove, MoveGen};
@@ -20,7 +21,7 @@ impl Pv {
 }
 
 pub struct Search {
-    stopping_condition: Arc<Mutex<bool>>,
+    stopping_condition: Arc<AtomicBool>,
     engine_tx: mpsc::Sender<UciMessage>,
 
     last_update: Instant,
@@ -28,7 +29,7 @@ pub struct Search {
 }
 
 impl Search {
-    fn new(stop: Arc<Mutex<bool>>, engine_tx: mpsc::Sender<UciMessage>) -> Self {
+    fn new(stop: Arc<AtomicBool>, engine_tx: mpsc::Sender<UciMessage>) -> Self {
         let mut pvs = Vec::with_capacity(MAX_DEPTH as usize);
         for _ in 0..MAX_DEPTH {
             pvs.push(Pv::default());
@@ -47,8 +48,7 @@ impl Search {
 impl Search {
     /// Return true if the stop condition is set.
     fn check_stop(&self) -> bool {
-        let stop = self.stopping_condition.lock().unwrap();
-        *stop
+        self.stopping_condition.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     fn save_pv(&mut self, m: ChessMove, depth_limit: u8, depth: u8, score: i32) {
@@ -65,7 +65,14 @@ impl Search {
         }
         self.last_update = std::time::Instant::now();
 
-        println!("making info: depth={:?} seldepth={:?} score={:?} mate={:?} mate_dist={:?}", depth_limit, depth, score, eval::is_mate(score), eval::mate_distance(score));
+        println!(
+            "making info: depth={:?} seldepth={:?} score={:?} mate={:?} mate_dist={:?}",
+            depth_limit,
+            depth,
+            score,
+            eval::is_mate(score),
+            eval::mate_distance(score)
+        );
         println!("pv full length: {:?}", self.pvs[depth].0);
 
         // When we have a mate, there might be more entries on the pv from other branches after the mate depth.
@@ -81,7 +88,7 @@ impl Search {
             .take(pv_length as usize)
             .cloned()
             .collect();
-        
+
         // Send info to output thread.
         self.engine_tx
             .send(UciMessage::Info(vec![
@@ -102,10 +109,9 @@ impl Search {
         alpha: i32,
         beta: i32,
     ) -> i32 {
-        
         debug_assert!(current_depth <= depth);
         debug_assert!(alpha < beta);
-        
+
         let moves = MoveGen::new_legal(board);
 
         // Check for checkmate or stalemate.
@@ -129,14 +135,13 @@ impl Search {
         // applies also in the opposite condition of being mated instead of giving mate. In this case
         // return a fail-high score.
         let mut alpha = std::cmp::max(-eval::mate_in_ply(current_depth), alpha);
-        let beta  = std::cmp::min(eval::mate_in_ply(current_depth+1), beta);
+        let beta = std::cmp::min(eval::mate_in_ply(current_depth + 1), beta);
         if alpha >= beta {
             return alpha;
         }
-        
 
         // Search each move recursively.
-        let next_board = &mut Board::default();  // Reuse the same board to avoid allocations inside the loop.
+        let next_board = &mut Board::default(); // Reuse the same board to avoid allocations inside the loop.
         let mut best_score = i32::MIN + 1;
         for m in moves {
             // Check for stop condition.
@@ -149,8 +154,8 @@ impl Search {
 
             if value > best_score {
                 best_score = value;
-                
-                // Beta cutoff implies we don't need to consider this node at all, and we 
+
+                // Beta cutoff implies we don't need to consider this node at all, and we
                 // should not save this as part of the PV either.
                 if value >= beta {
                     break;
@@ -165,7 +170,6 @@ impl Search {
                         current_depth,
                         eval::normalize_score(value, board.side_to_move()),
                     );
-
                 }
             }
         }
@@ -185,7 +189,7 @@ pub fn search(
     _: Option<UciTimeControl>,
     search_control: Option<UciSearchControl>,
     engine_tx: mpsc::Sender<UciMessage>,
-    stop: Arc<Mutex<bool>>,
+    stop: Arc<AtomicBool>,
 ) {
     let mut search_controller = Search::new(stop, engine_tx.clone());
 

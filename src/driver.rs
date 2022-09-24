@@ -1,7 +1,8 @@
 use std::io;
 use std::io::BufRead;
 use std::str::FromStr;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{mpsc, Arc};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -12,7 +13,7 @@ use crate::search::search;
 
 pub fn driver(engine_tx: mpsc::Sender<UciMessage>) {
     let mut board = None;
-    let stop = Arc::new(Mutex::new(false));
+    let stop = Arc::new(AtomicBool::new(false));
     let mut search_thread = None;
 
     // We loop forever, and only break out if the stdin channel is terminated.
@@ -62,10 +63,7 @@ pub fn driver(engine_tx: mpsc::Sender<UciMessage>) {
                 search_control,
             } => {
                 // Ensure the stopping marker is not set.
-                {
-                    let mut stop = stop.lock().unwrap();
-                    *stop = false;
-                }
+                stop.store(false, std::sync::atomic::Ordering::Relaxed);
 
                 // Dispatch a search in a new thread. We store the handle to join with it when we stop the search.
                 let stop = stop.clone();
@@ -86,11 +84,8 @@ pub fn driver(engine_tx: mpsc::Sender<UciMessage>) {
             UciMessage::Stop => {
                 // Set "stop" variable to true, then join with the search thread.
                 // The search thread should ensure to output bestmove
-                {
-                    let mut stop = stop.lock().unwrap();
-                    *stop = true;
-                }
-
+                stop.store(true, Ordering::Relaxed);
+                
                 // If a stop was sent without a running search, just ignore the command.
                 search_thread.take().map(JoinHandle::join);
             }
