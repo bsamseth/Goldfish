@@ -11,7 +11,6 @@ const MAX_DEPTH: u8 = u8::MAX - 1;
 #[derive(Debug, Clone, Default, PartialEq)]
 struct Pv(Vec<ChessMove>);
 
-    
 impl Pv {
     fn update(&mut self, m: ChessMove, pv: &Pv) {
         self.0.clear();
@@ -34,7 +33,7 @@ impl Search {
         for _ in 0..MAX_DEPTH {
             pvs.push(Pv::default());
         }
-        
+
         Search {
             stopping_condition: stop,
             engine_tx,
@@ -52,25 +51,44 @@ impl Search {
         *stop
     }
 
-    fn save_pv(&mut self, m: ChessMove, depth: u8, score: i32) {
+    fn save_pv(&mut self, m: ChessMove, depth_limit: u8, depth: u8, score: i32) {
         let depth = depth as usize;
-        
+
         // Save pv at this depth as m followed by the pv at the next depth.
         // Need to split the pvs vector to be allowed to mutate on pv based on another.
-        let (left, right) = self.pvs.split_at_mut(depth+1);
+        let (left, right) = self.pvs.split_at_mut(depth + 1);
         left[depth].update(m, &right[0]);
-
 
         // Conditionally send info if enough time has elapsed since the last update.
         if self.last_update.elapsed().as_millis() < 1000 {
             return;
         }
         self.last_update = std::time::Instant::now();
+
+        println!("making info: depth={:?} seldepth={:?} score={:?} mate={:?} mate_dist={:?}", depth_limit, depth, score, eval::is_mate(score), eval::mate_distance(score));
+        println!("pv full length: {:?}", self.pvs[depth].0);
+
+        // When we have a mate, there might be more entries on the pv from other branches after the mate depth.
+        // In this case we want to truncate the pv to the mate depth, and otherwise we keep all of it.
+        let pv_length = if eval::is_mate(score) {
+            eval::mate_distance(score)
+        } else {
+            MAX_DEPTH
+        };
+        let send_pv = self.pvs[depth]
+            .0
+            .iter()
+            .take(pv_length as usize)
+            .cloned()
+            .collect();
+        
+        // Send info to output thread.
         self.engine_tx
             .send(UciMessage::Info(vec![
-                UciInfoAttribute::Depth(depth as u8),
+                UciInfoAttribute::Depth(depth_limit as u8),
+                UciInfoAttribute::SelDepth(depth as u8),
                 eval::score_as_uci_info(score),
-                UciInfoAttribute::Pv(self.pvs[depth].0.clone()),
+                UciInfoAttribute::Pv(send_pv),
             ]))
             .unwrap();
     }
@@ -84,18 +102,19 @@ impl Search {
         alpha: i32,
         beta: i32,
     ) -> i32 {
-        let moves = MoveGen::new_legal(&board);
+        
+        debug_assert!(current_depth <= depth);
+        debug_assert!(alpha < beta);
+        
+        let moves = MoveGen::new_legal(board);
 
         // Check for checkmate or stalemate.
-        match moves.len() {
-            0 => {
-                if board.checkers().to_size(0) == 0 {
-                    return 0;
-                } else {
-                    return -eval::VALUE_MATE + (current_depth as i32) + 1;
-                }
+        if moves.len() == 0 {
+            if board.checkers().to_size(0) == 0 {
+                return 0;
+            } else {
+                return -eval::mate_in_ply(current_depth);
             }
-            _ => {}
         }
 
         // Check for depth limit.
@@ -103,10 +122,22 @@ impl Search {
             return eval::eval(board);
         }
 
+        // Mate distance pruning:
+        // Even if we mate at the next move our score would be at best CHECKMATE - ply, but if
+        // alpha is already bigger because a shorter mate was found upward in the tree then there is no
+        // need to search because we will never beat the current alpha. Same logic but with reversed signs
+        // applies also in the opposite condition of being mated instead of giving mate. In this case
+        // return a fail-high score.
+        let mut alpha = std::cmp::max(-eval::mate_in_ply(current_depth), alpha);
+        let beta  = std::cmp::min(eval::mate_in_ply(current_depth+1), beta);
+        if alpha >= beta {
+            return alpha;
+        }
+        
+
         // Search each move recursively.
-        let next_board = &mut Board::default();
+        let next_board = &mut Board::default();  // Reuse the same board to avoid allocations inside the loop.
         let mut best_score = i32::MIN + 1;
-        let mut alpha = alpha;
         for m in moves {
             // Check for stop condition.
             if self.check_stop() {
@@ -118,32 +149,28 @@ impl Search {
 
             if value > best_score {
                 best_score = value;
+                
+                // Beta cutoff implies we don't need to consider this node at all, and we 
+                // should not save this as part of the PV either.
+                if value >= beta {
+                    break;
+                }
 
                 if value > alpha {
                     alpha = value;
 
                     self.save_pv(
                         m,
+                        depth,
                         current_depth,
-                        normalize_score(value, board.side_to_move()),
+                        eval::normalize_score(value, board.side_to_move()),
                     );
 
-                    if value >= beta {
-                        break;
-                    }
                 }
             }
         }
 
         best_score
-    }
-}
-
-fn normalize_score(score: i32, side_to_move: chess::Color) -> i32 {
-    if side_to_move == chess::Color::White {
-        score
-    } else {
-        -score
     }
 }
 
@@ -167,7 +194,7 @@ pub fn search(
         .unwrap_or(MAX_DEPTH);
 
     for depth in 1..=max_depth {
-        let score = normalize_score(
+        let score = eval::normalize_score(
             search_controller.search_to_depth(&board, depth, 0, i32::MIN + 1, i32::MAX - 1),
             board.side_to_move(),
         );

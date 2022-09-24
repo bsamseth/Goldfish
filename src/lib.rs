@@ -1,5 +1,5 @@
 mod driver;
 mod search;
-mod eval;
+pub mod eval;
 
 pub use driver::driver;
