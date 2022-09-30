@@ -3,10 +3,10 @@ use vampirc_uci::UciInfoAttribute;
 
 /// Mate evaluation.
 /// Larger than any sensible evaluation, but also leaves room to not overflow.
-pub const VALUE_MATE: i32 = i32::MAX - 1 - (u8::MAX as i32);
+const VALUE_MATE: i32 = i32::MAX - 1 - (u8::MAX as i32);
 
 /// Mate in the maximum number of plies recongnized by the engine.
-pub const VALUE_MATE_IN_MAX_PLY: i32 = VALUE_MATE - (u8::MAX as i32);
+const VALUE_MATE_IN_MAX_PLY: i32 = VALUE_MATE - (u8::MAX as i32);
 
 /// True if the score is a mate score.
 ///

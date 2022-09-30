@@ -48,11 +48,18 @@ impl Search {
 impl Search {
     /// Return true if the stop condition is set.
     fn check_stop(&self) -> bool {
-        self.stopping_condition.load(std::sync::atomic::Ordering::Relaxed)
+        self.stopping_condition
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 
     fn save_pv(&mut self, m: ChessMove, depth_limit: u8, depth: u8, score: i32) {
         let depth = depth as usize;
+
+        // if eval::is_mate(score) {
+        //     for pv in &mut self.pvs[depth -1 +(eval::mate_distance(score) as usize)..] {
+        //         pv.0.clear();
+        //     }
+        // }
 
         // Save pv at this depth as m followed by the pv at the next depth.
         // Need to split the pvs vector to be allowed to mutate on pv based on another.
@@ -65,37 +72,13 @@ impl Search {
         }
         self.last_update = std::time::Instant::now();
 
-        println!(
-            "making info: depth={:?} seldepth={:?} score={:?} mate={:?} mate_dist={:?}",
-            depth_limit,
-            depth,
-            score,
-            eval::is_mate(score),
-            eval::mate_distance(score)
-        );
-        println!("pv full length: {:?}", self.pvs[depth].0);
-
-        // When we have a mate, there might be more entries on the pv from other branches after the mate depth.
-        // In this case we want to truncate the pv to the mate depth, and otherwise we keep all of it.
-        let pv_length = if eval::is_mate(score) {
-            eval::mate_distance(score)
-        } else {
-            MAX_DEPTH
-        };
-        let send_pv = self.pvs[depth]
-            .0
-            .iter()
-            .take(pv_length as usize)
-            .cloned()
-            .collect();
-
         // Send info to output thread.
         self.engine_tx
             .send(UciMessage::Info(vec![
                 UciInfoAttribute::Depth(depth_limit as u8),
                 UciInfoAttribute::SelDepth(depth as u8),
                 eval::score_as_uci_info(score),
-                UciInfoAttribute::Pv(send_pv),
+                UciInfoAttribute::Pv(self.pvs[depth].0.clone()),
             ]))
             .unwrap();
     }
@@ -142,7 +125,7 @@ impl Search {
 
         // Search each move recursively.
         let next_board = &mut Board::default(); // Reuse the same board to avoid allocations inside the loop.
-        let mut best_score = i32::MIN + 1;
+        let mut best_score = -eval::mate_in_ply(0);
         for m in moves {
             // Check for stop condition.
             if self.check_stop() {
