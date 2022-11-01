@@ -55,12 +55,6 @@ impl Search {
     fn save_pv(&mut self, m: ChessMove, depth_limit: u8, depth: u8, score: i32) {
         let depth = depth as usize;
 
-        // if eval::is_mate(score) {
-        //     for pv in &mut self.pvs[depth -1 +(eval::mate_distance(score) as usize)..] {
-        //         pv.0.clear();
-        //     }
-        // }
-
         // Save pv at this depth as m followed by the pv at the next depth.
         // Need to split the pvs vector to be allowed to mutate on pv based on another.
         let (left, right) = self.pvs.split_at_mut(depth + 1);

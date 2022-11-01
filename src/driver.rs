@@ -1,8 +1,8 @@
 use std::io;
 use std::io::BufRead;
 use std::str::FromStr;
-use std::sync::{mpsc, Arc};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{mpsc, Arc};
 use std::thread;
 use std::thread::JoinHandle;
 
@@ -85,7 +85,7 @@ pub fn driver(engine_tx: mpsc::Sender<UciMessage>) {
                 // Set "stop" variable to true, then join with the search thread.
                 // The search thread should ensure to output bestmove
                 stop.store(true, Ordering::Relaxed);
-                
+
                 // If a stop was sent without a running search, just ignore the command.
                 search_thread.take().map(JoinHandle::join);
             }

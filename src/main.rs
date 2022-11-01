@@ -9,8 +9,8 @@ fn main() {
 
     // Handle outputing messages to the GUI from the engine.
     // This is delgated to a separate thread to avoid blocking the engine.
-    thread::spawn(move || {handle_output(engine_rx)});
-    
+    thread::spawn(move || handle_output(engine_rx));
+
     driver(engine_tx);
 }
 
