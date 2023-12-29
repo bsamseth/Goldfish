@@ -108,7 +108,7 @@ impl std::str::FromStr for UciCommand {
             "stop" => Ok(UciCommand::Stop),
             "ponderhit" => Ok(UciCommand::PonderHit),
             "quit" => Ok(UciCommand::Quit),
-            _ => Err(format!("Invalid UCI command: {}", s)),
+            _ => Err(format!("Invalid UCI command: {s}")),
         }
     }
 }
@@ -147,8 +147,8 @@ impl std::str::FromStr for EngineOption {
 
 fn parse_position(s: &str) -> Result<Board, String> {
     let split = s.split_whitespace().collect::<Vec<_>>();
-    let (fen, rest) = match split[0] {
-        "startpos" => (START_POS_FEN.to_string(), &split[1..]),
+    let (fen, rest) = match split.first() {
+        Some(&"startpos") => (START_POS_FEN.to_string(), &split[1..]),
         _ if split.len() >= 6 => (split[..6].join(" "), &split[6..]),
         _ => {
             return Err(format!("Invalid position: {s}"));
@@ -169,11 +169,11 @@ fn parse_position(s: &str) -> Result<Board, String> {
         return Err(format!("Invalid position: {s}"));
     };
 
-    let mut board: Board = fen.parse().map_err(|e| format!("{}", e))?;
+    let mut board: Board = fen.parse().map_err(|e| format!("{e}"))?;
     if let Some(moves) = moves {
         for mv in moves {
             if !board.legal(mv) {
-                return Err(format!("Invalid move: {}", mv));
+                return Err(format!("Invalid move: {mv}"));
             }
             board = board.make_move_new(mv);
         }
