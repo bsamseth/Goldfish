@@ -6,15 +6,6 @@ use anyhow::Result;
 use chess::Game;
 use std::io::BufRead;
 
-impl Default for Uci {
-    fn default() -> Self {
-        Self {
-            game: Game::new(),
-            engine: Engine {},
-        }
-    }
-}
-
 impl Uci {
     /// Start the UCI communication loop.
     ///
@@ -59,5 +50,14 @@ impl Uci {
         }
 
         Ok(())
+    }
+}
+
+impl Default for Uci {
+    fn default() -> Self {
+        Self {
+            game: Game::new(),
+            engine: Engine::new(),
+        }
     }
 }
