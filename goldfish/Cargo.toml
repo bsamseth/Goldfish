@@ -1,9 +1,16 @@
 [package]
 name = "goldfish"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2021"
+description = """\
+Goldfish - A UCI chess engine.
+"""
+authors = ["Bendik Samseth <b.samseth@gmail.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.77"
 chess = "3.2.0"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
