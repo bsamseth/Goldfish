@@ -206,11 +206,13 @@ fn is_endgame(board: &Board) -> bool {
     let queens = board.pieces(Piece::Queen);
 
     let minor_pieces = board.pieces(Piece::Knight) | board.pieces(Piece::Bishop);
+    let rooks = board.pieces(Piece::Rook);
 
-    let definite_endgame = queens.0 == 0;
-    let me_endgame = (my_pieces & queens).0 == 0 || (my_pieces & minor_pieces).popcnt() <= 1;
-    let them_endgame =
-        (their_pieces & queens).0 == 0 || (their_pieces & minor_pieces).popcnt() <= 1;
+    let definite_endgame = queens == &chess::EMPTY;
+    let me_endgame = (my_pieces & queens) == chess::EMPTY
+        || ((my_pieces & rooks) == chess::EMPTY && (my_pieces & minor_pieces).popcnt() <= 1);
+    let them_endgame = (their_pieces & queens) == chess::EMPTY
+        || ((their_pieces & rooks) == chess::EMPTY && (their_pieces & minor_pieces).popcnt() <= 1);
 
     definite_endgame || (me_endgame && them_endgame)
 }
