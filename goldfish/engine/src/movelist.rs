@@ -1,6 +1,7 @@
+#![allow(dead_code)]
 use chess::ChessMove;
 
-use crate::engine::value;
+use crate::value;
 
 pub type MoveVec = Vec<MoveEntry>;
 
