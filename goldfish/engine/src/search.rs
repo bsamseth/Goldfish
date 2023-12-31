@@ -27,7 +27,7 @@ impl Searcher {
         }
     }
 
-    pub fn start(&mut self) {
+    pub fn run(&mut self) {
         // TODO: Implement search
         for i in 0..10 {
             if self.stop_signal.check() {

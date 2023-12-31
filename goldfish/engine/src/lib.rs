@@ -46,7 +46,7 @@ impl uci::Engine for Engine {
         let game = game.clone();
         self.searcher = Some(std::thread::spawn(move || {
             let mut searcher = search::Searcher::new(game, options, info_writer, ss);
-            searcher.start();
+            searcher.run();
         }));
     }
 
