@@ -1,35 +1,42 @@
+mod controller;
 mod evaluate;
 mod movelist;
+mod search;
 mod value;
 
-use movelist::{MoveEntry, MoveVec};
 pub use value::{Depth, Value};
 
-use chess::{Game, MoveGen};
+use crate::uci::{GoOption, StopSignal};
+use controller::Controller;
+use movelist::{MoveEntry, MoveVec};
+
+use chess::{Board, Game, MoveGen};
 
 #[derive(Debug)]
 pub struct Engine {
-    game: Game,
+    board: Board,
     root_moves: MoveVec,
+    pub controller: Controller,
 }
 
 impl Engine {
-    pub fn new() -> Self {
-        Self::new_from_game(Game::new())
+    pub fn new(game: Game, options: Vec<GoOption>, stop_signal: StopSignal) -> Self {
+        todo!()
     }
 
-    pub fn new_from_game(game: Game) -> Self {
-        let moves = MoveGen::new_legal(&game.current_position());
+    pub fn new_from_board(board: Board) -> Self {
+        let controller = Controller::default();
+        let moves = MoveGen::new_legal(&board);
         let mut root_moves = MoveVec::new();
 
         for mv in moves {
-            root_moves.push(MoveEntry {
-                mv,
-                value: value::INFINITE,
-                pv: vec![mv],
-            });
+            root_moves.push(MoveEntry::new(mv));
         }
 
-        Self { game, root_moves }
+        Self {
+            board,
+            root_moves,
+            controller,
+        }
     }
 }

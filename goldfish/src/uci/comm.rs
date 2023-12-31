@@ -1,10 +1,14 @@
 use crate::engine::Engine;
+use crate::uci::types::GoOption;
 use crate::uci::types::UciCommand;
+use crate::uci::StopSignal;
 use crate::uci::Uci;
 
 use anyhow::Result;
 use chess::Game;
 use std::io::BufRead;
+
+fn go(game: Game, options: Vec<GoOption>) -> (StopSignal, impl FnOnce()) {}
 
 impl Uci {
     /// Start the UCI communication loop.
@@ -17,6 +21,10 @@ impl Uci {
     /// It will _not_ return an error if it encounters an invalid UCI command. In this case the
     /// error message will be logged to stderr, and otherwise ignored.
     pub fn start(&mut self) -> Result<()> {
+        let mut game = Game::new();
+        let mut engine_thread = None;
+        let mut stop_signal = None;
+
         let stdin = std::io::stdin();
         loop {
             let line = stdin
@@ -38,12 +46,45 @@ impl Uci {
                 UciCommand::Debug => println!("Not implemented"),
                 UciCommand::IsReady => println!("readyok"),
                 UciCommand::SetOption(_option) => unimplemented!(),
-                UciCommand::UciNewGame => self.game = Game::new(),
+                UciCommand::UciNewGame => game = Game::new(),
                 UciCommand::Position(board) => {
-                    self.game = Game::new_with_board(board);
+                    game = Game::new_with_board(board);
                 }
-                UciCommand::Go(_options) => unimplemented!(),
-                UciCommand::Stop => unimplemented!(),
+                UciCommand::Go(options) => {
+                    if engine_thread.is_some() {
+                        tracing::error!("Search already in progress, ignoring go command.");
+                        continue;
+                    }
+
+                    assert!(
+                        options
+                            .iter()
+                            .all(|option| matches!(option, GoOption::Infinite)),
+                        "Only infinite search is supported at the moment"
+                    );
+
+                    let ss = StopSignal::new();
+                    let game = game.clone();
+                    stop_signal = Some(ss.clone());
+                    engine_thread = Some(std::thread::spawn(move || {
+                        Engine::new(game, options, ss).search()
+                    }));
+                }
+                UciCommand::Stop => {
+                    if let Some(stop_signal) = stop_signal.take() {
+                        stop_signal.stop();
+                    } else {
+                        // No search in progress, nothing to do.
+                        tracing::warn!("Stop command received, but no search in progress.");
+                        continue;
+                    }
+
+                    engine_thread
+                        .take()
+                        .expect("we have a stop signal, so we should have a thread")
+                        .join()
+                        .expect("search thread to exit successfully");
+                }
                 UciCommand::PonderHit => unimplemented!(),
                 UciCommand::Quit => break,
             }
@@ -55,9 +96,6 @@ impl Uci {
 
 impl Default for Uci {
     fn default() -> Self {
-        Self {
-            game: Game::new(),
-            engine: Engine::new(),
-        }
+        Self { game: Game::new() }
     }
 }

@@ -1,12 +1,22 @@
 use chess::ChessMove;
 
-use crate::engine::Value;
+use crate::engine::value;
 
 pub type MoveVec = Vec<MoveEntry>;
 
 #[derive(Debug)]
 pub struct MoveEntry {
     pub mv: ChessMove,
-    pub value: Value,
+    pub value: value::Value,
     pub pv: Vec<ChessMove>,
+}
+
+impl MoveEntry {
+    pub fn new(mv: ChessMove) -> Self {
+        Self {
+            mv,
+            value: -value::INFINITE,
+            pv: vec![mv],
+        }
+    }
 }
