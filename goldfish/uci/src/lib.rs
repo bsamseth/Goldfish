@@ -3,8 +3,8 @@ mod types;
 use chess::Game;
 use std::io::BufRead;
 
-use types::GoOption;
-use types::Info;
+pub use types::GoOption;
+pub use types::Info;
 use types::UciCommand;
 
 /// Engines must implement this trait to be compatible with this crate.
@@ -14,14 +14,14 @@ pub trait Engine {
     /// This will be sent to the GUI in response to a `uci` command, and
     /// might be used to identify the engine in the GUI. Any newlines will
     /// be replaced with spaces.
-    fn name(&self) -> &str;
+    fn name(&self) -> String;
 
     /// The name of the author of the engine.
     ///
     /// This will be sent to the GUI in response to a `uci` command, and
     /// might be used to identify the engine in the GUI. Any newlines will
     /// be replaced with spaces.
-    fn author(&self) -> &str;
+    fn author(&self) -> String;
 
     /// Ensure the engine is ready to recieve commands.
     ///
@@ -29,14 +29,14 @@ pub trait Engine {
     /// with `readyok`, but can optionally block until it is ready to proceed.
     ///
     /// By default, this function does nothing, and signals readiness immediately.
-    fn ready(&self) {}
+    fn ready(&mut self) {}
 
     /// Stop the search.
     ///
     /// This will only be called when the previous command was a `go` command,
     /// but could be sent even after the engine has decided end the search on its own.
     /// The engine should stop searching as soon as possible.
-    fn stop(&self);
+    fn stop(&mut self);
 
     /// Start a search.
     ///
@@ -45,7 +45,7 @@ pub trait Engine {
     /// The info writer can be used to send information about the search back to the GUI.
     ///
     /// This function should _not_ block, but should return immediately.
-    fn go(&self, game: &Game, options: Vec<GoOption>, info_writer: InfoWriter);
+    fn go(&mut self, game: Game, options: Vec<GoOption>, info_writer: InfoWriter);
 }
 
 pub struct InfoWriter {
@@ -53,12 +53,14 @@ pub struct InfoWriter {
 }
 
 impl InfoWriter {
-    /// Send an `InfoPart` to the GUI.
+    /// Send an `Info` to the GUI.
     ///
-    /// Any parts that can be joined together to form a complete `Info` will be joined
-    /// by the writer. The engine should simply send each part as it is generated.
+    /// # Panics
+    /// This function will panic if the UCI communication loop has exited. But if this
+    /// happens, all threads will be dropped anyway, meaning no one would be able to trigger
+    /// this function. So it's safe to assume that this function will never panic.
     pub fn send_info(&self, info: Info) {
-        self.sender.send(info).unwrap();
+        self.sender.send(info).expect("should be able to send info");
     }
 }
 
@@ -84,14 +86,14 @@ pub enum UciError {
 ///
 /// It will _not_ return an error if it encounters an invalid UCI command. In this case the
 /// error message will be logged to stderr, and otherwise ignored.
-pub fn start(engine: impl Engine) -> Result<(), UciError> {
+pub fn start(mut engine: impl Engine) -> Result<(), UciError> {
     let mut game = Game::new();
     let mut searching = false;
 
     let (tx, rx) = std::sync::mpsc::channel::<Info>();
     std::thread::spawn(move || {
         while let Ok(info) = rx.recv() {
-            println!("{}", info);
+            println!("{info}");
         }
     });
 
@@ -124,10 +126,8 @@ pub fn start(engine: impl Engine) -> Result<(), UciError> {
                     tracing::error!("{}", e);
                 }
                 UciCommand::Uci => {
-                    let name = engine.name().replace('\n', " ");
-                    let author = engine.author().replace('\n', " ");
-                    println!("id name {name}");
-                    println!("id author {author}");
+                    println!("id name {}", engine.name().replace('\n', " "));
+                    println!("id author {}", engine.author().replace('\n', " "));
                     println!("uciok");
                 }
                 UciCommand::Debug => unimplemented!(),
@@ -144,7 +144,7 @@ pub fn start(engine: impl Engine) -> Result<(), UciError> {
                 }
                 UciCommand::Go(options) => {
                     let info_writer = InfoWriter { sender: tx.clone() };
-                    engine.go(&game, options, info_writer);
+                    engine.go(game.clone(), options, info_writer);
                 }
                 UciCommand::Stop => {
                     tracing::error!("No search in progress, ignoring stop command.");
