@@ -1,0 +1,15 @@
+[package]
+name = "uci"
+version = "0.1.0"
+edition = "2021"
+description = """\
+Universal Chess Interface (UCI)
+"""
+authors = ["Bendik Samseth <b.samseth@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chess = "3.2.0"
+thiserror = "1.0.53"
+tracing = "0.1.40"
