@@ -1,8 +1,10 @@
 use anyhow::Result;
-use goldfish::Uci;
+
+use engine::Engine;
 
 fn main() -> Result<()> {
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        // _Must_ log to stderr, otherwise UCI protocol will be violated.
         .with_writer(std::io::stderr)
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
@@ -12,6 +14,6 @@ fn main() -> Result<()> {
         env!("CARGO_PKG_VERSION")
     );
 
-    let mut uci = Uci::default();
-    uci.start()
+    uci::start(Engine::default())?;
+    Ok(())
 }

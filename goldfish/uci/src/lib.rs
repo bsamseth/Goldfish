@@ -4,8 +4,8 @@ use chess::Game;
 use std::io::BufRead;
 
 pub use types::GoOption;
-pub use types::Info;
 use types::UciCommand;
+pub use types::{Info, InfoPart};
 
 /// Engines must implement this trait to be compatible with this crate.
 pub trait Engine {
@@ -48,6 +48,7 @@ pub trait Engine {
     fn go(&mut self, game: Game, options: Vec<GoOption>, info_writer: InfoWriter);
 }
 
+#[derive(Debug)]
 pub struct InfoWriter {
     sender: std::sync::mpsc::Sender<Info>,
 }
@@ -87,7 +88,7 @@ pub enum UciError {
 /// It will _not_ return an error if it encounters an invalid UCI command. In this case the
 /// error message will be logged to stderr, and otherwise ignored.
 pub fn start(mut engine: impl Engine) -> Result<(), UciError> {
-    let mut game = Game::new();
+    let mut game = None;
     let mut searching = false;
 
     let (tx, rx) = std::sync::mpsc::channel::<Info>();
@@ -137,14 +138,24 @@ pub fn start(mut engine: impl Engine) -> Result<(), UciError> {
                 }
                 UciCommand::SetOption(_option) => unimplemented!(),
                 UciCommand::UciNewGame => {
-                    // Nothing to do.
+                    game = None;
                 }
                 UciCommand::Position(board) => {
-                    game = Game::new_with_board(board);
+                    game = Some(Game::new_with_board(board));
                 }
                 UciCommand::Go(options) => {
-                    let info_writer = InfoWriter { sender: tx.clone() };
-                    engine.go(game.clone(), options, info_writer);
+                    if let Some(game) = &game {
+                        let options = if options.is_empty() {
+                            vec![GoOption::Infinite]
+                        } else {
+                            options
+                        };
+                        let info_writer = InfoWriter { sender: tx.clone() };
+                        engine.go(game.clone(), options, info_writer);
+                        searching = true;
+                    } else {
+                        tracing::error!("No position set, ignoring go command.");
+                    }
                 }
                 UciCommand::Stop => {
                     tracing::error!("No search in progress, ignoring stop command.");

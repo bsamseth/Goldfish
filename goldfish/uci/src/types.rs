@@ -98,7 +98,8 @@ impl Info {
         }
     }
 
-    pub fn add(&mut self, part: InfoPart) {
+    #[must_use]
+    pub fn with(mut self, part: InfoPart) -> Self {
         let fmt_moves = |moves: &[ChessMove]| {
             moves
                 .iter()
@@ -128,14 +129,14 @@ impl Info {
         };
         self.line.push(' ');
         self.line.push_str(&add);
+        self
     }
 }
 
 impl std::fmt::Display for Info {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("info")?;
-        f.write_str(&self.line)?;
-        f.write_str("\n")
+        f.write_str(&self.line)
     }
 }
 
