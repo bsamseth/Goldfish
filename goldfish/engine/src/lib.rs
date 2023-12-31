@@ -10,13 +10,16 @@ use stop_signal::StopSignal;
 
 /// `Engine` implements the `uci::Engine` trait for the Goldfish engine.
 ///
-/// The struct maintains a handle to a search thread, which does the actual work, along
-/// with a `StopSignal` which is used to signal the search thread to stop. This is needed as
-/// the search needs to happen in a separate thread to the UCI controll loop, but the thread also
-/// needs to be held somewhere so as to not drop it.
+/// This is the only public type in the crate, as the only intended way to use the engine crate
+/// is to provide the `uci::start` function with an instance of this struct.
 ///
-/// The search thread manages by the `Engine` will be given a reference to the `StopSignal`, and
-/// promises to check it regularly, stopping the search if it is set.
+/// # Examples
+/// ```no_run
+/// use engine::Engine;
+/// use uci::start;
+///
+/// start(Engine::default()).unwrap();
+/// ```
 #[derive(Debug, Default)]
 pub struct Engine {
     stop_signal: StopSignal,
