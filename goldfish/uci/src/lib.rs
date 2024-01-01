@@ -31,21 +31,31 @@ pub trait Engine {
     /// By default, this function does nothing, and signals readiness immediately.
     fn ready(&mut self) {}
 
+    /// Start a search.
+    ///
+    /// The game contains the current state of the board, including any moves leading up to it.
+    /// The options indicate any search options that were specified by the GUI.
+    /// The info writer can be used to send information about the search back to the GUI.
+    /// When the search stops, a move _must_ be sent to the GUI using the `best_move` sender.
+    ///
+    /// This function should _not_ block, but should return immediately.
+    fn go(
+        &mut self,
+        game: Game,
+        options: Vec<GoOption>,
+        info_writer: InfoWriter,
+        best_move: std::sync::mpsc::Sender<chess::ChessMove>,
+    );
+
     /// Stop the search.
     ///
     /// This will only be called when the previous command was a `go` command,
     /// but could be sent even after the engine has decided end the search on its own.
     /// The engine should stop searching as soon as possible.
+    ///
+    /// When the search has been stopped, either by itself or after a stop signal,
+    /// the engine should send the best move to the GUI, using the `best_move` sender.
     fn stop(&mut self);
-
-    /// Start a search.
-    ///
-    /// The game indicates the current state of the board, including any moves leading up to it.
-    /// The options indicate any search options that were specified by the GUI.
-    /// The info writer can be used to send information about the search back to the GUI.
-    ///
-    /// This function should _not_ block, but should return immediately.
-    fn go(&mut self, game: Game, options: Vec<GoOption>, info_writer: InfoWriter);
 }
 
 #[derive(Debug)]
@@ -71,6 +81,8 @@ pub enum UciError {
     Eof(String),
     #[error("Failed to read line from stdin")]
     ReadLine(#[from] std::io::Error),
+    #[error("Engine did not send best move")]
+    NoBestMove(#[from] std::sync::mpsc::RecvError),
 }
 
 /// Start the UCI communication loop.
@@ -91,12 +103,14 @@ pub fn start(mut engine: impl Engine) -> Result<(), UciError> {
     let mut game = None;
     let mut searching = false;
 
-    let (tx, rx) = std::sync::mpsc::channel::<Info>();
+    let (info_sender_tx, info_sender_rx) = std::sync::mpsc::channel::<Info>();
     std::thread::spawn(move || {
-        while let Ok(info) = rx.recv() {
+        while let Ok(info) = info_sender_rx.recv() {
             println!("{info}");
         }
     });
+
+    let (best_move_tx, best_move_rx) = std::sync::mpsc::channel::<chess::ChessMove>();
 
     let stdin = std::io::stdin();
     loop {
@@ -111,6 +125,8 @@ pub fn start(mut engine: impl Engine) -> Result<(), UciError> {
             match command {
                 UciCommand::Stop => {
                     engine.stop();
+                    let best_move = best_move_rx.recv()?;
+                    println!("bestmove {}", best_move);
                     searching = false;
                 }
                 UciCommand::Quit => {
@@ -150,8 +166,10 @@ pub fn start(mut engine: impl Engine) -> Result<(), UciError> {
                         } else {
                             options
                         };
-                        let info_writer = InfoWriter { sender: tx.clone() };
-                        engine.go(game.clone(), options, info_writer);
+                        let info_writer = InfoWriter {
+                            sender: info_sender_tx.clone(),
+                        };
+                        engine.go(game.clone(), options, info_writer, best_move_tx.clone());
                         searching = true;
                     } else {
                         tracing::error!("No position set, ignoring go command.");
