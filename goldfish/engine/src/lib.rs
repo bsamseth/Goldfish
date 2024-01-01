@@ -35,7 +35,13 @@ impl uci::Engine for Engine {
         env!("CARGO_PKG_AUTHORS").to_string()
     }
 
-    fn go(&mut self, game: Game, options: Vec<uci::GoOption>, info_writer: uci::InfoWriter) {
+    fn go(
+        &mut self,
+        game: Game,
+        options: Vec<uci::GoOption>,
+        info_writer: uci::InfoWriter,
+        best_move: std::sync::mpsc::Sender<chess::ChessMove>,
+    ) {
         assert!(
             self.searcher.is_none(),
             "search already in progress, uci protocol violation"
@@ -46,7 +52,10 @@ impl uci::Engine for Engine {
         let game = game.clone();
         self.searcher = Some(std::thread::spawn(move || {
             let mut searcher = search::Searcher::new(game, options, info_writer, ss);
-            searcher.run();
+            let bm = searcher.run();
+            best_move
+                .send(bm)
+                .expect("should be able to send best move back to GUI");
         }));
     }
 
