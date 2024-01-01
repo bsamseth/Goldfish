@@ -1,4 +1,5 @@
 mod evaluate;
+mod limits;
 mod movelist;
 mod search;
 mod stop_signal;

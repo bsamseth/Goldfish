@@ -85,7 +85,7 @@ const KING_ENDGAME_TABLE: [i8; 64] = [
     -50,-30,-30,-30,-30,-30,-30,-50
 ];
 
-trait Evaluate {
+pub trait Evaluate {
     fn evaluate(&self) -> i32;
 }
 
@@ -99,8 +99,7 @@ impl Evaluate for Board {
 ///
 /// The score is given w.r.t. the side to move, i.e. positive if the side to move has the better
 /// position, and negative if the opponent has the better position.
-#[allow(dead_code)]
-pub fn evaluate(board: &Board) -> i32 {
+fn evaluate(board: &Board) -> i32 {
     let mut score = 0;
 
     score += evaluate_material(board);
