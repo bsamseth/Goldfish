@@ -38,7 +38,13 @@ pub trait UciEngine {
     /// The info writer can be used to send information about the search back to the GUI.
     /// When the search stops, a move _must_ be sent to the GUI using the `best_move` sender.
     ///
+    /// # Important
     /// This function should _not_ block, but should return immediately.
+    ///
+    /// # Guarantees
+    /// The engine will never be sent a `go` command with a game in an invalid state or a game that
+    /// already has a result. I.e. the board will be a valid chess position with at least one legal
+    /// move.
     fn go(
         &mut self,
         game: Game,
@@ -156,8 +162,8 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
                 UciCommand::UciNewGame => {
                     game = None;
                 }
-                UciCommand::Position(board) => {
-                    game = Some(Game::new_with_board(board));
+                UciCommand::Position(g) => {
+                    game = Some(g);
                 }
                 UciCommand::Go(options) => {
                     if let Some(game) = &game {
