@@ -26,7 +26,7 @@ pub struct Engine {
     searcher: Option<std::thread::JoinHandle<()>>,
 }
 
-impl uci::Engine for Engine {
+impl uci::UciEngine for Engine {
     fn name(&self) -> String {
         format!("Goldfish {}", env!("CARGO_PKG_VERSION"))
     }

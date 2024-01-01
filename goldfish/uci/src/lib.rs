@@ -8,7 +8,7 @@ use types::UciCommand;
 pub use types::{Info, InfoPart};
 
 /// Engines must implement this trait to be compatible with this crate.
-pub trait Engine {
+pub trait UciEngine {
     /// The name of the engine, possibly including a version number.
     ///
     /// This will be sent to the GUI in response to a `uci` command, and
@@ -99,7 +99,7 @@ pub enum UciError {
 ///
 /// It will _not_ return an error if it encounters an invalid UCI command. In this case the
 /// error message will be logged to stderr, and otherwise ignored.
-pub fn start(mut engine: impl Engine) -> Result<(), UciError> {
+pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
     let mut game = None;
     let mut searching = false;
 
