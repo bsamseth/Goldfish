@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
 use std::collections::VecDeque;
+use std::str::FromStr;
 
-use chess::{Board, ChessMove};
+use chess::{ChessMove, Game};
 
 type Fen = String;
 const START_POS_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -14,7 +15,7 @@ pub enum UciCommand {
     IsReady,
     SetOption(EngineOption),
     UciNewGame,
-    Position(Board),
+    Position(Game),
     Go(Vec<GoOption>),
     Stop,
     PonderHit,
@@ -202,7 +203,7 @@ impl std::str::FromStr for EngineOption {
     }
 }
 
-fn parse_position(s: &str) -> Result<Board, String> {
+fn parse_position(s: &str) -> Result<Game, String> {
     let split = s.split_whitespace().collect::<Vec<_>>();
     let (fen, rest) = match split.first() {
         Some(&"startpos") => (START_POS_FEN.to_string(), &split[1..]),
@@ -226,17 +227,16 @@ fn parse_position(s: &str) -> Result<Board, String> {
         return Err(format!("Invalid position: {s}"));
     };
 
-    let mut board: Board = fen.parse().map_err(|e| format!("{e}"))?;
+    let mut game = Game::from_str(&fen).map_err(|e| format!("{e}"))?;
     if let Some(moves) = moves {
         for mv in moves {
-            if !board.legal(mv) {
+            if !game.make_move(mv) {
                 return Err(format!("Invalid move: {mv}"));
             }
-            board = board.make_move_new(mv);
         }
     }
 
-    Ok(board)
+    Ok(game)
 }
 
 fn parse_go_opitons(s: &str) -> Result<Vec<GoOption>, String> {
