@@ -2,6 +2,8 @@ mod types;
 
 use chess::Game;
 use std::io::BufRead;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 pub use types::GoOption;
 use types::UciCommand;
@@ -107,7 +109,7 @@ pub enum UciError {
 /// error message will be logged to stderr, and otherwise ignored.
 pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
     let mut game = None;
-    let mut searching = false;
+    let searching = Arc::new(AtomicBool::new(false));
 
     let (info_sender_tx, info_sender_rx) = std::sync::mpsc::channel::<Info>();
     std::thread::spawn(move || {
@@ -117,6 +119,13 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
     });
 
     let (best_move_tx, best_move_rx) = std::sync::mpsc::channel::<chess::ChessMove>();
+    let _searching = searching.clone();
+    std::thread::spawn(move || {
+        while let Ok(best_move) = best_move_rx.recv() {
+            _searching.store(false, Ordering::Relaxed);
+            println!("bestmove {}", best_move);
+        }
+    });
 
     let stdin = std::io::stdin();
     loop {
@@ -127,20 +136,18 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
 
         let command = UciCommand::from(line.as_str());
 
-        if searching {
+        if searching.load(Ordering::Relaxed) {
             match command {
                 UciCommand::Stop => {
                     engine.stop();
-                    let best_move = best_move_rx.recv()?;
-                    println!("bestmove {}", best_move);
-                    searching = false;
+                    searching.store(false, Ordering::Relaxed);
                 }
                 UciCommand::Quit => {
                     engine.stop();
                     break;
                 }
                 _ => {
-                    tracing::error!("Search in progress, ignoring command: {command:?}");
+                    tracing::info!("Search in progress, ignoring command: {command:?}");
                 }
             }
         } else {
@@ -176,13 +183,13 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
                             sender: info_sender_tx.clone(),
                         };
                         engine.go(game.clone(), options, info_writer, best_move_tx.clone());
-                        searching = true;
+                        searching.store(true, Ordering::Relaxed);
                     } else {
                         tracing::error!("No position set, ignoring go command.");
                     }
                 }
                 UciCommand::Stop => {
-                    tracing::error!("No search in progress, ignoring stop command.");
+                    tracing::info!("No search in progress, ignoring stop command.");
                 }
                 UciCommand::PonderHit => unimplemented!(),
                 UciCommand::Quit => break,

@@ -44,10 +44,9 @@ impl uci::UciEngine for Engine {
         info_writer: uci::InfoWriter,
         best_move: std::sync::mpsc::Sender<chess::ChessMove>,
     ) {
-        assert!(
-            self.searcher.is_none(),
-            "search already in progress, uci protocol violation"
-        );
+        if self.searcher.is_some() {
+            self.stop();
+        }
 
         self.stop_signal = StopSignal::default();
         let ss = self.stop_signal.clone();
