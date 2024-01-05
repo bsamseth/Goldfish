@@ -7,6 +7,8 @@
 /// [cp-wiki]: https://www.chessprogramming.org/Simplified_Evaluation_Function
 use chess::{BitBoard, Board, Piece, Square};
 
+use crate::value::Value;
+
 #[rustfmt::skip]
 const PAWN_TABLE: [i8; 64] = [
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -86,11 +88,11 @@ const KING_ENDGAME_TABLE: [i8; 64] = [
 ];
 
 pub trait Evaluate {
-    fn evaluate(&self) -> i32;
+    fn evaluate(&self) -> Value;
 }
 
 impl Evaluate for Board {
-    fn evaluate(&self) -> i32 {
+    fn evaluate(&self) -> Value {
         evaluate(self)
     }
 }
@@ -99,8 +101,8 @@ impl Evaluate for Board {
 ///
 /// The score is given w.r.t. the side to move, i.e. positive if the side to move has the better
 /// position, and negative if the opponent has the better position.
-fn evaluate(board: &Board) -> i32 {
-    let mut score = 0;
+fn evaluate(board: &Board) -> Value {
+    let mut score: Value = 0;
 
     score += evaluate_material(board);
     score += evaluate_piece_square_tables(board);
@@ -109,7 +111,7 @@ fn evaluate(board: &Board) -> i32 {
     score
 }
 
-fn evaluate_material(board: &Board) -> i32 {
+fn evaluate_material(board: &Board) -> Value {
     let mut score = 0;
 
     let my_pieces = board.color_combined(board.side_to_move());
@@ -141,13 +143,15 @@ fn evaluate_material(board: &Board) -> i32 {
     score -= count(their_pieces, queens) * 900;
 
     score
+        .try_into()
+        .expect("material evaluation should not overflow an i16")
 }
 
 /// Evaluate the position using piece-square tables.
 ///
 /// The score is given w.r.t. the side to move, i.e. positive if the side to move has the better
 /// position, and negative if the opponent has the better position.
-fn evaluate_piece_square_tables(board: &Board) -> i32 {
+fn evaluate_piece_square_tables(board: &Board) -> Value {
     let mut total = 0;
 
     for s in (0..64).map(|s| unsafe {
@@ -191,6 +195,8 @@ fn evaluate_piece_square_tables(board: &Board) -> i32 {
     }
 
     total
+        .try_into()
+        .expect("piece square evaluation should not overflow an i16")
 }
 
 /// Determine if a given board is in the endgame.
