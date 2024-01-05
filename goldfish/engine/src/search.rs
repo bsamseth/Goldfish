@@ -1,20 +1,20 @@
-#![allow(dead_code)]
 use chess::{Board, ChessMove, Game, MoveGen};
 
 use crate::evaluate::Evaluate;
 use crate::limits::Limits;
+use crate::logger::Logger;
 use crate::movelist::{MoveEntry, MoveVec};
 use crate::stop_signal::StopSignal;
-use crate::value::{self, Depth, Value};
-// use uci::{Info, InfoPart};
+use crate::value::{self, Depth, Value, MAX_PLY};
 
 #[derive(Debug)]
 pub struct Searcher {
     game: Game,
     limits: Limits,
-    info_writer: uci::InfoWriter,
+    logger: Logger,
     stop_signal: StopSignal,
     root_moves: MoveVec,
+    pv: Vec<Vec<ChessMove>>,
 }
 
 impl Searcher {
@@ -25,13 +25,35 @@ impl Searcher {
         stop_signal: StopSignal,
     ) -> Self {
         let root_moves = MoveVec::new_from_moves(MoveGen::new_legal(&game.current_position()));
+        let pv = (0..MAX_PLY)
+            .map(|_| Vec::with_capacity(MAX_PLY as usize))
+            .collect();
         Self {
             game,
             limits: Limits::from(options.as_slice()),
-            info_writer,
+            logger: Logger::new(info_writer),
             stop_signal,
             root_moves,
+            pv,
         }
+    }
+
+    /// Update the principal variation.
+    ///
+    /// Set the principal variation move at `ply`  to `[mv, ..pv[ply+1]]`.
+    /// That is, the pv at `ply` starts with `mv`, and is followed by the pv at `ply+1`.
+    ///
+    /// See: https://www.chessprogramming.org/Principal_Variation#PV-List_on_the_Stack
+    /// This is essentially the same, but the pvs are preallocated.
+    fn update_pv(&mut self, mv: ChessMove, ply: Depth) {
+        self.pv[ply as usize].clear();
+        self.pv[ply as usize].push(mv);
+
+        // Use split_at_mut to allow having a mutable reference to the pv[ply] while
+        // having a shared reference to pv[ply+1].
+        let (dst, src) = self.pv.split_at_mut(ply as usize + 1);
+        let (dst, src) = (&mut dst[ply as usize], &src[0]);
+        dst.extend_from_slice(src);
     }
 
     pub fn run(&mut self) -> ChessMove {
@@ -45,6 +67,7 @@ impl Searcher {
                 break;
             }
 
+            self.logger.set_current_depth(depth);
             self.search_root(depth, -value::INFINITE, value::INFINITE);
 
             self.root_moves.sort_moves();
@@ -66,6 +89,9 @@ impl Searcher {
         let mut best_value = -value::INFINITE;
 
         for (mv_nr, mv) in self.root_moves.clone().iter().enumerate() {
+            self.logger.set_current_move(mv.mv, mv_nr + 1);
+            self.logger.send_status();
+
             root_board.make_move(mv.mv, &mut board);
 
             let value = self.pv_search(&board, depth, alpha, beta, 0, mv_nr);
@@ -86,6 +112,9 @@ impl Searcher {
                 if value >= beta {
                     return;
                 }
+
+                self.update_pv(mv.mv, 0);
+                self.logger.send_move(&self.root_moves[mv_nr], &self.pv[0]);
             }
         }
     }
@@ -137,6 +166,8 @@ impl Searcher {
             return self.quiescence_search(board, alpha, beta, ply);
         }
 
+        self.logger.update_search(ply);
+
         let moves = MoveGen::new_legal(board);
         if moves.len() == 0 {
             if *board.checkers() == chess::EMPTY {
@@ -164,10 +195,10 @@ impl Searcher {
 
             if value > alpha {
                 alpha = value;
-
                 if value >= beta {
                     break;
                 }
+                self.update_pv(mv, ply);
             }
         }
 
@@ -181,6 +212,8 @@ impl Searcher {
         beta: Value,
         ply: Depth,
     ) -> Value {
+        self.logger.update_search(ply);
+
         if self.stop_signal.check() || ply == value::MAX_PLY {
             return board.evaluate();
         }
