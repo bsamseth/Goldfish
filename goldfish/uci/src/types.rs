@@ -66,14 +66,14 @@ enum OptionType {
 
 #[derive(Debug)]
 pub enum InfoPart<'a> {
-    Cp(i32),
+    Cp(i16),
     CurrLine(&'a [ChessMove]),
     CurrMove(ChessMove),
     CurrMoveNumber(usize),
     Depth(usize),
     HashFull(usize),
     LowerBound(i32),
-    Mate(i32),
+    Mate(i16),
     MultiPv(usize),
     Nodes(usize),
     Nps(usize),
