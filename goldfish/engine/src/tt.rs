@@ -41,12 +41,29 @@ pub struct TranspositionTable {
     entries: Vec<Option<Entry>>,
 }
 
+impl Default for TranspositionTable {
+    fn default() -> Self {
+        Self::new(crate::DEFAULT_HASH_SIZE_MB * crate::MB)
+    }
+}
+
 impl TranspositionTable {
     /// Creates a new transposition table with the given size in bytes.
     pub fn new(size: usize) -> Self {
+        let count = size / std::mem::size_of::<Option<Entry>>();
         Self {
-            entries: vec![None; size],
+            entries: vec![None; count],
         }
+    }
+
+    /// Resizes the table to the given size in bytes.
+    ///
+    /// This clears the table, and all entries are lost.
+    /// This is required, because the indices are only consistent for a given size.
+    pub fn resize(&mut self, size: usize) {
+        let count = size / std::mem::size_of::<Option<Entry>>();
+        self.entries.clear();
+        self.entries.resize(count, None);
     }
 
     /// Returns an index into the table for the given (Zobrist) key.
