@@ -9,9 +9,9 @@ use crate::{
 #[derive(Debug)]
 pub struct Logger {
     info_writer: uci::InfoWriter,
-    search_start_time: std::time::Instant,
+    pub search_start_time: std::time::Instant,
     last_log_time: std::time::Instant,
-    total_nodes: usize,
+    pub total_nodes: usize,
     tb_hits: usize,
     current_depth: Depth,
     current_max_depth: Depth,

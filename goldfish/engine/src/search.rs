@@ -41,6 +41,12 @@ impl Searcher {
         }
     }
 
+    fn should_stop(&self) -> bool {
+        self.stop_signal.check()
+            || self.logger.search_start_time.elapsed().as_millis() as usize >= self.limits.movetime
+            || self.logger.total_nodes >= self.limits.nodes
+    }
+
     /// Returns the principal variation for the current position.
     ///
     /// The principal variation is the sequence of moves that the engine thinks is the best.
@@ -89,7 +95,7 @@ impl Searcher {
         );
 
         for depth in 1..=self.limits.depth {
-            if self.stop_signal.check() {
+            if self.should_stop() {
                 break;
             }
 
@@ -122,7 +128,7 @@ impl Searcher {
 
             let value = self.pv_search(&board, depth, alpha, beta, 0, mv_nr);
 
-            if self.stop_signal.check() {
+            if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
                 // Rely on whatever we've found so far on only.
                 return;
@@ -182,7 +188,7 @@ impl Searcher {
         mut beta: Value,
         ply: Depth,
     ) -> Value {
-        if self.stop_signal.check() || ply == value::MAX_PLY {
+        if ply == value::MAX_PLY || self.should_stop() {
             return board.evaluate();
         }
 
@@ -225,7 +231,7 @@ impl Searcher {
 
             let value = self.pv_search(&new_board, depth, alpha, beta, ply, mv_nr);
 
-            if self.stop_signal.check() {
+            if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
                 // Rely on whatever we've found so far on only.
                 return best_value;
@@ -280,7 +286,7 @@ impl Searcher {
     ) -> Value {
         self.logger.update_search(ply);
 
-        if self.stop_signal.check() || ply == value::MAX_PLY {
+        if ply == value::MAX_PLY || self.should_stop() {
             return board.evaluate();
         }
 
@@ -322,7 +328,7 @@ impl Searcher {
 
             let value = -self.quiescence_search(&new_board, -beta, -alpha, ply + 1);
 
-            if self.stop_signal.check() {
+            if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
                 // Rely on whatever we've found so far on only.
                 return best_value;
