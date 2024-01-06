@@ -109,14 +109,14 @@ impl Info {
                 .join(" ")
         };
         let add = match part {
-            InfoPart::Cp(x) => format!("cp {x}"),
+            InfoPart::Cp(x) => format!("score cp {x}"),
             InfoPart::CurrLine(moves) => format!("currline {}", fmt_moves(moves)),
             InfoPart::CurrMove(mv) => format!("currmove {mv}"),
             InfoPart::CurrMoveNumber(n) => format!("currmovenumber {n}"),
             InfoPart::Depth(n) => format!("depth {n}"),
             InfoPart::HashFull(n) => format!("hashfull {n}"),
             InfoPart::LowerBound(x) => format!("lowerbound {x}"),
-            InfoPart::Mate(x) => format!("mate {x}"),
+            InfoPart::Mate(x) => format!("score mate {x}"),
             InfoPart::MultiPv(n) => format!("multipv {n}"),
             InfoPart::Nodes(n) => format!("nodes {n}"),
             InfoPart::Nps(n) => format!("nps {n}"),
