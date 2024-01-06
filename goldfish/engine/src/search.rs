@@ -1,10 +1,12 @@
 use chess::{Board, ChessMove, Game, MoveGen};
+use std::sync::{Arc, RwLock};
 
 use crate::evaluate::Evaluate;
 use crate::limits::Limits;
 use crate::logger::Logger;
 use crate::movelist::{MoveEntry, MoveVec};
 use crate::stop_signal::StopSignal;
+use crate::tt::{Bound, TranspositionTable};
 use crate::value::{self, Depth, Value, MAX_PLY};
 
 #[derive(Debug)]
@@ -15,6 +17,7 @@ pub struct Searcher {
     stop_signal: StopSignal,
     root_moves: MoveVec,
     pv: Vec<Vec<ChessMove>>,
+    transposition_table: Arc<RwLock<TranspositionTable>>,
 }
 
 impl Searcher {
@@ -23,6 +26,7 @@ impl Searcher {
         options: Vec<uci::GoOption>,
         info_writer: uci::InfoWriter,
         stop_signal: StopSignal,
+        transposition_table: Arc<RwLock<TranspositionTable>>,
     ) -> Self {
         let root_moves = MoveVec::new_from_moves(MoveGen::new_legal(&game.current_position()));
         let pv = (0..MAX_PLY)
@@ -35,6 +39,7 @@ impl Searcher {
             stop_signal,
             root_moves,
             pv,
+            transposition_table,
         }
     }
 
@@ -153,7 +158,7 @@ impl Searcher {
         board: &Board,
         depth: Depth,
         mut alpha: Value,
-        beta: Value,
+        mut beta: Value,
         ply: Depth,
     ) -> Value {
         if self.stop_signal.check() || ply == value::MAX_PLY {
@@ -162,6 +167,28 @@ impl Searcher {
 
         // TODO: Halfmove clock, repetition and insufficient material draw detection.
 
+        let alpha_orig = alpha;
+        let tt_entry = self
+            .transposition_table
+            .read()
+            .unwrap()
+            .get(board.get_hash(), depth);
+        if let Some((mv, bound, value)) = tt_entry {
+            if bound & Bound::Lower && alpha < value {
+                alpha = value;
+                if let Some(mv) = mv {
+                    self.update_pv(mv, ply);
+                }
+            }
+            if bound & Bound::Upper && value < beta {
+                beta = value;
+            }
+
+            if alpha >= beta {
+                return value;
+            }
+        }
+
         if depth == 0 {
             return self.quiescence_search(board, alpha, beta, ply);
         }
@@ -169,15 +196,10 @@ impl Searcher {
         self.logger.update_search(ply);
 
         let moves = MoveGen::new_legal(board);
-        if moves.len() == 0 {
-            if *board.checkers() == chess::EMPTY {
-                return value::DRAW;
-            } else {
-                return -value::CHECKMATE + Value::from(ply);
-            }
-        }
+        let possible_move_count = moves.len();
 
         let mut best_value = -value::INFINITE;
+        let mut best_move = None;
         let mut new_board = *board;
 
         for (mv_nr, mv) in moves.enumerate() {
@@ -191,16 +213,43 @@ impl Searcher {
                 return best_value;
             }
 
-            best_value = best_value.max(value);
+            if value > best_value {
+                best_value = value;
+                best_move = Some(mv);
 
-            if value > alpha {
-                alpha = value;
-                if value >= beta {
-                    break;
+                if value > alpha {
+                    alpha = value;
+                    if value >= beta {
+                        break;
+                    }
+                    self.update_pv(mv, ply);
                 }
-                self.update_pv(mv, ply);
             }
         }
+
+        let bound = if possible_move_count == 0 {
+            best_value = if *board.checkers() == chess::EMPTY {
+                value::DRAW
+            } else {
+                -value::CHECKMATE + Value::from(ply)
+            };
+
+            Bound::Exact
+        } else if best_value <= alpha_orig {
+            Bound::Upper
+        } else if best_value >= beta {
+            Bound::Lower
+        } else {
+            Bound::Exact
+        };
+
+        self.transposition_table.write().unwrap().store(
+            board.get_hash(),
+            best_move,
+            bound,
+            best_value,
+            depth,
+        );
 
         best_value
     }

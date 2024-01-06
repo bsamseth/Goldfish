@@ -9,24 +9,36 @@ use crate::value::{Depth, Value};
 /// whether the value is an upper bound, a lower bound, or an exact value, so that we
 /// can take the correct action when we encounter the position again.
 #[derive(Debug, Clone, Copy)]
+#[repr(u8)]
 pub enum Bound {
-    Lower(Value),
-    Upper(Value),
-    Exact(Value),
+    Lower = 1,
+    Upper = 2,
+    Exact = Self::Lower as u8 | Self::Upper as u8,
+}
+
+impl std::ops::BitAnd for Bound {
+    type Output = bool;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        let self_bits = self as u8;
+        let rhs_bits = rhs as u8;
+        self_bits & rhs_bits != 0
+    }
 }
 
 /// A transposition table entry.
 ///
 /// Each entry stores the following information:
 /// - Checkbits: The 32 most significant bits of the Zobrist key, used to detect collisions.
-/// - move: The best move found for the position.
+/// - move: The best move found for the position, if any.
 /// - Bound: The type of the value stored in the entry.
 /// - Depth: The depth at which the value was computed.
 #[derive(Debug, Clone)]
 pub struct Entry {
     checkbits: u32,
-    pub mv: ChessMove,
+    pub mv: Option<ChessMove>,
     pub bound: Bound,
+    pub value: Value,
     depth: Depth,
 }
 
@@ -85,11 +97,13 @@ impl TranspositionTable {
     ///
     /// 1. The entry must exist, i.e. the position must have been stored in the table.
     /// 2. The entry must have a depth greater than or equal to the requested depth.
-    pub fn get(&self, key: u64, depth: Depth) -> Option<&Entry> {
+    pub fn get(&self, key: u64, depth: Depth) -> Option<(Option<ChessMove>, Bound, Value)> {
         // Safety: `index` is guaranteed to return a valid index.
         let entry = unsafe { self.entries.get_unchecked(self.index(key)).as_ref() };
 
-        entry.filter(|entry| Self::checkbits(key) == entry.checkbits && depth <= entry.depth)
+        entry
+            .filter(|entry| Self::checkbits(key) == entry.checkbits && depth <= entry.depth)
+            .map(|entry| (entry.mv, entry.bound, entry.value))
     }
 
     /// Stores an entry in the table if it is better than the current entry.
@@ -101,7 +115,14 @@ impl TranspositionTable {
     ///
     /// In case of a collision, the entry with the greater depth is stored, and ties broken in
     /// favor of the new entry.
-    pub fn store(&mut self, key: u64, mv: ChessMove, bound: Bound, depth: Depth) {
+    pub fn store(
+        &mut self,
+        key: u64,
+        mv: Option<ChessMove>,
+        bound: Bound,
+        value: Value,
+        depth: Depth,
+    ) {
         let index = self.index(key);
         // Safety: `index` is guaranteed to return a valid index.
         let entry = unsafe { self.entries.get_unchecked_mut(index) };
@@ -111,6 +132,7 @@ impl TranspositionTable {
                 checkbits: (key >> 32) as u32,
                 mv,
                 bound,
+                value,
                 depth,
             });
         }
