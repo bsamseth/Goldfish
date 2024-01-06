@@ -4,6 +4,7 @@ mod logger;
 mod movelist;
 mod search;
 mod stop_signal;
+mod tt;
 mod value;
 
 use chess::Game;
