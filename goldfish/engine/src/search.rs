@@ -7,16 +7,16 @@ use crate::logger::Logger;
 use crate::movelist::{MoveEntry, MoveVec};
 use crate::stop_signal::StopSignal;
 use crate::tt::{Bound, TranspositionTable};
-use crate::value::{self, Depth, Value, MAX_PLY};
+use crate::value::{self, Depth, Value};
 
 #[derive(Debug)]
 pub struct Searcher {
     game: Game,
+    root_position: Board,
     limits: Limits,
     logger: Logger,
     stop_signal: StopSignal,
     root_moves: MoveVec,
-    pv: Vec<Vec<ChessMove>>,
     transposition_table: Arc<RwLock<TranspositionTable>>,
 }
 
@@ -29,38 +29,59 @@ impl Searcher {
         transposition_table: Arc<RwLock<TranspositionTable>>,
     ) -> Self {
         let root_moves = MoveVec::new_from_moves(MoveGen::new_legal(&game.current_position()));
-        let pv = (0..MAX_PLY)
-            .map(|_| Vec::with_capacity(MAX_PLY as usize))
-            .collect();
+        let root_position = game.current_position();
         Self {
             game,
+            root_position,
             limits: Limits::from(options.as_slice()),
             logger: Logger::new(info_writer),
             stop_signal,
             root_moves,
-            pv,
             transposition_table,
         }
     }
 
-    /// Update the principal variation.
+    /// Returns the principal variation for the current position.
     ///
-    /// Set the principal variation move at `ply`  to `[mv, ..pv[ply+1]]`.
-    /// That is, the pv at `ply` starts with `mv`, and is followed by the pv at `ply+1`.
+    /// The principal variation is the sequence of moves that the engine thinks is the best.
+    /// It is used to display the engine's thinking process.
     ///
-    /// See: https://www.chessprogramming.org/Principal_Variation#PV-List_on_the_Stack
-    /// This is essentially the same, but the pvs are preallocated.
-    fn update_pv(&mut self, mv: ChessMove, ply: Depth) {
-        self.pv[ply as usize].clear();
-        self.pv[ply as usize].push(mv);
+    /// We use the transposition table to build the PV on demand. This is not the most efficient
+    /// way to build the PV itself, but it removes complexity (and cycles) from the main search
+    /// code path. Only when a new best move is found at the root (for a given depth) do we need
+    /// to build the PV, which means this doesn't impact the search speed.
+    ///
+    /// Another potential downside is that the PV might be cut short if a replacement occurs in the
+    /// table. For a reasonable table size this should be rare, so this approach is the less
+    /// intrusive one.
+    fn build_pv(&self) -> Vec<ChessMove> {
+        let mut pv = Vec::new();
+        let mut board = self.root_position;
 
-        // Use split_at_mut to allow having a mutable reference to the pv[ply] while
-        // having a shared reference to pv[ply+1].
-        let (dst, src) = self.pv.split_at_mut(ply as usize + 1);
-        let (dst, src) = (&mut dst[ply as usize], &src[0]);
-        dst.extend_from_slice(src);
+        // The root position is _not_ in the table, so we manually pick out the best root move.
+        // The root move list is only sorted by the previous depth's values, so we must determine
+        // it on demand.
+        let first_move = self.root_moves.iter().max_by_key(|r| r.value).unwrap().mv;
+        board = board.make_move_new(first_move);
+        pv.push(first_move);
+
+        while let Some((Some(mv), _, _)) = self
+            .transposition_table
+            .read()
+            .unwrap()
+            .get(board.get_hash(), 0)
+        {
+            pv.push(mv);
+            board = board.make_move_new(mv);
+        }
+
+        pv
     }
 
+    /// Run a search and return the best move.
+    ///
+    /// The search may stop for a variety of reasons, depending on the options set by the user,
+    /// or if the user sends a stop signal. Still, it should always eventually return.
     pub fn run(&mut self) -> ChessMove {
         assert!(
             !self.root_moves.is_empty(),
@@ -118,8 +139,8 @@ impl Searcher {
                     return;
                 }
 
-                self.update_pv(mv.mv, 0);
-                self.logger.send_move(&self.root_moves[mv_nr], &self.pv[0]);
+                self.logger
+                    .send_move(&self.root_moves[mv_nr], &self.build_pv());
             }
         }
     }
@@ -173,12 +194,9 @@ impl Searcher {
             .read()
             .unwrap()
             .get(board.get_hash(), depth);
-        if let Some((mv, bound, value)) = tt_entry {
+        if let Some((_, bound, value)) = tt_entry {
             if bound & Bound::Lower && alpha < value {
                 alpha = value;
-                if let Some(mv) = mv {
-                    self.update_pv(mv, ply);
-                }
             }
             if bound & Bound::Upper && value < beta {
                 beta = value;
@@ -222,7 +240,6 @@ impl Searcher {
                     if value >= beta {
                         break;
                     }
-                    self.update_pv(mv, ply);
                 }
             }
         }
