@@ -8,6 +8,7 @@ mod tt;
 mod value;
 
 use chess::Game;
+use std::sync::{Arc, RwLock};
 
 use stop_signal::StopSignal;
 
@@ -27,7 +28,7 @@ use stop_signal::StopSignal;
 pub struct Engine {
     stop_signal: StopSignal,
     searcher: Option<std::thread::JoinHandle<()>>,
-    transposition_table: tt::TranspositionTable,
+    transposition_table: Arc<RwLock<tt::TranspositionTable>>,
 }
 
 impl uci::UciEngine for Engine {
@@ -70,8 +71,9 @@ impl uci::UciEngine for Engine {
         self.stop_signal = StopSignal::default();
         let ss = self.stop_signal.clone();
         let game = game.clone();
+        let tt = self.transposition_table.clone();
         self.searcher = Some(std::thread::spawn(move || {
-            let mut searcher = search::Searcher::new(game, options, info_writer, ss);
+            let mut searcher = search::Searcher::new(game, options, info_writer, ss, tt);
             let bm = searcher.run();
             best_move
                 .send(bm)
@@ -95,7 +97,7 @@ impl Engine {
             "Hash" => {
                 let value = value.parse::<usize>()?;
                 tracing::info!("setting hash size to {} MB", value);
-                self.transposition_table.resize(value * MB);
+                self.transposition_table.write().unwrap().resize(value * MB);
                 Ok(())
             }
             _ => anyhow::bail!("invalid option {name}"),
