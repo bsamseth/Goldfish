@@ -5,8 +5,9 @@ use std::io::BufRead;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-pub use types::GoOption;
 use types::UciCommand;
+
+pub use types::{EngineOptionSpesification, EngineOptionType, GoOption};
 pub use types::{Info, InfoPart};
 
 /// Engines must implement this trait to be compatible with this crate.
@@ -24,6 +25,24 @@ pub trait UciEngine {
     /// might be used to identify the engine in the GUI. Any newlines will
     /// be replaced with spaces.
     fn author(&self) -> String;
+
+    /// The options supported by the engine.
+    ///
+    /// This will be sent to the GUI in response to a `uci` command, and
+    /// might be used to configure the engine. See `EngineOptionSpesification`.
+    ///
+    /// By default, this function returns an empty vector, i.e. no supported options.
+    fn options(&self) -> Vec<EngineOptionSpesification> {
+        vec![]
+    }
+
+    /// Set an option to the given value.
+    ///
+    /// This will be called when the GUI sends a `setoption` command.
+    /// The engine should update its internal state to reflect the new value.
+    /// If the value is invalid, the engine might log an error, but should otherwise ignore
+    /// the command.
+    fn set_option(&mut self, name: &str, value: &str);
 
     /// Ensure the engine is ready to recieve commands.
     ///
@@ -158,6 +177,11 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
                 UciCommand::Uci => {
                     println!("id name {}", engine.name().replace('\n', " "));
                     println!("id author {}", engine.author().replace('\n', " "));
+
+                    println!();
+                    for option in engine.options() {
+                        println!("{}", option);
+                    }
                     println!("uciok");
                 }
                 UciCommand::Debug => unimplemented!(),
@@ -165,7 +189,9 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
                     engine.ready();
                     println!("readyok");
                 }
-                UciCommand::SetOption(_option) => unimplemented!(),
+                UciCommand::SetOption(option) => {
+                    engine.set_option(&option.name, &option.value);
+                }
                 UciCommand::UciNewGame => {
                     game = None;
                 }

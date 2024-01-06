@@ -27,6 +27,7 @@ use stop_signal::StopSignal;
 pub struct Engine {
     stop_signal: StopSignal,
     searcher: Option<std::thread::JoinHandle<()>>,
+    transposition_table: tt::TranspositionTable,
 }
 
 impl uci::UciEngine for Engine {
@@ -36,6 +37,23 @@ impl uci::UciEngine for Engine {
 
     fn author(&self) -> String {
         env!("CARGO_PKG_AUTHORS").to_string()
+    }
+
+    fn options(&self) -> Vec<uci::EngineOptionSpesification> {
+        vec![uci::EngineOptionSpesification {
+            name: "Hash".to_string(),
+            option_type: uci::EngineOptionType::Spin,
+            default: Some(format!("{DEFAULT_HASH_SIZE_MB}")),
+            min: Some(1),
+            max: Some(33554432), // Lots of memory, stockfish uses this max 🤷.
+            var: None,
+        }]
+    }
+
+    fn set_option(&mut self, name: &str, value: &str) {
+        if let Err(e) = self._set_option(name, value) {
+            tracing::error!("failed to set option: {}", e);
+        }
     }
 
     fn go(
@@ -70,3 +88,20 @@ impl uci::UciEngine for Engine {
         self.searcher.take().unwrap().join().unwrap();
     }
 }
+
+impl Engine {
+    fn _set_option(&mut self, name: &str, value: &str) -> anyhow::Result<()> {
+        match name {
+            "Hash" => {
+                let value = value.parse::<usize>()?;
+                tracing::info!("setting hash size to {} MB", value);
+                self.transposition_table.resize(value * MB);
+                Ok(())
+            }
+            _ => anyhow::bail!("invalid option {name}"),
+        }
+    }
+}
+
+const MB: usize = 1024 * 1024;
+const DEFAULT_HASH_SIZE_MB: usize = 1;
