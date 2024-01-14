@@ -8,7 +8,6 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Logger {
-    info_writer: uci::InfoWriter,
     pub search_start_time: std::time::Instant,
     last_log_time: std::time::Instant,
     pub total_nodes: usize,
@@ -20,9 +19,8 @@ pub struct Logger {
 }
 
 impl Logger {
-    pub fn new(info_writer: uci::InfoWriter) -> Self {
+    pub fn new() -> Self {
         Self {
-            info_writer,
             search_start_time: std::time::Instant::now(),
             last_log_time: std::time::Instant::now(),
             total_nodes: 0,
@@ -75,7 +73,7 @@ impl Logger {
             .with(InfoPart::CurrMove(self.current_move))
             .with(InfoPart::CurrMoveNumber(self.current_move_number));
 
-        self.info_writer.send_info(info);
+        println!("{info}");
         self.last_log_time = std::time::Instant::now();
     }
 
@@ -106,7 +104,7 @@ impl Logger {
         }
 
         info = info.with(InfoPart::Pv(pv));
-        self.info_writer.send_info(info);
+        println!("{info}");
         self.last_log_time = std::time::Instant::now();
     }
 }
