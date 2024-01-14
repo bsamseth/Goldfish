@@ -19,7 +19,8 @@ impl From<&[GoOption]> for Limits {
         for option in options {
             match option {
                 GoOption::Depth(depth) => {
-                    limits.depth = (*depth).min(limits.depth as usize) as Depth
+                    let depth = Depth::try_from(*depth).unwrap_or(MAX_PLY);
+                    limits.depth = depth.min(limits.depth);
                 }
                 GoOption::Nodes(nodes) => limits.nodes = limits.nodes.min(*nodes),
                 GoOption::MoveTime(movetime) => limits.movetime = limits.movetime.min(*movetime),

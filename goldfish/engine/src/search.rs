@@ -23,7 +23,7 @@ pub struct Searcher {
 impl Searcher {
     pub fn new(
         game: Game,
-        options: Vec<uci::GoOption>,
+        options: &[uci::GoOption],
         stop_signal: StopSignal,
         transposition_table: Arc<RwLock<TranspositionTable>>,
     ) -> Self {
@@ -32,7 +32,7 @@ impl Searcher {
         Self {
             game,
             root_position,
-            limits: Limits::from(options.as_slice()),
+            limits: Limits::from(options),
             logger: Logger::new(),
             stop_signal,
             root_moves,
@@ -311,9 +311,8 @@ impl Searcher {
         if moves.len() == 0 {
             if *board.checkers() == chess::EMPTY {
                 return value::DRAW;
-            } else {
-                return -value::CHECKMATE + Value::from(ply);
             }
+            return -value::CHECKMATE + Value::from(ply);
         }
 
         let targets = board.color_combined(!board.side_to_move());
