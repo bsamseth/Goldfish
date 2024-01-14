@@ -106,4 +106,4 @@ impl Engine {
 }
 
 const MB: usize = 1024 * 1024;
-const DEFAULT_HASH_SIZE_MB: usize = 1;
+const DEFAULT_HASH_SIZE_MB: usize = 16;
