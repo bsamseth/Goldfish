@@ -24,7 +24,6 @@ impl Searcher {
     pub fn new(
         game: Game,
         options: Vec<uci::GoOption>,
-        info_writer: uci::InfoWriter,
         stop_signal: StopSignal,
         transposition_table: Arc<RwLock<TranspositionTable>>,
     ) -> Self {
@@ -34,7 +33,7 @@ impl Searcher {
             game,
             root_position,
             limits: Limits::from(options.as_slice()),
-            logger: Logger::new(info_writer),
+            logger: Logger::new(),
             stop_signal,
             root_moves,
             transposition_table,
