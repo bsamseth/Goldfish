@@ -10,7 +10,6 @@ pub struct MoveVec(Vec<MoveEntry>);
 pub struct MoveEntry {
     pub mv: ChessMove,
     pub value: value::Value,
-    pub pv: Vec<ChessMove>,
 }
 
 impl MoveEntry {
@@ -18,7 +17,6 @@ impl MoveEntry {
         Self {
             mv,
             value: -value::INFINITE,
-            pv: vec![mv],
         }
     }
 }
