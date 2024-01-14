@@ -1,3 +1,8 @@
+/// A crate for implementing UCI chess engines.
+///
+/// Defines types and scaffolding for engines to implement the [UCI protocol](uci-protocol).
+///
+/// [uci-protocol]: https://www.wbec-ridderkerk.nl/html/UCIProtocol.html
 mod types;
 
 use chess::Game;
@@ -35,6 +40,17 @@ pub trait UciEngine {
     fn options(&self) -> Vec<EngineOptionSpesification> {
         vec![]
     }
+
+    /// Recieve a `ucinewgame` command.
+    ///
+    /// This is sent to the engine when the next search (started with "position" and "go")
+    /// will be from a different game. Engines _could_ clear transposition tables and such,
+    /// but the engine is free to do anything here. This function should not block. The GUI
+    /// will send a `isready` command after this, so the engine could do background processing
+    /// if needed.
+    ///
+    /// By default, this function does nothing.
+    fn ucinewgame(&mut self) {}
 
     /// Set an option to the given value.
     ///
@@ -193,7 +209,7 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
                     engine.set_option(&option.name, &option.value);
                 }
                 UciCommand::UciNewGame => {
-                    game = None;
+                    engine.ucinewgame();
                 }
                 UciCommand::Position(g) => {
                     game = Some(g);
