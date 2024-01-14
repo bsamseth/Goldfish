@@ -47,7 +47,7 @@ pub struct Entry {
 /// The table is a fixed-size array of entries. The size is specified at creation time.
 /// The entries in the table are indexed by the Zobrist key of the position they represent.
 ///
-/// See `Entry` for more information on the contents of each entry.
+/// See [`Entry`] for more information on the contents of each entry.
 #[derive(Debug)]
 pub struct TranspositionTable {
     entries: Vec<Option<Entry>>,
@@ -83,7 +83,9 @@ impl TranspositionTable {
     /// # Safety
     /// It is always safe to use the returned index to access the table.
     fn index(&self, key: u64) -> usize {
-        key as usize % self.entries.len()
+        #[allow(clippy::cast_possible_truncation)]
+        let key = key as usize;
+        key % self.entries.len()
     }
 
     /// Returns the checkbits for the given key.
@@ -93,7 +95,7 @@ impl TranspositionTable {
 
     /// Returns an entry for the given key if it exists and is valid.
     ///
-    /// Two conditions must be met to get a `Some` value:
+    /// Two conditions must be met to get a [`Some`] value:
     ///
     /// 1. The entry must exist, i.e. the position must have been stored in the table.
     /// 2. The entry must have a depth greater than or equal to the requested depth.

@@ -46,7 +46,7 @@ impl uci::UciEngine for Engine {
             option_type: uci::EngineOptionType::Spin,
             default: Some(format!("{DEFAULT_HASH_SIZE_MB}")),
             min: Some(1),
-            max: Some(33554432), // Lots of memory, stockfish uses this max 🤷.
+            max: Some(33_554_432), // Lots of memory, stockfish uses this max 🤷.
             var: None,
         }]
     }
@@ -72,7 +72,7 @@ impl uci::UciEngine for Engine {
         let game = game.clone();
         let tt = self.transposition_table.clone();
         self.searcher = Some(std::thread::spawn(move || {
-            let mut searcher = search::Searcher::new(game, options, ss, tt);
+            let mut searcher = search::Searcher::new(game, &options, ss, tt);
             let bm = searcher.run();
             best_move
                 .send(bm)

@@ -46,7 +46,7 @@ impl Logger {
         self.total_nodes += 1;
         self.current_max_depth = self.current_max_depth.max(ply);
 
-        self.send_optional_status()
+        self.send_optional_status();
     }
 
     pub fn send_optional_status(&mut self) {
