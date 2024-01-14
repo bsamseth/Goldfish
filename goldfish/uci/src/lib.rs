@@ -1,244 +1,52 @@
-/// A crate for implementing UCI chess engines.
-///
-/// Defines types and scaffolding for engines to implement the [UCI protocol](uci-protocol).
-///
-/// [uci-protocol]: https://www.wbec-ridderkerk.nl/html/UCIProtocol.html
-mod types;
+/*!
+A crate for implementing UCI chess engines.
 
-use chess::Game;
-use std::io::BufRead;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+Defines types and scaffolding for engines to implement the [UCI protocol][uci-protocol].
 
-use types::UciCommand;
+# Example
 
-pub use types::{EngineOptionSpesification, EngineOptionType, GoOption};
-pub use types::{Info, InfoPart};
+This example shows how the main function could be set up, provided you have a struct that implements the [`UciEngine`] trait.
+You simply call [`start`] with an instance of your engine, and the UCI protocol will be handled for you.
 
-/// Engines must implement this trait to be compatible with this crate.
-pub trait UciEngine {
-    /// The name of the engine, possibly including a version number.
-    ///
-    /// This will be sent to the GUI in response to a `uci` command, and
-    /// might be used to identify the engine in the GUI. Any newlines will
-    /// be replaced with spaces.
-    fn name(&self) -> String;
+```rust
+use anyhow::Result;
 
-    /// The name of the author of the engine.
-    ///
-    /// This will be sent to the GUI in response to a `uci` command, and
-    /// might be used to identify the engine in the GUI. Any newlines will
-    /// be replaced with spaces.
-    fn author(&self) -> String;
+struct MyEngine;
+impl uci::UciEngine for MyEngine {
+    ...
+}
 
-    /// The options supported by the engine.
-    ///
-    /// This will be sent to the GUI in response to a `uci` command, and
-    /// might be used to configure the engine. See `EngineOptionSpesification`.
-    ///
-    /// By default, this function returns an empty vector, i.e. no supported options.
-    fn options(&self) -> Vec<EngineOptionSpesification> {
-        vec![]
-    }
+fn main() -> Result<()> {
+    // If you want to enable logging, you must configure it to log to stderr.
+    // Otherwise the logs will be read as if they were UCI responses.
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .with_writer(std::io::stderr)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber)?;
 
-    /// Recieve a `ucinewgame` command.
-    ///
-    /// This is sent to the engine when the next search (started with "position" and "go")
-    /// will be from a different game. Engines _could_ clear transposition tables and such,
-    /// but the engine is free to do anything here. This function should not block. The GUI
-    /// will send a `isready` command after this, so the engine could do background processing
-    /// if needed.
-    ///
-    /// By default, this function does nothing.
-    fn ucinewgame(&mut self) {}
-
-    /// Set an option to the given value.
-    ///
-    /// This will be called when the GUI sends a `setoption` command.
-    /// The engine should update its internal state to reflect the new value.
-    /// If the value is invalid, the engine might log an error, but should otherwise ignore
-    /// the command.
-    fn set_option(&mut self, name: &str, value: &str);
-
-    /// Ensure the engine is ready to recieve commands.
-    ///
-    /// Called when the GUI sends a `isready` command. The protocol will always respond
-    /// with `readyok`, but can optionally block until it is ready to proceed.
-    ///
-    /// By default, this function does nothing, and signals readiness immediately.
-    fn ready(&mut self) {}
-
-    /// Start a search.
-    ///
-    /// The game contains the current state of the board, including any moves leading up to it.
-    /// The options indicate any search options that were specified by the GUI.
-    /// The info writer can be used to send information about the search back to the GUI.
-    /// When the search stops, a move _must_ be sent to the GUI using the `best_move` sender.
-    ///
-    /// # Important
-    /// This function should _not_ block, but should return immediately.
-    ///
-    /// # Guarantees
-    /// The engine will never be sent a `go` command with a game in an invalid state or a game that
-    /// already has a result. I.e. the board will be a valid chess position with at least one legal
-    /// move.
-    fn go(
-        &mut self,
-        game: Game,
-        options: Vec<GoOption>,
-        info_writer: InfoWriter,
-        best_move: std::sync::mpsc::Sender<chess::ChessMove>,
+    // UCI engines aren't required to do anything before they are asked to,
+    // but it is common to print a greeting when started.
+    println!(
+        "Example engine, version {}, by {}",
+        env!("CARGO_PKG_VERSION"),
+        env!("CARGO_PKG_AUTHORS"),
     );
 
-    /// Stop the search.
-    ///
-    /// This will only be called when the previous command was a `go` command,
-    /// but could be sent even after the engine has decided end the search on its own.
-    /// The engine should stop searching as soon as possible.
-    ///
-    /// When the search has been stopped, either by itself or after a stop signal,
-    /// the engine should send the best move to the GUI, using the `best_move` sender.
-    fn stop(&mut self);
-}
-
-#[derive(Debug)]
-pub struct InfoWriter {
-    sender: std::sync::mpsc::Sender<Info>,
-}
-
-impl InfoWriter {
-    /// Send an `Info` to the GUI.
-    ///
-    /// # Panics
-    /// This function will panic if the UCI communication loop has exited. But if this
-    /// happens, all threads will be dropped anyway, meaning no one would be able to trigger
-    /// this function. So it's safe to assume that this function will never panic.
-    pub fn send_info(&self, info: Info) {
-        self.sender.send(info).expect("should be able to send info");
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum UciError {
-    #[error("EOF while reading from stdin")]
-    Eof(String),
-    #[error("Failed to read line from stdin")]
-    ReadLine(#[from] std::io::Error),
-    #[error("Engine did not send best move")]
-    NoBestMove(#[from] std::sync::mpsc::RecvError),
-}
-
-/// Start the UCI communication loop.
-///
-/// This function will block until the `quit` command is received, or an error occurs.
-///
-/// # Important
-/// This crate uses `tracing` for logging. If you enable logging, e.g. using `tracing_subscriber`,
-/// you **must** configure it to log to stderr. Otherwise, the UCI protocol will be violated, as
-/// communication is done over stdin/stdout.
-///
-/// # Note
-/// For convenience during debug, this UCI implementation will act as if a `position startpos` has
-/// been given already. That is, it will accept a `go` command without a `position` command
-/// first.
-///
-/// # Errors
-/// This function will return an error if it fails to read from stdin.
-///
-/// It will _not_ return an error if it encounters an invalid UCI command. In this case the
-/// error message will be logged to stderr, and otherwise ignored.
-pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
-    let mut game = Game::new();
-    let searching = Arc::new(AtomicBool::new(false));
-
-    let (info_sender_tx, info_sender_rx) = std::sync::mpsc::channel::<Info>();
-    std::thread::spawn(move || {
-        while let Ok(info) = info_sender_rx.recv() {
-            println!("{info}");
-        }
-    });
-
-    let (best_move_tx, best_move_rx) = std::sync::mpsc::channel::<chess::ChessMove>();
-    let _searching = searching.clone();
-    std::thread::spawn(move || {
-        while let Ok(best_move) = best_move_rx.recv() {
-            _searching.store(false, Ordering::Relaxed);
-            println!("bestmove {}", best_move);
-        }
-    });
-
-    let stdin = std::io::stdin();
-    loop {
-        let line =
-            stdin.lock().lines().next().ok_or_else(|| {
-                UciError::Eof("Reached EOF while reading from stdin".to_string())
-            })??;
-
-        let command = UciCommand::from(line.as_str());
-
-        if searching.load(Ordering::Relaxed) {
-            match command {
-                UciCommand::Stop => {
-                    engine.stop();
-                    searching.store(false, Ordering::Relaxed);
-                }
-                UciCommand::Quit => {
-                    engine.stop();
-                    break;
-                }
-                _ => {
-                    tracing::info!("Search in progress, ignoring command: {command:?}");
-                }
-            }
-        } else {
-            match command {
-                UciCommand::Unknown(e) => {
-                    tracing::error!("{}", e);
-                }
-                UciCommand::Uci => {
-                    println!("id name {}", engine.name().replace('\n', " "));
-                    println!("id author {}", engine.author().replace('\n', " "));
-
-                    println!();
-                    for option in engine.options() {
-                        println!("{}", option);
-                    }
-                    println!("uciok");
-                }
-                UciCommand::Debug => unimplemented!(),
-                UciCommand::IsReady => {
-                    engine.ready();
-                    println!("readyok");
-                }
-                UciCommand::SetOption(option) => {
-                    engine.set_option(&option.name, &option.value);
-                }
-                UciCommand::UciNewGame => {
-                    engine.ucinewgame();
-                }
-                UciCommand::Position(g) => {
-                    game = g;
-                }
-                UciCommand::Go(options) => {
-                    let options = if options.is_empty() {
-                        vec![GoOption::Infinite]
-                    } else {
-                        options
-                    };
-                    let info_writer = InfoWriter {
-                        sender: info_sender_tx.clone(),
-                    };
-                    engine.go(game.clone(), options, info_writer, best_move_tx.clone());
-                    searching.store(true, Ordering::Relaxed);
-                }
-                UciCommand::Stop => {
-                    tracing::info!("No search in progress, ignoring stop command.");
-                }
-                UciCommand::PonderHit => unimplemented!(),
-                UciCommand::Quit => break,
-            }
-        }
-    }
-
+    uci::start(MyEngine{})?;
     Ok(())
 }
+```
+
+[uci-protocol]: https://www.wbec-ridderkerk.nl/html/UCIProtocol.html
+*/
+
+mod comm;
+mod commands;
+mod error;
+mod responses;
+mod uciengine;
+
+pub use comm::start;
+pub use commands::GoOption;
+pub use responses::{EngineOptionSpesification, EngineOptionType, Info, InfoPart};
+pub use uciengine::UciEngine;
