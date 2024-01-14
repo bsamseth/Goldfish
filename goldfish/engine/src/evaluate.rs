@@ -9,6 +9,10 @@ use chess::{BitBoard, Board, Piece, Square};
 
 use crate::value::Value;
 
+/// Piece-square tables (PSQTs).
+///
+/// Important: These should be written from white's perspective, with A8 being index 0 and H1 being
+/// index 63, and must be symmetric along the center of the board.
 #[rustfmt::skip]
 const PAWN_TABLE: [i8; 64] = [
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -177,17 +181,23 @@ fn evaluate_piece_square_tables(board: &Board) -> Value {
         };
 
         let index = if color == chess::Color::White {
-            s.to_index()
-        } else {
-            // Note that this doesn't "flip" the board, but rather rotates it 180 degrees.
-            // The piece-square tables are symmetric, so this makes no difference, and is
-            // simpler (and possibly faster) to implement.
+            // The PSQTs are written as a board from white's perspective, but the
+            // indices are reversed when written this way. A1 == 0, but index 0 is A8.
+            // Therefore we need to convert the square to the correct index. Because the piece
+            // square tables are entierly symmetric, we can just do 64 - index. This strictly
+            // speaking returns e.g. F6 when given F3, but symmetry makes this the easiest
+            // way to implement this.
             63 - s.to_index()
+        } else {
+            // From black's perspective, we should flip the PSQT before doing the same as we
+            // did for white. But this would be flipping twice, so we can just use the index
+            // as-is. We again rely on the PSQTs to be symmetric for this to work.
+            s.to_index()
         };
 
         let score = i32::from(table[index]);
 
-        if color == chess::Color::White {
+        if color == board.side_to_move() {
             total += score;
         } else {
             total -= score;
