@@ -137,13 +137,18 @@ pub enum UciError {
 /// you **must** configure it to log to stderr. Otherwise, the UCI protocol will be violated, as
 /// communication is done over stdin/stdout.
 ///
+/// # Note
+/// For convenience during debug, this UCI implementation will act as if a `position startpos` has
+/// been given already. That is, it will accept a `go` command without a `position` command
+/// first.
+///
 /// # Errors
 /// This function will return an error if it fails to read from stdin.
 ///
 /// It will _not_ return an error if it encounters an invalid UCI command. In this case the
 /// error message will be logged to stderr, and otherwise ignored.
 pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
-    let mut game = None;
+    let mut game = Game::new();
     let searching = Arc::new(AtomicBool::new(false));
 
     let (info_sender_tx, info_sender_rx) = std::sync::mpsc::channel::<Info>();
@@ -212,23 +217,19 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), UciError> {
                     engine.ucinewgame();
                 }
                 UciCommand::Position(g) => {
-                    game = Some(g);
+                    game = g;
                 }
                 UciCommand::Go(options) => {
-                    if let Some(game) = &game {
-                        let options = if options.is_empty() {
-                            vec![GoOption::Infinite]
-                        } else {
-                            options
-                        };
-                        let info_writer = InfoWriter {
-                            sender: info_sender_tx.clone(),
-                        };
-                        engine.go(game.clone(), options, info_writer, best_move_tx.clone());
-                        searching.store(true, Ordering::Relaxed);
+                    let options = if options.is_empty() {
+                        vec![GoOption::Infinite]
                     } else {
-                        tracing::error!("No position set, ignoring go command.");
-                    }
+                        options
+                    };
+                    let info_writer = InfoWriter {
+                        sender: info_sender_tx.clone(),
+                    };
+                    engine.go(game.clone(), options, info_writer, best_move_tx.clone());
+                    searching.store(true, Ordering::Relaxed);
                 }
                 UciCommand::Stop => {
                     tracing::info!("No search in progress, ignoring stop command.");
