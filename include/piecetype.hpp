@@ -3,6 +3,7 @@
 #include "value.hpp"
 
 #include <array>
+#include <stdexcept>
 
 namespace goldfish
 {
