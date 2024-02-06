@@ -1,5 +1,3 @@
-use chess::Game;
-
 use crate::commands::GoOption;
 use crate::responses::EngineOptionSpesification;
 
@@ -58,7 +56,7 @@ pub trait UciEngine {
 
     /// Start a search.
     ///
-    /// The game contains the current state of the board, including any moves leading up to it.
+    ///
     /// The options indicate any search options that were specified by the GUI.
     /// The info writer can be used to send information about the search back to the GUI.
     /// When the search stops, a move _must_ be sent to the GUI using the `best_move` sender.
@@ -72,7 +70,7 @@ pub trait UciEngine {
     /// move.
     fn go(
         &mut self,
-        game: Game,
+        position: UciPosition,
         options: Vec<GoOption>,
         best_move: std::sync::mpsc::Sender<chess::ChessMove>,
     );
@@ -86,4 +84,11 @@ pub trait UciEngine {
     /// When the search has been stopped, either by itself or after a stop signal,
     /// the engine should send the best move to the GUI, using the `best_move` sender.
     fn stop(&mut self);
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UciPosition {
+    pub start_pos: chess::Board,
+    pub moves: Vec<chess::ChessMove>,
+    pub starting_halfmove_clock: usize,
 }
