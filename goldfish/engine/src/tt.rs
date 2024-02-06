@@ -1,6 +1,6 @@
 use chess::ChessMove;
 
-use crate::value::{Depth, Value};
+use crate::value::{self, Depth, Value};
 
 /// A bound on the value of a position.
 ///
@@ -26,6 +26,16 @@ impl std::ops::BitAnd for Bound {
     }
 }
 
+/// A [`Value`] with special handling for mate scores.
+///
+/// In short, mates are scored as the distance to the mate from the root position, but that
+/// distance might be different between two nodes that are transpositions of each other.
+/// Therefore, we store instead the distance to the mate from the current position, which
+/// would be the same for both nodes. More detailed explenation below.
+/// [`https://github.com/maksimKorzh/chess_programming/blob/master/src/bbc/tt_search_mating_scores/TT_mate_scoring.txt`]
+#[derive(Debug, Clone, Copy)]
+struct TtValue(Value);
+
 /// A transposition table entry.
 ///
 /// Each entry stores the following information:
@@ -34,11 +44,11 @@ impl std::ops::BitAnd for Bound {
 /// - Bound: The type of the value stored in the entry.
 /// - Depth: The depth at which the value was computed.
 #[derive(Debug, Clone)]
-pub struct Entry {
+struct Entry {
     checkbits: u32,
     pub mv: Option<ChessMove>,
     pub bound: Bound,
-    pub value: Value,
+    pub value: TtValue,
     depth: Depth,
 }
 
@@ -99,13 +109,18 @@ impl TranspositionTable {
     ///
     /// 1. The entry must exist, i.e. the position must have been stored in the table.
     /// 2. The entry must have a depth greater than or equal to the requested depth.
-    pub fn get(&self, key: u64, depth: Depth) -> Option<(Option<ChessMove>, Bound, Value)> {
+    pub fn get(
+        &self,
+        key: u64,
+        depth: Depth,
+        ply: Depth,
+    ) -> Option<(Option<ChessMove>, Bound, Value)> {
         // Safety: `index` is guaranteed to return a valid index.
         let entry = unsafe { self.entries.get_unchecked(self.index(key)).as_ref() };
 
         entry
             .filter(|entry| Self::checkbits(key) == entry.checkbits && depth <= entry.depth)
-            .map(|entry| (entry.mv, entry.bound, entry.value))
+            .map(|entry| (entry.mv, entry.bound, entry.value.into(ply)))
     }
 
     /// Stores an entry in the table if it is better than the current entry.
@@ -124,6 +139,7 @@ impl TranspositionTable {
         bound: Bound,
         value: Value,
         depth: Depth,
+        ply: Depth,
     ) {
         let index = self.index(key);
         // Safety: `index` is guaranteed to return a valid index.
@@ -134,9 +150,31 @@ impl TranspositionTable {
                 checkbits: (key >> 32) as u32,
                 mv,
                 bound,
-                value,
+                value: TtValue::from(value, ply),
                 depth,
             });
+        }
+    }
+}
+
+impl TtValue {
+    fn from(value: Value, ply: Depth) -> Self {
+        if value >= value::CHECKMATE_THRESHOLD {
+            Self(value + Value::from(ply))
+        } else if value <= -value::CHECKMATE_THRESHOLD {
+            Self(value - Value::from(ply))
+        } else {
+            Self(value)
+        }
+    }
+
+    fn into(self, ply: Depth) -> Value {
+        if self.0 >= value::CHECKMATE_THRESHOLD {
+            self.0 - Value::from(ply)
+        } else if self.0 <= -value::CHECKMATE_THRESHOLD {
+            self.0 + Value::from(ply)
+        } else {
+            self.0
         }
     }
 }
