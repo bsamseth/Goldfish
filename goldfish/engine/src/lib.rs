@@ -1,3 +1,4 @@
+mod board;
 mod evaluate;
 mod limits;
 mod logger;
@@ -7,7 +8,6 @@ mod stop_signal;
 mod tt;
 mod value;
 
-use chess::Game;
 use std::sync::{Arc, RwLock};
 
 use stop_signal::StopSignal;
@@ -59,7 +59,7 @@ impl uci::UciEngine for Engine {
 
     fn go(
         &mut self,
-        game: Game,
+        position: uci::UciPosition,
         options: Vec<uci::GoOption>,
         best_move: std::sync::mpsc::Sender<chess::ChessMove>,
     ) {
@@ -69,14 +69,17 @@ impl uci::UciEngine for Engine {
 
         self.stop_signal = StopSignal::default();
         let ss = self.stop_signal.clone();
-        let game = game.clone();
         let tt = self.transposition_table.clone();
-        self.searcher = Some(std::thread::spawn(move || {
-            let mut searcher = search::Searcher::new(game, &options, ss, tt);
-            let bm = searcher.run();
-            best_move
-                .send(bm)
-                .expect("should be able to send best move back to GUI");
+        self.searcher = Some(std::thread::spawn({
+            let ss = ss.clone();
+            let tt = tt.clone();
+            move || {
+                let mut searcher = search::Searcher::new(position, &options, ss, tt);
+                let bm = searcher.run();
+                best_move
+                    .send(bm)
+                    .expect("should be able to send best move back to GUI");
+            }
         }));
     }
 

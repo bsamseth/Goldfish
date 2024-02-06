@@ -1,6 +1,9 @@
-use chess::{Board, ChessMove, Game, MoveGen};
 use std::sync::{Arc, RwLock};
 
+use chess::{Board, ChessMove, MoveGen};
+use uci::UciPosition;
+
+use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
 use crate::limits::Limits;
 use crate::logger::Logger;
@@ -11,8 +14,8 @@ use crate::value::{self, Depth, Value};
 
 #[derive(Debug)]
 pub struct Searcher {
-    game: Game,
     root_position: Board,
+    ss: [StackState; value::MAX_PLY as usize + 1],
     limits: Limits,
     logger: Logger,
     stop_signal: StopSignal,
@@ -20,18 +23,32 @@ pub struct Searcher {
     transposition_table: Arc<RwLock<TranspositionTable>>,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+struct StackState {
+    halfmove_clock: usize,
+}
+
 impl Searcher {
     pub fn new(
-        game: Game,
+        position: UciPosition,
         options: &[uci::GoOption],
         stop_signal: StopSignal,
         transposition_table: Arc<RwLock<TranspositionTable>>,
     ) -> Self {
-        let root_moves = MoveVec::new_from_moves(MoveGen::new_legal(&game.current_position()));
-        let root_position = game.current_position();
+        let mut board = position.start_pos;
+        let mut root_position = board;
+        let mut halfmove_clock = position.starting_halfmove_clock;
+        for mv in position.moves {
+            board.make_move_with_halfmove(mv, &mut root_position, &mut halfmove_clock);
+            board = root_position;
+        }
+
+        let root_moves = MoveVec::new_from_moves(MoveGen::new_legal(&root_position));
+        let mut stack_states = [StackState::default(); value::MAX_PLY as usize + 1];
+        stack_states[0].halfmove_clock = halfmove_clock;
         Self {
-            game,
             root_position,
+            ss: stack_states,
             limits: Limits::from(options),
             logger: Logger::new(),
             stop_signal,
@@ -115,7 +132,7 @@ impl Searcher {
             *m = MoveEntry::new(m.mv);
         });
 
-        let root_board = self.game.current_position();
+        let root_board = self.root_position;
         let mut board = root_board;
         let mut best_value = -value::INFINITE;
 
@@ -123,7 +140,7 @@ impl Searcher {
             self.logger.set_current_move(mv.mv, mv_nr + 1);
             self.logger.send_status();
 
-            root_board.make_move(mv.mv, &mut board);
+            root_board.make_move_with_halfmove(mv.mv, &mut board, &mut self.ss[1].halfmove_clock);
 
             let value = self.pv_search(&board, depth, alpha, beta, 0, mv_nr);
 
@@ -193,6 +210,7 @@ impl Searcher {
 
         // TODO: Halfmove clock, repetition and insufficient material draw detection.
 
+        // Check the transposition table for a stored value before we do anything else.
         let alpha_orig = alpha;
         let tt_entry = self
             .transposition_table
@@ -226,7 +244,11 @@ impl Searcher {
         let mut new_board = *board;
 
         for (mv_nr, mv) in moves.enumerate() {
-            board.make_move(mv, &mut new_board);
+            board.make_move_with_halfmove(
+                mv,
+                &mut new_board,
+                &mut self.ss[usize::from(ply) + 1].halfmove_clock,
+            );
 
             let value = self.pv_search(&new_board, depth, alpha, beta, ply, mv_nr);
 
@@ -322,7 +344,11 @@ impl Searcher {
         let mut new_board = *board;
 
         for mv in captures {
-            board.make_move(mv, &mut new_board);
+            board.make_move_with_halfmove(
+                mv,
+                &mut new_board,
+                &mut self.ss[usize::from(ply) + 1].halfmove_clock,
+            );
 
             let value = -self.quiescence_search(&new_board, -beta, -alpha, ply + 1);
 
