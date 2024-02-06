@@ -24,8 +24,9 @@ pub struct Searcher {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-struct StackState {
-    halfmove_clock: usize,
+pub struct StackState {
+    pub halfmove_clock: usize,
+    pub zobrist: u64,
 }
 
 impl Searcher {
@@ -39,20 +40,28 @@ impl Searcher {
         let mut root_position = board;
         let mut halfmove_clock = position.starting_halfmove_clock;
         for mv in position.moves {
-            board.make_move_with_halfmove(mv, &mut root_position, &mut halfmove_clock);
+            if board.halfmove_reset(mv) {
+                halfmove_clock = 0;
+            } else {
+                halfmove_clock += 1;
+            }
+            board.make_move(mv, &mut root_position);
             board = root_position;
         }
 
-        let root_moves = MoveVec::new_from_moves(MoveGen::new_legal(&root_position));
         let mut stack_states = [StackState::default(); value::MAX_PLY as usize + 1];
-        stack_states[0].halfmove_clock = halfmove_clock;
+        stack_states[0] = StackState {
+            halfmove_clock,
+            zobrist: root_position.get_hash(),
+        };
+
         Self {
             root_position,
             ss: stack_states,
             limits: Limits::from(options),
             logger: Logger::new(),
             stop_signal,
-            root_moves,
+            root_moves: MoveVec::new_from_moves(MoveGen::new_legal(&root_position)),
             transposition_table,
         }
     }
@@ -140,7 +149,7 @@ impl Searcher {
             self.logger.set_current_move(mv.mv, mv_nr + 1);
             self.logger.send_status();
 
-            root_board.make_move_with_halfmove(mv.mv, &mut board, &mut self.ss[1].halfmove_clock);
+            self.make_move(&root_board, mv.mv, &mut board, 0);
 
             let value = self.pv_search(&board, depth, alpha, beta, 0, mv_nr);
 
@@ -208,7 +217,9 @@ impl Searcher {
             return board.evaluate();
         }
 
-        // TODO: Halfmove clock, repetition and insufficient material draw detection.
+        if self.is_draw(board, ply) {
+            return value::DRAW;
+        }
 
         // Check the transposition table for a stored value before we do anything else.
         let alpha_orig = alpha;
@@ -216,7 +227,7 @@ impl Searcher {
             .transposition_table
             .read()
             .unwrap()
-            .get(board.get_hash(), depth);
+            .get(self.ss[usize::from(ply)].zobrist, depth);
         if let Some((_, bound, value)) = tt_entry {
             if bound & Bound::Lower && alpha < value {
                 alpha = value;
@@ -244,11 +255,7 @@ impl Searcher {
         let mut new_board = *board;
 
         for (mv_nr, mv) in moves.enumerate() {
-            board.make_move_with_halfmove(
-                mv,
-                &mut new_board,
-                &mut self.ss[usize::from(ply) + 1].halfmove_clock,
-            );
+            self.make_move(board, mv, &mut new_board, ply);
 
             let value = self.pv_search(&new_board, depth, alpha, beta, ply, mv_nr);
 
@@ -288,7 +295,7 @@ impl Searcher {
         };
 
         self.transposition_table.write().unwrap().store(
-            board.get_hash(),
+            self.ss[usize::from(ply)].zobrist,
             best_move,
             bound,
             best_value,
@@ -311,7 +318,9 @@ impl Searcher {
             return board.evaluate();
         }
 
-        // TODO: Halfmove clock, repetition and insufficient material draw detection.
+        if self.is_draw(board, ply) {
+            return value::DRAW;
+        }
 
         let mut best_value = -value::INFINITE;
 
@@ -344,11 +353,7 @@ impl Searcher {
         let mut new_board = *board;
 
         for mv in captures {
-            board.make_move_with_halfmove(
-                mv,
-                &mut new_board,
-                &mut self.ss[usize::from(ply) + 1].halfmove_clock,
-            );
+            self.make_move(board, mv, &mut new_board, ply);
 
             let value = -self.quiescence_search(&new_board, -beta, -alpha, ply + 1);
 
@@ -370,5 +375,44 @@ impl Searcher {
         }
 
         best_value
+    }
+
+    /// Make a move on a pre-allocated board, and update the stack state.
+    ///
+    /// The move must be valid for [`board`], and [`result`] will be the result of
+    /// applying [`mv`] to [`board`].
+    ///
+    /// [`ply`] should be the current ply count in the search, and _not_ the count after the move
+    /// is made. I.e. this should be true: [`self.ss[ply].zobrist == board.get_hash()`].
+    fn make_move(&mut self, board: &Board, mv: ChessMove, result: &mut Board, ply: Depth) {
+        let current_halfmove = self.ss[usize::from(ply)].halfmove_clock;
+        let new_ss = &mut self.ss[usize::from(ply) + 1];
+
+        if board.halfmove_reset(mv) {
+            new_ss.halfmove_clock = 0;
+        } else {
+            new_ss.halfmove_clock = current_halfmove + 1;
+        }
+        board.make_move(mv, result);
+        new_ss.zobrist = result.get_hash();
+    }
+
+    fn is_draw(&self, board: &Board, ply: Depth) -> bool {
+        let ply = ply as usize;
+        if self.ss[ply].halfmove_clock >= 100 || board.has_insufficient_material() {
+            return true;
+        }
+
+        // Check for repetition.
+        // Check positions from the last halfmove clock reset, and return true if we've seen the
+        // same position twice before. Positions are treated as equal by their Zobrist keys.
+        self.ss[ply.saturating_sub(self.ss[ply].halfmove_clock)..ply]
+            .iter()
+            .filter({
+                let latest_zobrist = self.ss[ply].zobrist;
+                move |s| s.zobrist == latest_zobrist
+            })
+            .count()
+            >= 2
     }
 }
