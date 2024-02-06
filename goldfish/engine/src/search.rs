@@ -96,11 +96,11 @@ impl Searcher {
         board = board.make_move_new(first_move);
         pv.push(first_move);
 
-        while let Some((Some(mv), _, _)) = self
-            .transposition_table
-            .read()
-            .unwrap()
-            .get(board.get_hash(), 0)
+        while let Some((Some(mv), _, _)) =
+            self.transposition_table
+                .read()
+                .unwrap()
+                .get(board.get_hash(), 0, 0)
         {
             pv.push(mv);
             board = board.make_move_new(mv);
@@ -223,11 +223,11 @@ impl Searcher {
 
         // Check the transposition table for a stored value before we do anything else.
         let alpha_orig = alpha;
-        let tt_entry = self
-            .transposition_table
-            .read()
-            .unwrap()
-            .get(self.ss[usize::from(ply)].zobrist, depth);
+        let tt_entry = self.transposition_table.read().unwrap().get(
+            self.ss[usize::from(ply)].zobrist,
+            depth,
+            ply,
+        );
         if let Some((_, bound, value)) = tt_entry {
             if bound & Bound::Lower && alpha < value {
                 alpha = value;
@@ -300,6 +300,7 @@ impl Searcher {
             bound,
             best_value,
             depth,
+            ply,
         );
 
         best_value
