@@ -2,11 +2,10 @@ use std::io::BufRead;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use chess::Game;
-
 use crate::commands::{GoOption, UciCommand};
 use crate::error::Error;
 use crate::uciengine::UciEngine;
+use crate::UciPosition;
 
 /// Start the UCI communication loop.
 ///
@@ -28,7 +27,7 @@ use crate::uciengine::UciEngine;
 /// It will _not_ return an error if it encounters an invalid UCI command. In this case the
 /// error message will be logged to stderr, and otherwise ignored.
 pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
-    let mut game = Game::new();
+    let mut position = UciPosition::default();
     let searching = Arc::new(AtomicBool::new(false));
 
     let (best_move_tx, best_move_rx) = std::sync::mpsc::channel::<chess::ChessMove>();
@@ -90,8 +89,8 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
                 UciCommand::UciNewGame => {
                     engine.ucinewgame();
                 }
-                UciCommand::Position(g) => {
-                    game = g;
+                UciCommand::Position(pos) => {
+                    position = pos;
                 }
                 UciCommand::Go(options) => {
                     let options = if options.is_empty() {
@@ -99,7 +98,7 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
                     } else {
                         options
                     };
-                    engine.go(game.clone(), options, best_move_tx.clone());
+                    engine.go(position.clone(), options, best_move_tx.clone());
                     searching.store(true, Ordering::Relaxed);
                 }
                 UciCommand::Stop => {

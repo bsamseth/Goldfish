@@ -49,4 +49,4 @@ mod uciengine;
 pub use comm::start;
 pub use commands::GoOption;
 pub use responses::{EngineOptionSpesification, EngineOptionType, Info, InfoPart};
-pub use uciengine::UciEngine;
+pub use uciengine::{UciEngine, UciPosition};

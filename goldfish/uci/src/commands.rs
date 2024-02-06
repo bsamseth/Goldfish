@@ -1,5 +1,7 @@
-use chess::{ChessMove, Game};
+use chess::ChessMove;
 use std::str::FromStr;
+
+use crate::UciPosition;
 
 #[derive(Debug)]
 pub(crate) enum UciCommand {
@@ -8,7 +10,7 @@ pub(crate) enum UciCommand {
     IsReady,
     SetOption(EngineOption),
     UciNewGame,
-    Position(Game),
+    Position(UciPosition),
     Go(Vec<GoOption>),
     Stop,
     PonderHit,
@@ -100,7 +102,7 @@ impl std::str::FromStr for EngineOption {
     }
 }
 
-fn parse_position(s: &str) -> Result<Game, String> {
+fn parse_position(s: &str) -> Result<UciPosition, String> {
     const START_POS_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let split = s.split_whitespace().collect::<Vec<_>>();
     let (fen, rest) = match split.first() {
@@ -112,29 +114,30 @@ fn parse_position(s: &str) -> Result<Game, String> {
     };
 
     let moves = if rest.len() >= 2 && rest[0] == "moves" {
-        Some(
-            rest.iter()
-                .skip(1)
-                .map(|s| s.parse::<ChessMove>())
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| format!("Invalid move: {e}"))?,
-        )
+        rest.iter()
+            .skip(1)
+            .map(|s| s.parse::<ChessMove>())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| format!("Invalid move: {e}"))?
     } else if rest.is_empty() {
-        None
+        vec![]
     } else {
         return Err(format!("Invalid position: {s}"));
     };
 
-    let mut game = Game::from_str(&fen).map_err(|e| format!("{e}"))?;
-    if let Some(moves) = moves {
-        for mv in moves {
-            if !game.make_move(mv) {
-                return Err(format!("Invalid move: {mv}"));
-            }
-        }
-    }
+    let start_pos = chess::Board::from_str(&fen).map_err(|e| format!("{e}"))?;
+    let starting_halfmove_clock = fen
+        .split_whitespace()
+        .nth(4)
+        .unwrap()
+        .parse()
+        .map_err(|e| format!("{e}"))?;
 
-    Ok(game)
+    Ok(UciPosition {
+        start_pos,
+        moves,
+        starting_halfmove_clock,
+    })
 }
 
 fn parse_go_opitons(s: &str) -> Result<Vec<GoOption>, String> {
