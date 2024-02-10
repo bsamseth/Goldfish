@@ -85,7 +85,9 @@ impl Searcher {
     /// Another potential downside is that the PV might be cut short if a replacement occurs in the
     /// table. For a reasonable table size this should be rare, so this approach is the less
     /// intrusive one.
-    fn build_pv(&self) -> Vec<ChessMove> {
+    ///
+    /// The PV will contain at most `depth` moves, as any more than this would likely be speculative.
+    fn build_pv(&self, depth: Depth) -> Vec<ChessMove> {
         let mut pv = Vec::new();
         let mut board = self.root_position;
 
@@ -105,9 +107,7 @@ impl Searcher {
             pv.push(mv);
             board = board.make_move_new(mv);
 
-            if pv.len() >= 8 {
-                // A PV might be long, but nobody cares this much.
-                // Four full moves should be sufficient to show anybody the general plan.
+            if pv.len() >= depth as usize {
                 break;
             }
         }
@@ -174,7 +174,7 @@ impl Searcher {
                 }
 
                 self.logger
-                    .send_move(&self.root_moves[mv_nr], &self.build_pv());
+                    .send_move(&self.root_moves[mv_nr], &self.build_pv(depth));
             }
         }
     }
