@@ -125,15 +125,30 @@ impl Searcher {
             "no legal moves in starting position, uci-crate promise violation"
         );
 
+        let alpha = if let Some(mate_distance) = self.limits.mate {
+            let mate_score = value::CHECKMATE - Value::from(mate_distance);
+            mate_score - 1
+        } else {
+            -value::INFINITE
+        };
+
         for depth in 1..=self.limits.depth {
             if self.should_stop() {
                 break;
             }
 
             self.logger.set_current_depth(depth);
-            self.search_root(depth, -value::INFINITE, value::INFINITE);
+            self.search_root(depth, alpha, value::INFINITE);
 
             self.root_moves.sort_moves();
+
+            // If we're in mate search mode, and we've found a mate, we can stop if the mate is
+            // within the distance we're looking for.
+            if let Some(mate) = self.limits.mate {
+                if self.root_moves[0].value >= value::CHECKMATE - Value::from(mate) {
+                    break;
+                }
+            }
         }
 
         self.root_moves[0].mv
