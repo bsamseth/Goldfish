@@ -96,7 +96,7 @@ impl Searcher {
         board = board.make_move_new(first_move);
         pv.push(first_move);
 
-        while let Some((Some(mv), _, _)) =
+        while let Some((Some(mv), Bound::Exact, _)) =
             self.transposition_table
                 .read()
                 .unwrap()
@@ -104,6 +104,12 @@ impl Searcher {
         {
             pv.push(mv);
             board = board.make_move_new(mv);
+
+            if pv.len() >= 8 {
+                // A PV might be long, but nobody cares this much.
+                // Four full moves should be sufficient to show anybody the general plan.
+                break;
+            }
         }
 
         pv
