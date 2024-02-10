@@ -16,6 +16,9 @@ pub trait BoardExt {
     /// This does not include all technically insufficient material situations, but if this
     /// returns true, it is guaranteed that the game is a draw regardless of the moves played.
     fn has_insufficient_material(&self) -> bool;
+
+    /// Return true if the current side to move is in check.
+    fn in_check(&self) -> bool;
 }
 
 impl BoardExt for Board {
@@ -29,5 +32,9 @@ impl BoardExt for Board {
             && self.pieces(Piece::Queen).0 == 0
             && self.pieces(Piece::Rook).0 == 0
             && self.pieces(Piece::Bishop).popcnt() + self.pieces(Piece::Knight).popcnt() <= 1
+    }
+
+    fn in_check(&self) -> bool {
+        self.checkers().0 != 0
     }
 }
