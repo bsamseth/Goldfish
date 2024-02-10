@@ -47,6 +47,9 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
             .next()
             .ok_or_else(|| Error::Eof("Reached EOF while reading from stdin".to_string()))??;
 
+        if line.is_empty() {
+            continue;
+        }
         let command = UciCommand::from(line.as_str());
 
         if searching.load(Ordering::Relaxed) {
@@ -102,7 +105,7 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
                     searching.store(true, Ordering::Relaxed);
                 }
                 UciCommand::Stop => {
-                    tracing::info!("No search in progress, ignoring stop command.");
+                    tracing::debug!("No search in progress, ignoring stop command.");
                 }
                 UciCommand::PonderHit => unimplemented!(),
                 UciCommand::Quit => break,
