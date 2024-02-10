@@ -143,7 +143,6 @@ impl Searcher {
 
         let root_board = self.root_position;
         let mut board = root_board;
-        let mut best_value = -value::INFINITE;
 
         for (mv_nr, mv) in self.root_moves.clone().iter().enumerate() {
             self.logger.set_current_move(mv.mv, mv_nr + 1);
@@ -158,8 +157,6 @@ impl Searcher {
                 // Rely on whatever we've found so far on only.
                 return;
             }
-
-            best_value = best_value.max(value);
 
             if value > alpha {
                 alpha = value;
@@ -279,10 +276,10 @@ impl Searcher {
         }
 
         let bound = if possible_move_count == 0 {
-            best_value = if *board.checkers() == chess::EMPTY {
-                value::DRAW
-            } else {
+            best_value = if board.in_check() {
                 -value::CHECKMATE + Value::from(ply)
+            } else {
+                value::DRAW
             };
 
             Bound::Exact
@@ -326,7 +323,7 @@ impl Searcher {
         let mut best_value = -value::INFINITE;
 
         // Stand pat:
-        if *board.checkers() == chess::EMPTY {
+        if !board.in_check() {
             best_value = board.evaluate();
 
             if best_value > alpha {
@@ -338,22 +335,25 @@ impl Searcher {
             }
         }
 
-        let moves = MoveGen::new_legal(board);
+        let mut moves = MoveGen::new_legal(board);
 
         if moves.len() == 0 {
-            if *board.checkers() == chess::EMPTY {
+            if board.in_check() {
                 return value::DRAW;
             }
             return -value::CHECKMATE + Value::from(ply);
         }
 
-        let targets = board.color_combined(!board.side_to_move());
-        let mut captures = moves; // Rename to captures
-        captures.set_iterator_mask(*targets);
+        // If we're not in check, we only search captures.
+        // In check we should also consider evasions.
+        if !board.in_check() {
+            let targets = board.color_combined(!board.side_to_move());
+            moves.set_iterator_mask(*targets);
+        }
 
         let mut new_board = *board;
 
-        for mv in captures {
+        for mv in moves {
             self.make_move(board, mv, &mut new_board, ply);
 
             let value = -self.quiescence_search(&new_board, -beta, -alpha, ply + 1);
