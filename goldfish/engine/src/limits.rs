@@ -6,6 +6,7 @@ pub struct Limits {
     pub depth: Depth,
     pub nodes: usize,
     pub movetime: usize,
+    pub mate: Option<Depth>,
 }
 
 impl From<&[GoOption]> for Limits {
@@ -14,6 +15,7 @@ impl From<&[GoOption]> for Limits {
             depth: MAX_PLY,
             nodes: usize::MAX,
             movetime: usize::MAX,
+            mate: None,
         };
 
         for option in options {
@@ -24,6 +26,9 @@ impl From<&[GoOption]> for Limits {
                 }
                 GoOption::Nodes(nodes) => limits.nodes = limits.nodes.min(*nodes),
                 GoOption::MoveTime(movetime) => limits.movetime = limits.movetime.min(*movetime),
+                GoOption::Mate(full_moves) if *full_moves > 0 => {
+                    limits.mate = Some(Depth::try_from(*full_moves * 2 - 1).unwrap_or(MAX_PLY));
+                }
                 _ => {}
             }
         }
