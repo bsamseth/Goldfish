@@ -126,6 +126,7 @@ fn parse_position(s: &str) -> Result<UciPosition, String> {
     };
 
     let start_pos = chess::Board::from_str(&fen).map_err(|e| format!("{e}"))?;
+    verify_moves(start_pos, &moves)?;
     let starting_halfmove_clock = fen
         .split_whitespace()
         .nth(4)
@@ -138,6 +139,16 @@ fn parse_position(s: &str) -> Result<UciPosition, String> {
         moves,
         starting_halfmove_clock,
     })
+}
+
+fn verify_moves(mut board: chess::Board, moves: &[chess::ChessMove]) -> Result<(), String> {
+    for mv in moves {
+        if !board.legal(*mv) {
+            return Err(format!("Illegal move: {mv}"));
+        }
+        board = board.make_move_new(*mv);
+    }
+    Ok(())
 }
 
 fn parse_go_opitons(s: &str) -> Result<Vec<GoOption>, String> {
