@@ -7,7 +7,7 @@
 /// [cp-wiki]: https://www.chessprogramming.org/Simplified_Evaluation_Function
 use chess::{BitBoard, Board, Piece, Square};
 
-use crate::value::Value;
+use crate::newtypes::Value;
 
 /// Piece-square tables (PSQTs).
 ///
@@ -106,17 +106,17 @@ impl Evaluate for Board {
 /// The score is given w.r.t. the side to move, i.e. positive if the side to move has the better
 /// position, and negative if the opponent has the better position.
 fn evaluate(board: &Board) -> Value {
-    let mut score: Value = 0;
+    let mut score = Value::DRAW;
 
     score += evaluate_material(board);
     score += evaluate_piece_square_tables(board);
-    score += 1; // Add bonus for tempo.
+    score += Value::new(1); // Add bonus for tempo.
 
     score
 }
 
 fn evaluate_material(board: &Board) -> Value {
-    let mut score = 0;
+    let mut score = 0i32;
 
     let my_pieces = board.color_combined(board.side_to_move());
     let their_pieces = board.color_combined(!board.side_to_move());
@@ -146,9 +146,11 @@ fn evaluate_material(board: &Board) -> Value {
     score += count(my_pieces, queens) * 900;
     score -= count(their_pieces, queens) * 900;
 
-    score
-        .try_into()
-        .expect("material evaluation should not overflow an i16")
+    Value::new(
+        score
+            .try_into()
+            .expect("material evaluation should not overflow an i16"),
+    )
 }
 
 /// Evaluate the position using piece-square tables.
@@ -204,9 +206,11 @@ fn evaluate_piece_square_tables(board: &Board) -> Value {
         }
     }
 
-    total
-        .try_into()
-        .expect("piece square evaluation should not overflow an i16")
+    Value::new(
+        total
+            .try_into()
+            .expect("piece square evaluation should not overflow an i16"),
+    )
 }
 
 /// Determine if a given board is in the endgame.
