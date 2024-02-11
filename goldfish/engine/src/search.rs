@@ -8,14 +8,14 @@ use crate::evaluate::Evaluate;
 use crate::limits::Limits;
 use crate::logger::Logger;
 use crate::movelist::{MoveEntry, MoveVec};
+use crate::newtypes::{Depth, Ply, Value};
 use crate::stop_signal::StopSignal;
 use crate::tt::{Bound, TranspositionTable};
-use crate::value::{self, Depth, Value};
 
 #[derive(Debug)]
 pub struct Searcher {
     root_position: Board,
-    ss: [StackState; value::MAX_PLY as usize + 1],
+    ss: [StackState; Ply::MAX.as_usize() + 1],
     limits: Limits,
     logger: Logger,
     stop_signal: StopSignal,
@@ -49,7 +49,7 @@ impl Searcher {
             board = root_position;
         }
 
-        let mut stack_states = [StackState::default(); value::MAX_PLY as usize + 1];
+        let mut stack_states = [StackState::default(); Ply::MAX.as_usize() + 1];
         stack_states[0] = StackState {
             halfmove_clock,
             zobrist: root_position.get_hash(),
@@ -98,16 +98,15 @@ impl Searcher {
         board = board.make_move_new(first_move);
         pv.push(first_move);
 
-        while let Some((Some(mv), Bound::Exact, _)) =
-            self.transposition_table
-                .read()
-                .unwrap()
-                .get(board.get_hash(), 0, 0)
-        {
+        while let Some((Some(mv), Bound::Exact, _)) = self.transposition_table.read().unwrap().get(
+            board.get_hash(),
+            Depth::new(0),
+            Ply::new(0),
+        ) {
             pv.push(mv);
             board = board.make_move_new(mv);
 
-            if pv.len() >= depth as usize {
+            if pv.len() >= depth.as_usize() {
                 break;
             }
         }
@@ -126,26 +125,27 @@ impl Searcher {
         );
 
         let alpha = if let Some(mate_distance) = self.limits.mate {
-            let mate_score = value::CHECKMATE - Value::from(mate_distance);
-            mate_score - 1
+            Value::mate_in(mate_distance + Ply::new(1))
         } else {
-            -value::INFINITE
+            -Value::INFINITE
         };
 
-        for depth in 1..=self.limits.depth {
+        for depth in 1..=self.limits.depth.as_inner() {
+            let depth = Depth::new(depth);
+
             if self.should_stop() {
                 break;
             }
 
             self.logger.set_current_depth(depth);
-            self.search_root(depth, alpha, value::INFINITE);
+            self.search_root(depth, alpha, Value::INFINITE);
 
             self.root_moves.sort_moves();
 
             // If we're in mate search mode, and we've found a mate, we can stop if the mate is
             // within the distance we're looking for.
             if let Some(mate) = self.limits.mate {
-                if self.root_moves[0].value >= value::CHECKMATE - Value::from(mate) {
+                if self.root_moves[0].value >= Value::mate_in(mate) {
                     break;
                 }
             }
@@ -155,7 +155,7 @@ impl Searcher {
     }
 
     fn search_root(&mut self, depth: Depth, mut alpha: Value, beta: Value) {
-        assert!(depth > 0, "depth must be greater than 0");
+        assert!(depth > Depth::new(0), "depth must be greater than 0");
 
         // Reset all values, so the best move as determined at this new (larger) depth is pushed to the front
         self.root_moves.iter_mut().for_each(|m| {
@@ -169,9 +169,9 @@ impl Searcher {
             self.logger.set_current_move(mv.mv, mv_nr + 1);
             self.logger.send_status();
 
-            self.make_move(&root_board, mv.mv, &mut board, 0);
+            self.make_move(&root_board, mv.mv, &mut board, Ply::new(0));
 
-            let value = self.pv_search(&board, depth, alpha, beta, 0, mv_nr);
+            let value = self.pv_search(&board, depth, alpha, beta, Ply::new(0), mv_nr);
 
             if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
@@ -209,18 +209,30 @@ impl Searcher {
         depth: Depth,
         alpha: Value,
         beta: Value,
-        ply: Depth,
+        ply: Ply,
         mv_nr: usize,
     ) -> Value {
-        if depth > 1 && mv_nr > 0 {
-            let value = -self.search(board, depth - 1, -alpha - 1, -alpha, ply + 1);
+        if depth > Depth::new(1) && mv_nr > 0 {
+            let value = -self.search(
+                board,
+                depth - Depth::new(1),
+                -alpha - Value::new(1),
+                -alpha,
+                ply + Ply::new(1),
+            );
 
             if value <= alpha {
                 return value;
             }
         }
 
-        -self.search(board, depth - 1, -beta, -alpha, ply + 1)
+        -self.search(
+            board,
+            depth - Depth::new(1),
+            -beta,
+            -alpha,
+            ply + Ply::new(1),
+        )
     }
 
     fn search(
@@ -229,20 +241,20 @@ impl Searcher {
         depth: Depth,
         mut alpha: Value,
         mut beta: Value,
-        ply: Depth,
+        ply: Ply,
     ) -> Value {
-        if ply == value::MAX_PLY || self.should_stop() {
+        if ply == Ply::MAX || self.should_stop() {
             return board.evaluate();
         }
 
         if self.is_draw(board, ply) {
-            return value::DRAW;
+            return Value::DRAW;
         }
 
         // Check the transposition table for a stored value before we do anything else.
         let alpha_orig = alpha;
         let tt_entry = self.transposition_table.read().unwrap().get(
-            self.ss[usize::from(ply)].zobrist,
+            self.ss[ply.as_usize()].zobrist,
             depth,
             ply,
         );
@@ -259,7 +271,7 @@ impl Searcher {
             }
         }
 
-        if depth == 0 {
+        if depth == Depth::new(0) {
             return self.quiescence_search(board, alpha, beta, ply);
         }
 
@@ -268,7 +280,7 @@ impl Searcher {
         let moves = MoveGen::new_legal(board);
         let possible_move_count = moves.len();
 
-        let mut best_value = -value::INFINITE;
+        let mut best_value = -Value::INFINITE;
         let mut best_move = None;
         let mut new_board = *board;
 
@@ -298,9 +310,9 @@ impl Searcher {
 
         let bound = if possible_move_count == 0 {
             best_value = if board.in_check() {
-                -value::CHECKMATE + Value::from(ply)
+                Value::mated_in(ply)
             } else {
-                value::DRAW
+                Value::DRAW
             };
 
             Bound::Exact
@@ -313,7 +325,7 @@ impl Searcher {
         };
 
         self.transposition_table.write().unwrap().store(
-            self.ss[usize::from(ply)].zobrist,
+            self.ss[ply.as_usize()].zobrist,
             best_move,
             bound,
             best_value,
@@ -329,19 +341,19 @@ impl Searcher {
         board: &Board,
         mut alpha: Value,
         beta: Value,
-        ply: Depth,
+        ply: Ply,
     ) -> Value {
         self.logger.update_search(ply);
 
-        if ply == value::MAX_PLY || self.should_stop() {
+        if ply == Ply::MAX || self.should_stop() {
             return board.evaluate();
         }
 
         if self.is_draw(board, ply) {
-            return value::DRAW;
+            return Value::DRAW;
         }
 
-        let mut best_value = -value::INFINITE;
+        let mut best_value = -Value::INFINITE;
 
         // Stand pat:
         if !board.in_check() {
@@ -360,9 +372,9 @@ impl Searcher {
 
         if moves.len() == 0 {
             if board.in_check() {
-                return value::DRAW;
+                return Value::mated_in(ply);
             }
-            return -value::CHECKMATE + Value::from(ply);
+            return Value::DRAW;
         }
 
         // If we're not in check, we only search captures.
@@ -377,7 +389,7 @@ impl Searcher {
         for mv in moves {
             self.make_move(board, mv, &mut new_board, ply);
 
-            let value = -self.quiescence_search(&new_board, -beta, -alpha, ply + 1);
+            let value = -self.quiescence_search(&new_board, -beta, -alpha, ply + Ply::new(1));
 
             if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
@@ -406,9 +418,9 @@ impl Searcher {
     ///
     /// [`ply`] should be the current ply count in the search, and _not_ the count after the move
     /// is made. I.e. this should be true: [`self.ss[ply].zobrist == board.get_hash()`].
-    fn make_move(&mut self, board: &Board, mv: ChessMove, result: &mut Board, ply: Depth) {
-        let current_halfmove = self.ss[usize::from(ply)].halfmove_clock;
-        let new_ss = &mut self.ss[usize::from(ply) + 1];
+    fn make_move(&mut self, board: &Board, mv: ChessMove, result: &mut Board, ply: Ply) {
+        let current_halfmove = self.ss[ply.as_usize()].halfmove_clock;
+        let new_ss = &mut self.ss[ply.as_usize() + 1];
 
         if board.halfmove_reset(mv) {
             new_ss.halfmove_clock = 0;
@@ -419,8 +431,8 @@ impl Searcher {
         new_ss.zobrist = result.get_hash();
     }
 
-    fn is_draw(&self, board: &Board, ply: Depth) -> bool {
-        let ply = ply as usize;
+    fn is_draw(&self, board: &Board, ply: Ply) -> bool {
+        let ply = ply.as_usize();
         if self.ss[ply].halfmove_clock >= 100 || board.has_insufficient_material() {
             return true;
         }

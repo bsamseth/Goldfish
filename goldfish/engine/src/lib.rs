@@ -3,10 +3,10 @@ mod evaluate;
 mod limits;
 mod logger;
 mod movelist;
+mod newtypes;
 mod search;
 mod stop_signal;
 mod tt;
-mod value;
 
 use std::sync::{Arc, RwLock};
 

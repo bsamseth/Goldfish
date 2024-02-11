@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use chess::{ChessMove, MoveGen};
 
-use crate::value;
+use crate::newtypes::Value;
 
 #[derive(Debug)]
 pub struct MoveVec(Vec<MoveEntry>);
@@ -9,14 +9,14 @@ pub struct MoveVec(Vec<MoveEntry>);
 #[derive(Debug, Clone)]
 pub struct MoveEntry {
     pub mv: ChessMove,
-    pub value: value::Value,
+    pub value: Value,
 }
 
 impl MoveEntry {
     pub fn new(mv: ChessMove) -> Self {
         Self {
             mv,
-            value: -value::INFINITE,
+            value: -Value::INFINITE,
         }
     }
 }

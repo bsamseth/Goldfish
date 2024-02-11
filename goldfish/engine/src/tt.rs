@@ -1,6 +1,6 @@
 use chess::ChessMove;
 
-use crate::value::{self, Depth, Value};
+use crate::newtypes::{Depth, Ply, Value};
 
 /// A bound on the value of a position.
 ///
@@ -93,13 +93,15 @@ impl TranspositionTable {
     /// # Safety
     /// It is always safe to use the returned index to access the table.
     fn index(&self, key: u64) -> usize {
+        static_assertions::assert_eq_size!(usize, u64);
+        // Safety: `usize` and `u64` have now been checked to have the same size, so this cast is safe.
         #[allow(clippy::cast_possible_truncation)]
         let key = key as usize;
         key % self.entries.len()
     }
 
     /// Returns the checkbits for the given key.
-    fn checkbits(key: u64) -> u32 {
+    const fn checkbits(key: u64) -> u32 {
         (key >> 32) as u32
     }
 
@@ -113,7 +115,7 @@ impl TranspositionTable {
         &self,
         key: u64,
         depth: Depth,
-        ply: Depth,
+        ply: Ply,
     ) -> Option<(Option<ChessMove>, Bound, Value)> {
         // Safety: `index` is guaranteed to return a valid index.
         let entry = unsafe { self.entries.get_unchecked(self.index(key)).as_ref() };
@@ -139,7 +141,7 @@ impl TranspositionTable {
         bound: Bound,
         value: Value,
         depth: Depth,
-        ply: Depth,
+        ply: Ply,
     ) {
         let index = self.index(key);
         // Safety: `index` is guaranteed to return a valid index.
@@ -158,21 +160,21 @@ impl TranspositionTable {
 }
 
 impl TtValue {
-    fn from(value: Value, ply: Depth) -> Self {
-        if value >= value::CHECKMATE_THRESHOLD {
-            Self(value + Value::from(ply))
-        } else if value <= -value::CHECKMATE_THRESHOLD {
-            Self(value - Value::from(ply))
+    fn from(value: Value, ply: Ply) -> Self {
+        if value.is_winning_checkmate() {
+            Self(value + Value::new(i16::from(ply.as_inner())))
+        } else if value.is_losing_checkmate() {
+            Self(value - Value::new(i16::from(ply.as_inner())))
         } else {
             Self(value)
         }
     }
 
-    fn into(self, ply: Depth) -> Value {
-        if self.0 >= value::CHECKMATE_THRESHOLD {
-            self.0 - Value::from(ply)
-        } else if self.0 <= -value::CHECKMATE_THRESHOLD {
-            self.0 + Value::from(ply)
+    fn into(self, ply: Ply) -> Value {
+        if self.0.is_winning_checkmate() {
+            self.0 - Value::new(i16::from(ply.as_inner()))
+        } else if self.0.is_losing_checkmate() {
+            self.0 + Value::new(i16::from(ply.as_inner()))
         } else {
             self.0
         }

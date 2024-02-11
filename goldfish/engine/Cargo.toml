@@ -12,6 +12,8 @@ authors = ["Bendik Samseth <b.samseth@gmail.com>"]
 [dependencies]
 anyhow = "1.0.77"
 chess = "3.2.0"
+derive_more = "0.99.17"
+static_assertions = "1.1.0"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 uci = { path = "../uci" }
