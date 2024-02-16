@@ -55,13 +55,15 @@ impl Searcher {
             zobrist: root_position.get_hash(),
         };
 
+        let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
+
         Self {
             root_position,
             ss: stack_states,
             limits: Limits::from(options),
             logger: Logger::new(),
             stop_signal,
-            root_moves: MoveVec::new_from_moves(MoveGen::new_legal(&root_position), &root_position),
+            root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
             transposition_table,
         }
     }
@@ -140,7 +142,7 @@ impl Searcher {
             self.logger.set_current_depth(depth);
             self.search_root(depth, alpha, Value::INFINITE);
 
-            self.root_moves.sort_moves();
+            self.root_moves.sort();
 
             // If we're in mate search mode, and we've found a mate, we can stop if the mate is
             // within the distance we're looking for.
@@ -276,16 +278,16 @@ impl Searcher {
 
         self.logger.update_search(ply);
 
-        let mut moves = MoveVec::new_from_board(board);
-        moves.sort_moves();
-        let moves = moves.iter().map(|m| m.mv);
+        let moves = MoveVec::from(MoveGen::new_legal(board))
+            .mvv_lva_rated(board)
+            .sorted();
         let possible_move_count = moves.len();
 
         let mut best_value = -Value::INFINITE;
         let mut best_move = None;
         let mut new_board = *board;
 
-        for (mv_nr, mv) in moves.enumerate() {
+        for (mv_nr, mv) in moves.iter().map(|entry| entry.mv).enumerate() {
             self.make_move(board, mv, &mut new_board, ply);
 
             let value = self.pv_search(&new_board, depth, alpha, beta, ply, mv_nr);
@@ -385,13 +387,11 @@ impl Searcher {
             moves.set_iterator_mask(*targets);
         }
 
-        let mut moves = MoveVec::new_from_moves(moves, board);
-        moves.sort_moves();
-        let moves = moves.iter().map(|m| m.mv);
+        let moves = MoveVec::from(moves).mvv_lva_rated(board).sorted();
 
         let mut new_board = *board;
 
-        for mv in moves {
+        for mv in moves.iter().map(|entry| entry.mv) {
             self.make_move(board, mv, &mut new_board, ply);
 
             let value = -self.quiescence_search(&new_board, -beta, -alpha, ply + Ply::new(1));
