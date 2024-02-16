@@ -1,5 +1,4 @@
 use chess::ChessMove;
-use std::str::FromStr;
 
 use crate::UciPosition;
 
@@ -60,7 +59,7 @@ impl std::str::FromStr for UciCommand {
             "isready" => Ok(UciCommand::IsReady),
             "setoption" => Ok(UciCommand::SetOption(rest.parse()?)),
             "ucinewgame" => Ok(UciCommand::UciNewGame),
-            "position" => Ok(UciCommand::Position(parse_position(rest)?)),
+            "position" => Ok(UciCommand::Position(rest.parse()?)),
             "go" => Ok(UciCommand::Go(parse_go_opitons(rest)?)),
             "stop" => Ok(UciCommand::Stop),
             "ponderhit" => Ok(UciCommand::PonderHit),
@@ -102,43 +101,46 @@ impl std::str::FromStr for EngineOption {
     }
 }
 
-fn parse_position(s: &str) -> Result<UciPosition, String> {
-    const START_POS_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let split = s.split_whitespace().collect::<Vec<_>>();
-    let (fen, rest) = match split.first() {
-        Some(&"startpos") => (START_POS_FEN.to_string(), &split[1..]),
-        _ if split.len() >= 7 => (split[1..7].join(" "), &split[7..]),
-        _ => {
+impl std::str::FromStr for UciPosition {
+    type Err = String;
+    fn from_str(s: &str) -> Result<UciPosition, String> {
+        const START_POS_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        let split = s.split_whitespace().collect::<Vec<_>>();
+        let (fen, rest) = match split.first() {
+            Some(&"startpos") => (START_POS_FEN.to_string(), &split[1..]),
+            _ if split.len() >= 7 => (split[1..7].join(" "), &split[7..]),
+            _ => {
+                return Err(format!("Invalid position: {s}"));
+            }
+        };
+
+        let moves = if rest.len() >= 2 && rest[0] == "moves" {
+            rest.iter()
+                .skip(1)
+                .map(|s| s.parse::<ChessMove>())
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| format!("Invalid move: {e}"))?
+        } else if rest.is_empty() {
+            vec![]
+        } else {
             return Err(format!("Invalid position: {s}"));
-        }
-    };
+        };
 
-    let moves = if rest.len() >= 2 && rest[0] == "moves" {
-        rest.iter()
-            .skip(1)
-            .map(|s| s.parse::<ChessMove>())
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| format!("Invalid move: {e}"))?
-    } else if rest.is_empty() {
-        vec![]
-    } else {
-        return Err(format!("Invalid position: {s}"));
-    };
+        let start_pos = chess::Board::from_str(&fen).map_err(|e| format!("{e}"))?;
+        verify_moves(start_pos, &moves)?;
+        let starting_halfmove_clock = fen
+            .split_whitespace()
+            .nth(4)
+            .unwrap()
+            .parse()
+            .map_err(|e| format!("{e}"))?;
 
-    let start_pos = chess::Board::from_str(&fen).map_err(|e| format!("{e}"))?;
-    verify_moves(start_pos, &moves)?;
-    let starting_halfmove_clock = fen
-        .split_whitespace()
-        .nth(4)
-        .unwrap()
-        .parse()
-        .map_err(|e| format!("{e}"))?;
-
-    Ok(UciPosition {
-        start_pos,
-        moves,
-        starting_halfmove_clock,
-    })
+        Ok(UciPosition {
+            start_pos,
+            moves,
+            starting_halfmove_clock,
+        })
+    }
 }
 
 fn verify_moves(mut board: chess::Board, moves: &[chess::ChessMove]) -> Result<(), String> {
