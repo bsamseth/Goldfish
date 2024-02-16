@@ -61,7 +61,7 @@ impl Searcher {
             limits: Limits::from(options),
             logger: Logger::new(),
             stop_signal,
-            root_moves: MoveVec::new_from_moves(MoveGen::new_legal(&root_position)),
+            root_moves: MoveVec::new_from_moves(MoveGen::new_legal(&root_position), &root_position),
             transposition_table,
         }
     }
@@ -253,12 +253,11 @@ impl Searcher {
 
         // Check the transposition table for a stored value before we do anything else.
         let alpha_orig = alpha;
-        let tt_entry = self.transposition_table.read().unwrap().get(
+        if let Some((_, bound, value)) = self.transposition_table.read().unwrap().get(
             self.ss[ply.as_usize()].zobrist,
             depth,
             ply,
-        );
-        if let Some((_, bound, value)) = tt_entry {
+        ) {
             if bound & Bound::Lower && alpha < value {
                 alpha = value;
             }
@@ -277,7 +276,9 @@ impl Searcher {
 
         self.logger.update_search(ply);
 
-        let moves = MoveGen::new_legal(board);
+        let mut moves = MoveVec::new_from_board(board);
+        moves.sort_moves();
+        let moves = moves.iter().map(|m| m.mv);
         let possible_move_count = moves.len();
 
         let mut best_value = -Value::INFINITE;
@@ -383,6 +384,10 @@ impl Searcher {
             let targets = board.color_combined(!board.side_to_move());
             moves.set_iterator_mask(*targets);
         }
+
+        let mut moves = MoveVec::new_from_moves(moves, board);
+        moves.sort_moves();
+        let moves = moves.iter().map(|m| m.mv);
 
         let mut new_board = *board;
 
