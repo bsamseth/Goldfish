@@ -20,7 +20,12 @@ uci = { path = "../uci" }
 
 [dev-dependencies]
 criterion = "0.5.1"
+iai = "0.1.1"
 
 [[bench]]
-name = "standard_search_suite"
+name = "standard_search_suite_criterion"
+harness = false
+
+[[bench]]
+name = "standard_search_suite_iai"
 harness = false

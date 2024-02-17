@@ -1,3 +1,4 @@
+pub mod bench;
 mod board;
 mod evaluate;
 mod limits;
