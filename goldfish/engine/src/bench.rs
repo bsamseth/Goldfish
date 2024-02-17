@@ -1,9 +1,31 @@
-use criterion::{criterion_group, criterion_main, Criterion};
-
-use engine::Engine;
+use crate::Engine;
 use uci::{GoOption, UciEngine, UciPosition};
 
-const BENCH_CASES: [&str; 1] = [
+pub trait Bench {
+    /// Bench the given position to a given depth.
+    ///
+    /// The `position` should be a FEN string, optionally followed by `moves` and a list of
+    /// moves to play from the given position. I.e. the notation used in the `position` UCI command,
+    /// but without the `position` keyword.
+    fn bench(&mut self, position: &str, depth: usize);
+}
+
+impl Bench for Engine {
+    fn bench(&mut self, position: &str, depth: usize) {
+        self.set_option("Hash", "128");
+        self.ucinewgame();
+        self.ready();
+        let position = position.parse::<UciPosition>().unwrap();
+        let go_options = vec![GoOption::Depth(depth)];
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.go(position, go_options, tx);
+
+        assert!(rx.recv().is_ok());
+    }
+}
+
+pub const BENCH_CASES: [&str; 1] = [
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 10",
     // "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 11",
@@ -50,29 +72,3 @@ const BENCH_CASES: [&str; 1] = [
     // "8/8/8/8/8/6k1/6p1/6K1 w - -",
     // "7k/7P/6K1/8/3B4/8/8/8 b - -",
 ];
-
-fn standard_search_suite(c: &mut Criterion) {
-    for fen in &BENCH_CASES {
-        let with_prefix = format!("fen {fen}");
-        c.bench_function(&format!("Case: {fen}"), |b| {
-            b.iter(|| run_bench_case(&with_prefix));
-        });
-    }
-}
-
-fn run_bench_case(position: &str) {
-    let mut engine = Engine::default();
-    engine.set_option("Hash", "128");
-    engine.ucinewgame();
-    engine.ready();
-    let position = position.parse::<UciPosition>().unwrap();
-    let go_options = vec![GoOption::Depth(6)];
-
-    let (tx, rx) = std::sync::mpsc::channel();
-    engine.go(position, go_options, tx);
-
-    assert!(rx.recv().is_ok());
-}
-
-criterion_group!(benches, standard_search_suite);
-criterion_main!(benches);

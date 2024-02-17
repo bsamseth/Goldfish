@@ -262,6 +262,7 @@ dependencies = [
  "chess",
  "criterion",
  "derive_more",
+ "iai",
  "static_assertions",
  "tracing",
  "tracing-subscriber",
@@ -311,6 +312,12 @@ name = "hermit-abi"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd5256b483761cd23699d0da46cc6fd2ee3be420bbe6d020ae4a091e70b7e9fd"
+
+[[package]]
+name = "iai"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71a816c97c42258aa5834d07590b718b4c9a598944cd39a52dc25b351185d678"
 
 [[package]]
 name = "is-terminal"
