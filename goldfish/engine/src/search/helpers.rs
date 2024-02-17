@@ -9,11 +9,12 @@ use crate::board::BoardExt;
 use crate::limits::Limits;
 use crate::logger::Logger;
 use crate::movelist::MoveVec;
-use crate::newtypes::{Depth, Ply};
+use crate::newtypes::{Depth, Ply, Value};
 use crate::stop_signal::StopSignal;
 use crate::tt::{Bound, TranspositionTable};
 
 impl Searcher {
+    /// Create a new [`Searcher`].
     pub fn new(
         position: UciPosition,
         options: &[uci::GoOption],
@@ -53,13 +54,20 @@ impl Searcher {
         }
     }
 
+    /// Return `true` if the search should stop.
+    ///
+    /// The search should stop if any of the following conditions are met:
+    ///
+    ///   - The stop signal has been set.
+    ///   - The time limit has been reached.
+    ///   - The node limit has been reached.
     pub fn should_stop(&self) -> bool {
         self.stop_signal.check()
             || self.logger.search_start_time.elapsed().as_millis() as usize >= self.limits.movetime
             || self.logger.total_nodes >= self.limits.nodes
     }
 
-    /// Returns the principal variation for the current position.
+    /// Return the principal variation for the current position.
     ///
     /// The principal variation is the sequence of moves that the engine thinks is the best.
     /// It is used to display the engine's thinking process.
@@ -103,11 +111,11 @@ impl Searcher {
 
     /// Make a move on a pre-allocated board, and update the stack state.
     ///
-    /// The move must be valid for [`board`], and [`result`] will be the result of
-    /// applying [`mv`] to [`board`].
+    /// The move must be valid for `board`, and `result` will be the result of
+    /// applying `mv` to `board`.
     ///
-    /// [`ply`] should be the current ply count in the search, and _not_ the count after the move
-    /// is made. I.e. this should be true: [`self.stack_state(ply).zobrist == board.get_hash()`].
+    /// `ply` should be the current ply count in the search, and _not_ the count after the move
+    /// is made. I.e. this should be true: `self.stack_state(ply).zobrist == board.get_hash()`.
     pub fn make_move(&mut self, board: &Board, mv: ChessMove, result: &mut Board, ply: Ply) {
         let current_halfmove = self.stack_state(ply).halfmove_clock;
         let new_ss = self.stack_state_mut(ply + Ply::new(1));
@@ -121,7 +129,7 @@ impl Searcher {
         new_ss.zobrist = result.get_hash();
     }
 
-    /// Returns true if the current position is a draw.
+    /// Return `true` if the current position is a draw.
     pub fn is_draw(&self, board: &Board, ply: Ply) -> bool {
         if self.stack_state(ply).halfmove_clock >= 100 || board.has_insufficient_material() {
             return true;
@@ -141,10 +149,21 @@ impl Searcher {
             >= 2
     }
 
+    /// Return a reference to the stack state for the given ply.
     pub fn stack_state(&self, ply: Ply) -> &StackState {
         &self.ss[ply.as_usize()]
     }
+    /// Return a mutable reference to the stack state for the given ply.
     pub fn stack_state_mut(&mut self, ply: Ply) -> &mut StackState {
         &mut self.ss[ply.as_usize()]
+    }
+}
+
+impl From<Result<Value, Value>> for Value {
+    /// Collapse a `Result<Value, Value>` into a `Value`.
+    fn from(result: Result<Value, Value>) -> Self {
+        match result {
+            Ok(value) | Err(value) => value,
+        }
     }
 }
