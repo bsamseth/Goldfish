@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use chess::{Board, ChessMove, MoveGen, Piece};
 
 use crate::newtypes::Value;
