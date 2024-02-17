@@ -63,7 +63,7 @@ impl Searcher {
             limits: Limits::from(options),
             logger: Logger::new(),
             stop_signal,
-            root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
+            root_moves: root_moves.mvv_lva_rated(&root_position).sorted(0),
             transposition_table,
         }
     }
@@ -255,22 +255,28 @@ impl Searcher {
 
         // Check the transposition table for a stored value before we do anything else.
         let alpha_orig = alpha;
-        if let Some((_, bound, value)) = self.transposition_table.read().unwrap().get(
-            self.ss[ply.as_usize()].zobrist,
-            depth,
-            ply,
-        ) {
-            if bound & Bound::Lower && alpha < value {
-                alpha = value;
-            }
-            if bound & Bound::Upper && value < beta {
-                beta = value;
-            }
+        let tt_move = {
+            if let Some((mv, bound, value)) = self.transposition_table.read().unwrap().get(
+                self.ss[ply.as_usize()].zobrist,
+                depth,
+                ply,
+            ) {
+                if bound & Bound::Lower && alpha < value {
+                    alpha = value;
+                }
+                if bound & Bound::Upper && value < beta {
+                    beta = value;
+                }
 
-            if alpha >= beta {
-                return value;
+                if alpha >= beta {
+                    return value;
+                }
+
+                mv
+            } else {
+                None
             }
-        }
+        };
 
         if depth == Depth::new(0) {
             return self.quiescence_search(board, alpha, beta, ply);
@@ -280,7 +286,8 @@ impl Searcher {
 
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)
-            .sorted();
+            .with_move_at(0, tt_move)
+            .sorted(tt_move.map_or(0, |_| 1));
         let possible_move_count = moves.len();
 
         let mut best_value = -Value::INFINITE;
@@ -387,7 +394,7 @@ impl Searcher {
             moves.set_iterator_mask(*targets);
         }
 
-        let moves = MoveVec::from(moves).mvv_lva_rated(board).sorted();
+        let moves = MoveVec::from(moves).mvv_lva_rated(board).sorted(0);
 
         let mut new_board = *board;
 
