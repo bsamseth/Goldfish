@@ -45,7 +45,7 @@ impl MoveVec {
     }
 
     pub fn sorted(mut self, skip: usize) -> Self {
-        let (skip, rest) = self.split_at_mut(skip);
+        let (_, rest) = self.split_at_mut(skip);
         rest.sort_by_key(|m| -m.value);
         self
     }
