@@ -50,18 +50,30 @@ impl MoveVec {
         self.sort_by_key(|m| -m.value);
     }
 
-    pub fn sorted(mut self, skip: usize) -> Self {
-        let (_, rest) = self.split_at_mut(skip);
-        rest.sort_by_key(|m| -m.value);
+    pub fn sorted(mut self) -> Self {
+        self.sort();
         self
     }
 
-    pub fn with_move_at(mut self, index: usize, mv: Option<ChessMove>) -> Self {
-        if let Some(mv) = mv {
-            if let Some(orig_index) = self.iter().position(|m| m.mv == mv) {
-                self.0.swap(index, orig_index);
+    pub fn sort_with_preference(
+        mut self,
+        preferences: impl IntoIterator<Item = ChessMove>,
+    ) -> Self {
+        // Place preferences first in the given order, then sort the rest by value.
+        let mut swaps = 0;
+        for (i, mv) in preferences.into_iter().enumerate() {
+            if i < self.len() {
+                if let Some(index) = self.iter().position(|m| m.mv == mv) {
+                    self.swap(i, index);
+                }
             }
+            swaps += 1;
         }
+
+        let swaps = swaps.min(self.len());
+        let (_, rest) = self.split_at_mut(swaps);
+        rest.sort_by_key(|m| -m.value);
+
         self
     }
 }
