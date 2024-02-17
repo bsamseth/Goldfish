@@ -55,6 +55,10 @@ impl MoveVec {
         self
     }
 
+    /// Sorts the moves with the given preferences first, then by value.
+    ///
+    /// The preferences, if [`Some`] and valid moves, are placed first in the given order. Then the
+    /// rest of the moves are sorted by value.
     pub fn sort_with_preference(
         mut self,
         preferences: impl IntoIterator<Item = ChessMove>,
@@ -64,10 +68,10 @@ impl MoveVec {
         for (i, mv) in preferences.into_iter().enumerate() {
             if i < self.len() {
                 if let Some(index) = self.iter().position(|m| m.mv == mv) {
+                    swaps += 1;
                     self.swap(i, index);
                 }
             }
-            swaps += 1;
         }
 
         let swaps = swaps.min(self.len());
