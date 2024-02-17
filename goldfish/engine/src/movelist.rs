@@ -24,18 +24,24 @@ impl MoveEntry {
 impl MoveVec {
     pub fn mvv_lva_rated(mut self, board: &Board) -> Self {
         for entry in self.iter_mut() {
-            entry.value = Value::new(0);
+            let mut value = 0i16;
 
-            if let Some(target) = board.piece_on(entry.mv.get_dest()) {
-                entry.value = Value::new(
-                    10 * piece_value(target)
-                        - piece_value(
-                            board
-                                .piece_on(entry.mv.get_source())
-                                .expect("there should always be a source piece for a move"),
-                        ),
-                );
+            // In case of promotions, add the value of the promoted piece to the move value.
+            if let Some(piece) = entry.mv.get_promotion() {
+                value += 10 * (piece_value(piece) - piece_value(Piece::Pawn));
             }
+
+            // Capture? Prefer captures with higher value victims, by lower value attackers.
+            if let Some(target) = board.piece_on(entry.mv.get_dest()) {
+                value += 10 * piece_value(target)
+                    - piece_value(
+                        board
+                            .piece_on(entry.mv.get_source())
+                            .expect("there should always be a source piece for a move"),
+                    );
+            }
+
+            entry.value = Value::new(value);
         }
         self
     }
