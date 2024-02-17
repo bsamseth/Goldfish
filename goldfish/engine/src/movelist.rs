@@ -41,11 +41,21 @@ impl MoveVec {
     }
 
     pub fn sort(&mut self) {
-        self.0.sort_by_key(|m| -m.value);
+        self.sort_by_key(|m| -m.value);
     }
 
-    pub fn sorted(mut self) -> Self {
-        self.sort();
+    pub fn sorted(mut self, skip: usize) -> Self {
+        let (skip, rest) = self.split_at_mut(skip);
+        rest.sort_by_key(|m| -m.value);
+        self
+    }
+
+    pub fn with_move_at(mut self, index: usize, mv: Option<ChessMove>) -> Self {
+        if let Some(mv) = mv {
+            if let Some(orig_index) = self.iter().position(|m| m.mv == mv) {
+                self.0.swap(index, orig_index);
+            }
+        }
         self
     }
 }
