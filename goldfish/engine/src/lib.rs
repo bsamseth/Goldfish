@@ -103,7 +103,7 @@ impl Engine {
                 self.transposition_table.write().unwrap().resize(value * MB);
                 Ok(())
             }
-            _ => anyhow::bail!("invalid option {name}"),
+            _ => Err(anyhow::anyhow!("invalid option {name}")),
         }
     }
 }
