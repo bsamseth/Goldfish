@@ -152,4 +152,32 @@ impl Searcher {
         }
         Ok(())
     }
+
+    /// Mate distance pruning
+    ///
+    /// Even if we mate at the next move our score would be at best CHECKMATE - ply, but if alpha
+    /// is already bigger because a shorter mate was found upward in the tree then there is no need
+    /// to search because we will never beat the current alpha. Same logic but with reversed signs
+    /// applies also in the opposite condition of being mated instead of giving mate.
+    ///
+    /// This may modify `alpha` and `beta` in place. If `alpha >= beta` after this, the function
+    /// signals that an early return is possible.
+    pub fn mate_distance_pruning(
+        alpha: &mut Value,
+        beta: &mut Value,
+        ply: Ply,
+    ) -> Result<(), Value> {
+        let worst_mate = Value::mated_in(ply);
+        let best_mate = Value::mate_in(ply + Ply::new(1));
+        if *alpha < worst_mate {
+            *alpha = worst_mate;
+        }
+        if *beta > best_mate {
+            *beta = best_mate;
+        }
+        if alpha >= beta {
+            return Err(*alpha);
+        }
+        Ok(())
+    }
 }
