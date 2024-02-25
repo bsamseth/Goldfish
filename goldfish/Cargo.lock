@@ -262,6 +262,7 @@ dependencies = [
  "chess",
  "criterion",
  "derive_more",
+ "fathom-syzygy",
  "iai",
  "static_assertions",
  "tracing",
@@ -289,6 +290,26 @@ dependencies = [
  "quote",
  "syn 1.0.109",
  "synstructure",
+]
+
+[[package]]
+name = "fathom-syzygy"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c0b00b270fb5104741991b617f8adbfa18e66711c3baaf0497292cf691d8639"
+dependencies = [
+ "fathom-syzygy-sys",
+ "thiserror",
+]
+
+[[package]]
+name = "fathom-syzygy-sys"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2609067825fe8ee7352ff6b07d4ddaecc93d8dd0f9cafdb0d3ef27c71e1564f"
+dependencies = [
+ "cc",
+ "libc",
 ]
 
 [[package]]
