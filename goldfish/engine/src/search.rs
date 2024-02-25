@@ -14,6 +14,7 @@ use super::logger::Logger;
 use super::movelist::MoveVec;
 use super::newtypes::{Depth, Ply, Value};
 use super::stop_signal::StopSignal;
+use super::tablebase::Tablebase;
 use super::tt::TranspositionTable;
 use stackstate::StackState;
 
@@ -26,6 +27,7 @@ pub struct Searcher {
     stop_signal: StopSignal,
     root_moves: MoveVec,
     transposition_table: Arc<RwLock<TranspositionTable>>,
+    tablebase: Option<Arc<Tablebase>>,
 }
 
 impl Searcher {

@@ -29,6 +29,7 @@ impl Searcher {
         self.logger.update_search(ply);
 
         Searcher::mate_distance_pruning(&mut alpha, &mut beta, ply)?;
+        self.check_tablebase(board, &mut alpha, &mut beta, ply, depth)?;
 
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)

@@ -25,6 +25,9 @@ impl Value {
     /// The smallest possible [`Value`] which is still a checkmate score.
     pub const CHECKMATE_THRESHOLD: Value = Self::mate_in(Ply::MAX);
 
+    /// The [`Value`] of a known winning position, determined by endgame tablebases.
+    pub const KNOWN_WIN: Self = Self(Self::CHECKMATE_THRESHOLD.0 - 1);
+
     /// A [`Value`] greater than all other values.
     ///
     /// The negative of this value is a value smaller than all other values.
@@ -48,6 +51,20 @@ impl Value {
     /// A loss in `ply` halfmoves.
     pub const fn mated_in(ply: Ply) -> Self {
         Self(-Self::CHECKMATE.0 + (ply.as_inner() as Inner))
+    }
+
+    /// A known win in `ply` halfmoves.
+    ///
+    /// That is, in `ply` halfmoves the position is known to be a win.
+    pub const fn known_win_in(ply: Ply) -> Self {
+        Self(Self::KNOWN_WIN.0 - (ply.as_inner() as Inner))
+    }
+
+    /// A known loss in `ply` halfmoves.
+    ///
+    /// That is, in `ply` halfmoves the position is known to be a loss.
+    pub const fn known_loss_in(ply: Ply) -> Self {
+        Self(-Self::KNOWN_WIN.0 + (ply.as_inner() as Inner))
     }
 
     /// Return `true` if this [`Value`] is a checkmate score.

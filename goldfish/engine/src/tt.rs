@@ -8,7 +8,7 @@ use crate::newtypes::{Depth, Ply, Value};
 /// not be exact. For the purposes of a transposition table, we need to keep track of
 /// whether the value is an upper bound, a lower bound, or an exact value, so that we
 /// can take the correct action when we encounter the position again.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Bound {
     Lower = 1,

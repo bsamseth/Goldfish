@@ -11,6 +11,7 @@ use crate::logger::Logger;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::stop_signal::StopSignal;
+use crate::tablebase::Tablebase;
 use crate::tt::{Bound, TranspositionTable};
 
 impl Searcher {
@@ -20,6 +21,7 @@ impl Searcher {
         options: &[uci::GoOption],
         stop_signal: StopSignal,
         transposition_table: Arc<RwLock<TranspositionTable>>,
+        tablebase: Option<Arc<Tablebase>>,
     ) -> Self {
         let mut board = position.start_pos;
         let mut root_position = board;
@@ -41,7 +43,14 @@ impl Searcher {
             killers: [None; 2],
         };
 
-        let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
+        let mut root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
+
+        if let Some(probe) = tablebase
+            .as_ref()
+            .and_then(|tb| tb.probe_root(&root_position, halfmove_clock))
+        {
+            probe.filter_moves(&mut root_moves);
+        }
 
         Self {
             root_position,
@@ -51,6 +60,7 @@ impl Searcher {
             stop_signal,
             root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
             transposition_table,
+            tablebase,
         }
     }
 
