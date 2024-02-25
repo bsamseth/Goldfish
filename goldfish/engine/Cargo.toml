@@ -16,7 +16,10 @@ derive_more = "0.99.17"
 fathom-syzygy = "0.1.0"
 static_assertions = "1.1.0"
 tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+tracing-subscriber = { version = "0.3.18", features = [
+  "default",
+  "env-filter",
+] }
 uci = { path = "../uci" }
 
 [dev-dependencies]
