@@ -11,7 +11,7 @@ use crate::logger::Logger;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::stop_signal::StopSignal;
-use crate::tablebase::Tablebase;
+use crate::tb::Tablebase;
 use crate::tt::{Bound, TranspositionTable};
 
 impl Searcher {
