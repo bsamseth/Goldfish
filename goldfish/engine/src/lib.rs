@@ -7,7 +7,7 @@ mod movelist;
 mod newtypes;
 mod search;
 mod stop_signal;
-mod tablebase;
+mod tb;
 mod tt;
 
 use std::sync::{Arc, RwLock};
@@ -31,7 +31,7 @@ pub struct Engine {
     stop_signal: StopSignal,
     searcher: Option<std::thread::JoinHandle<()>>,
     transposition_table: Arc<RwLock<tt::TranspositionTable>>,
-    tablebase: Option<Arc<tablebase::Tablebase>>,
+    tablebase: Option<Arc<tb::Tablebase>>,
 }
 
 impl uci::UciEngine for Engine {
@@ -116,7 +116,7 @@ impl Engine {
             }
             "SyzygyPath" => {
                 let path = std::path::PathBuf::from(value);
-                self.tablebase = Some(Arc::new(tablebase::Tablebase::new(path)?));
+                self.tablebase = Some(Arc::new(tb::Tablebase::new(path)?));
                 Ok(())
             }
             _ => Err(anyhow::anyhow!("invalid option {name}")),

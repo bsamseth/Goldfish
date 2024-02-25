@@ -4,7 +4,7 @@ use super::Searcher;
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
 use crate::newtypes::{Depth, Ply, Value};
-use crate::tablebase::Wdl;
+use crate::tb::Wdl;
 use crate::tt::Bound;
 
 impl Searcher {
