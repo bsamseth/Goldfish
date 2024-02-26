@@ -41,6 +41,8 @@ impl Searcher {
             "no legal moves in starting position, uci-crate promise violation"
         );
 
+        self.filter_root_moves_using_tb();
+
         // If there's only one legal move, we don't need to search.
         // A general purpose UCI engine should actually search the position anyway, in order to
         // determine the actual evaluation of the position. This, however, is an engine meant to

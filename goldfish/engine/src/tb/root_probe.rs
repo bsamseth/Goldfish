@@ -1,6 +1,7 @@
 use super::{Tablebase, Wdl};
 use crate::board::BoardExt;
 use crate::movelist::MoveVec;
+use crate::newtypes::Value;
 
 #[derive(Debug)]
 pub struct RootMovesFilter<'a> {
@@ -45,5 +46,17 @@ impl<'a> RootMovesFilter<'a> {
                 .probe_wdl(&next, halfmove_clock)
                 .map_or(false, |wdl| wdl == wdl_opponent)
         });
+    }
+
+    /// Get the [`Value`] of the root position.
+    ///
+    /// This is the value of the position from the perspective of the side to move,
+    /// counting all kinds of draws as `Value::DRAW`.
+    pub fn score(&self) -> Value {
+        match self.wdl {
+            Wdl::Win => Value::KNOWN_WIN,
+            Wdl::Loss => -Value::KNOWN_WIN,
+            Wdl::Draw | Wdl::BlessedLoss | Wdl::CursedWin => Value::DRAW,
+        }
     }
 }

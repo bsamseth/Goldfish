@@ -43,14 +43,7 @@ impl Searcher {
             killers: [None; 2],
         };
 
-        let mut root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
-
-        if let Some(probe) = tablebase
-            .as_ref()
-            .and_then(|tb| tb.probe_root(&root_position, halfmove_clock))
-        {
-            probe.filter_moves(&mut root_moves);
-        }
+        let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
 
         Self {
             root_position,
@@ -166,6 +159,26 @@ impl Searcher {
     /// Return a mutable reference to the stack state for the given ply.
     pub fn stack_state_mut(&mut self, ply: Ply) -> &mut StackState {
         &mut self.ss[ply.as_usize()]
+    }
+
+    /// Remove moves from the root move list that don't preserve the WDL value (if available).
+    ///
+    /// A tablebase must be initialized, and the root position must be in the tablebase.
+    pub fn filter_root_moves_using_tb(&mut self) {
+        let hmc = self.stack_state(Ply::new(0)).halfmove_clock;
+        if let Some(probe) = self
+            .tablebase
+            .as_ref()
+            .and_then(|tb| tb.probe_root(&self.root_position, hmc))
+        {
+            probe.filter_moves(&mut self.root_moves);
+
+            if self.root_moves.len() < 2 {
+                self.root_moves[0].value = probe.score();
+                self.logger
+                    .send_move(&self.root_moves[0], &[self.root_moves[0].mv]);
+            }
+        }
     }
 }
 
