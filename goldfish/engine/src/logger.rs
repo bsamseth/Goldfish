@@ -89,12 +89,13 @@ impl Logger {
         self.last_log_time = std::time::Instant::now();
     }
 
-    pub fn send_move(&mut self, move_entry: &MoveEntry, pv: &[ChessMove]) {
+    pub fn send_move(&mut self, move_entry: &MoveEntry, pv: &[ChessMove], hashfull: usize) {
         let millis = self.search_start_time.elapsed().as_millis() as usize;
         let mut info = Info::new()
             .with(InfoPart::Depth(self.current_depth.as_usize()))
             .with(InfoPart::SelDepth(self.current_max_ply.as_usize()))
             .with(InfoPart::Nodes(self.total_nodes))
+            .with(InfoPart::HashFull(hashfull))
             .with(InfoPart::Time(millis))
             .with(InfoPart::Nps(if millis > 0 {
                 self.total_nodes * 1000 / millis
