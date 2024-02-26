@@ -41,6 +41,14 @@ impl Searcher {
             "no legal moves in starting position, uci-crate promise violation"
         );
 
+        // If there's only one legal move, we don't need to search.
+        // A general purpose UCI engine should actually search the position anyway, in order to
+        // determine the actual evaluation of the position. This, however, is an engine meant to
+        // play, and searching a position with only one legal move is a waste of time.
+        if self.root_moves.len() == 1 {
+            return self.root_moves[0].mv;
+        }
+
         let alpha = if let Some(mate_distance) = self.limits.mate {
             Value::mate_in(mate_distance + Ply::new(1))
         } else {
