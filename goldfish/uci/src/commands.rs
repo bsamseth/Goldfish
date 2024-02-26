@@ -17,7 +17,7 @@ pub(crate) enum UciCommand {
     Unknown(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GoOption {
     SearchMoves(Vec<chess::ChessMove>),
     Ponder,
@@ -31,6 +31,8 @@ pub enum GoOption {
     Mate(usize),
     MoveTime(usize),
     Infinite,
+    // Non-standard:
+    Silent,
 }
 
 #[derive(Debug)]
@@ -214,6 +216,7 @@ fn parse_go_opitons(s: &str) -> Result<Vec<GoOption>, String> {
                 }
                 options.push(GoOption::SearchMoves(moves));
             }
+            "silent" => options.push(GoOption::Silent),
             _ => {
                 return Err(format!("Invalid go option: {opt}"));
             }
