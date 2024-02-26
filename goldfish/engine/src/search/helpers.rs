@@ -66,8 +66,8 @@ impl Searcher {
     ///   - The node limit has been reached.
     pub fn should_stop(&self) -> bool {
         self.stop_signal.check()
-            || self.logger.search_start_time.elapsed().as_millis() as usize >= self.limits.movetime
-            || self.logger.total_nodes >= self.limits.nodes
+            || self.logger.exceeds_time_limit(self.limits.movetime)
+            || self.logger.exceeds_node_limit(self.limits.nodes)
     }
 
     /// Return the principal variation for the current position.
@@ -171,6 +171,7 @@ impl Searcher {
             .as_ref()
             .and_then(|tb| tb.probe_root(&self.root_position, hmc))
         {
+            self.logger.tb_hit();
             probe.filter_moves(&mut self.root_moves);
 
             if self.root_moves.len() < 2 {

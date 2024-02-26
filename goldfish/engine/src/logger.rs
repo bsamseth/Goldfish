@@ -10,7 +10,7 @@ use crate::{
 pub struct Logger {
     pub search_start_time: std::time::Instant,
     last_log_time: std::time::Instant,
-    pub total_nodes: usize,
+    total_nodes: usize,
     tb_hits: usize,
     current_depth: Depth,
     current_max_ply: Ply,
@@ -30,6 +30,18 @@ impl Logger {
             current_move: ChessMove::default(),
             current_move_number: 0,
         }
+    }
+
+    pub fn exceeds_node_limit(&self, node_limit: usize) -> bool {
+        self.total_nodes >= node_limit
+    }
+
+    pub fn exceeds_time_limit(&self, time_limit: usize) -> bool {
+        self.search_start_time.elapsed().as_millis() as usize >= time_limit
+    }
+
+    pub fn tb_hit(&mut self) {
+        self.tb_hits += 1;
     }
 
     pub fn set_current_depth(&mut self, current_depth: Depth) {

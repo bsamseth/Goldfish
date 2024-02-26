@@ -182,8 +182,9 @@ impl Searcher {
         Ok(())
     }
 
+    /// Adjust alpha/beta if the position is in the tablebase.
     pub fn check_tablebase(
-        &self,
+        &mut self,
         board: &Board,
         alpha: &mut Value,
         beta: &mut Value,
@@ -192,6 +193,7 @@ impl Searcher {
     ) -> Result<(), Value> {
         if let Some(tb) = &self.tablebase {
             if let Some(wdl) = tb.probe_wdl(board, self.stack_state(ply).halfmove_clock) {
+                self.logger.tb_hit();
                 let (value, bound) = match wdl {
                     Wdl::Win => (Value::known_win_in(ply), Bound::Lower),
                     Wdl::Loss => (Value::known_loss_in(ply), Bound::Upper),
