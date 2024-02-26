@@ -38,8 +38,11 @@ impl Searcher {
                     return;
                 }
 
-                self.logger
-                    .send_move(&self.root_moves[mv_nr], &self.build_pv(depth));
+                self.logger.send_move(
+                    &self.root_moves[mv_nr],
+                    &self.build_pv(depth),
+                    self.transposition_table.read().unwrap().hashfull(),
+                );
             }
         }
     }

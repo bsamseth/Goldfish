@@ -177,7 +177,7 @@ impl Searcher {
             if self.root_moves.len() < 2 {
                 self.root_moves[0].value = probe.score();
                 self.logger
-                    .send_move(&self.root_moves[0], &[self.root_moves[0].mv]);
+                    .send_move(&self.root_moves[0], &[self.root_moves[0].mv], 0);
             }
         }
     }

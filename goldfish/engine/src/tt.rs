@@ -61,6 +61,7 @@ struct Entry {
 #[derive(Debug)]
 pub struct TranspositionTable {
     entries: Vec<Option<Entry>>,
+    count: usize,
 }
 
 impl Default for TranspositionTable {
@@ -75,6 +76,7 @@ impl TranspositionTable {
         let count = size / std::mem::size_of::<Option<Entry>>();
         Self {
             entries: vec![None; count],
+            count: 0,
         }
     }
 
@@ -86,6 +88,7 @@ impl TranspositionTable {
         let count = size / std::mem::size_of::<Option<Entry>>();
         self.entries.clear();
         self.entries.resize(count, None);
+        self.count = 0;
     }
 
     /// Returns an index into the table for the given (Zobrist) key.
@@ -148,6 +151,9 @@ impl TranspositionTable {
         let entry = unsafe { self.entries.get_unchecked_mut(index) };
 
         if entry.as_mut().map_or(true, |e| depth >= e.depth) {
+            if entry.is_none() {
+                self.count += 1;
+            }
             *entry = Some(Entry {
                 checkbits: (key >> 32) as u32,
                 mv,
@@ -156,6 +162,14 @@ impl TranspositionTable {
                 depth,
             });
         }
+    }
+
+    /// Returns the permill of the table that is full.
+    pub fn hashfull(&self) -> usize {
+        if self.entries.is_empty() {
+            return 0;
+        }
+        self.count * 1000 / self.entries.len()
     }
 }
 
