@@ -9,9 +9,10 @@ type Inner = u8;
 impl Depth {
     /// The maximum search depth considered by the engine from any given position.
     ///
-    /// This is defined implicitly by [`Ply::MAX`], as the maximum depth cannot exceed the maximum
-    /// number of plies possible.
-    pub const MAX: Self = Self(super::Ply::MAX.as_inner());
+    /// This could likely be almost [`u8::max`], but we choose a smaller value to avoid having to
+    /// consider the possibility of overflow in the search code. Any search stopping due to
+    /// reaching the maximum depth will be served just as well by stopping here.
+    pub const MAX: Self = Self(127);
 
     /// Create a new [`Depth`] from an inner `u8`.
     pub const fn new(inner: Inner) -> Self {
