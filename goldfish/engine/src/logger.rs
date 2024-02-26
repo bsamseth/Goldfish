@@ -16,6 +16,7 @@ pub struct Logger {
     current_max_ply: Ply,
     current_move: ChessMove,
     current_move_number: usize,
+    silent: bool,
 }
 
 impl Logger {
@@ -29,6 +30,7 @@ impl Logger {
             current_max_ply: Ply::new(0),
             current_move: ChessMove::default(),
             current_move_number: 0,
+            silent: false,
         }
     }
 
@@ -67,7 +69,16 @@ impl Logger {
         }
     }
 
+    pub fn silent(mut self, silent: bool) -> Self {
+        self.silent = silent;
+        self
+    }
+
     pub fn send_status(&mut self) {
+        if self.silent {
+            return;
+        }
+
         let delta = self.search_start_time.elapsed();
 
         if delta.as_secs() < 1 {
@@ -90,6 +101,10 @@ impl Logger {
     }
 
     pub fn send_move(&mut self, move_entry: &MoveEntry, pv: &[ChessMove], hashfull: usize) {
+        if self.silent {
+            return;
+        }
+
         let millis = self.search_start_time.elapsed().as_millis() as usize;
         let mut info = Info::new()
             .with(InfoPart::Depth(self.current_depth.as_usize()))
