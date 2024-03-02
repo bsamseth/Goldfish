@@ -1,5 +1,5 @@
 mod chess_to_fathom;
-mod root_probe;
+mod root_moves_filter;
 
 use std::path::Path;
 use std::sync::Mutex;
@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use fathom_syzygy::Fathom;
 pub use fathom_syzygy::Wdl;
 
-use root_probe::RootMovesFilter;
+use root_moves_filter::RootMovesFilter;
 
 /// An endgame tablebase.
 ///
