@@ -1,4 +1,4 @@
 [workspace]
 
-members = ["engine", "uci"]
+members = ["engine", "fathom", "uci"]
 resolver = "2"

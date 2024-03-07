@@ -7,7 +7,6 @@ mod movelist;
 mod newtypes;
 mod search;
 mod stop_signal;
-mod tb;
 mod tt;
 
 use std::sync::{Arc, RwLock};
@@ -31,7 +30,7 @@ pub struct Engine {
     stop_signal: StopSignal,
     searcher: Option<std::thread::JoinHandle<()>>,
     transposition_table: Arc<RwLock<tt::TranspositionTable>>,
-    tablebase: Option<Arc<tb::Tablebase>>,
+    tablebase: Option<&'static fathom::Tablebase>,
 }
 
 impl uci::UciEngine for Engine {
@@ -84,7 +83,7 @@ impl uci::UciEngine for Engine {
         self.searcher = Some(std::thread::spawn({
             let ss = self.stop_signal.clone();
             let tt = self.transposition_table.clone();
-            let tb = self.tablebase.clone();
+            let tb = self.tablebase;
             move || {
                 let mut searcher = search::Searcher::new(position, &options, ss, tt, tb);
                 let bm = searcher.run();
@@ -107,6 +106,12 @@ impl uci::UciEngine for Engine {
 
 impl Engine {
     fn _set_option(&mut self, name: &str, value: &str) -> anyhow::Result<()> {
+        // The UCI protocol states that options are only set when then
+        // engine is waiting. We enforce this defensively to make sure.
+        if self.searcher.is_some() {
+            anyhow::bail!("cannot set options while searching");
+        }
+
         match name {
             "Hash" => {
                 let value = value.parse::<usize>()?;
@@ -116,7 +121,9 @@ impl Engine {
             }
             "SyzygyPath" => {
                 let path = std::path::PathBuf::from(value);
-                self.tablebase = Some(Arc::new(tb::Tablebase::new(path)?));
+                // Safety: There's no ongoing search, and only one option can be set any given
+                // time. This means nobody else is potentially loading/probing, so this is safe.
+                self.tablebase = Some(unsafe { fathom::Tablebase::load(path) }?);
                 Ok(())
             }
             _ => Err(anyhow::anyhow!("invalid option {name}")),

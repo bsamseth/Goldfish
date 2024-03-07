@@ -98,3 +98,13 @@ impl Value {
         }
     }
 }
+
+impl From<fathom::Wdl> for Value {
+    fn from(value: fathom::Wdl) -> Self {
+        match value {
+            fathom::Wdl::Win => Value::KNOWN_WIN,
+            fathom::Wdl::Loss => -Value::KNOWN_WIN,
+            _ => Value::DRAW,
+        }
+    }
+}
