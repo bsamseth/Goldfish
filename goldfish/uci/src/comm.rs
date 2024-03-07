@@ -105,7 +105,7 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
                     searching.store(true, Ordering::Relaxed);
                 }
                 UciCommand::Stop => {
-                    tracing::debug!("No search in progress, ignoring stop command.");
+                    engine.stop(); // Already stopped, but tell the engine anyway.
                 }
                 UciCommand::PonderHit => unimplemented!(),
                 UciCommand::Quit => break,
