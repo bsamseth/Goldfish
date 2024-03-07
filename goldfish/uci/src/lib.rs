@@ -8,7 +8,7 @@ Defines types and scaffolding for engines to implement the [UCI protocol][uci-pr
 This example shows how the main function could be set up, provided you have a struct that implements the [`UciEngine`] trait.
 You simply call [`start`] with an instance of your engine, and the UCI protocol will be handled for you.
 
-```rust
+```ignore
 use anyhow::Result;
 
 struct MyEngine;
