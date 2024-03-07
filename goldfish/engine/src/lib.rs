@@ -95,12 +95,10 @@ impl uci::UciEngine for Engine {
     }
 
     fn stop(&mut self) {
-        assert!(
-            self.searcher.is_some(),
-            "no search in progress, uci protocol violation"
-        );
         self.stop_signal.stop();
-        self.searcher.take().unwrap().join().unwrap();
+        if let Some(s) = self.searcher.take() {
+            s.join().unwrap();
+        }
     }
 }
 
