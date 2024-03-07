@@ -8,12 +8,13 @@ pub trait Bench {
     /// moves to play from the given position. I.e. the notation used in the `position` UCI command,
     /// but without the `position` keyword.
     fn bench(&mut self, position: &str, depth: usize);
+
+    /// Set the bench options for the engine.
+    fn set_bench_options(&mut self);
 }
 
 impl Bench for Engine {
     fn bench(&mut self, position: &str, depth: usize) {
-        self.set_option("Hash", "128");
-        self.set_option("SyzygyPath", "../../../syzygy");
         self.ucinewgame();
         self.ready();
         let position = position.parse::<UciPosition>().unwrap();
@@ -24,9 +25,14 @@ impl Bench for Engine {
 
         assert!(rx.recv().is_ok());
     }
+
+    fn set_bench_options(&mut self) {
+        self.set_option("Hash", "128");
+        self.set_option("SyzygyPath", "../../../syzygy");
+    }
 }
 
-pub const BENCH_CASES: [&str; 2] = [
+pub const BENCH_CASES: [&str; 3] = [
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     // "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 10",
     // "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 11",
@@ -59,8 +65,7 @@ pub const BENCH_CASES: [&str; 2] = [
     // "8/3p3B/5p2/5P2/p7/PP5b/k7/6K1 w - - 0 1",
     // 5-man positions
     "8/8/8/8/5kp1/P7/8/1K1N4 w - - 0 1", // Kc2 - mate
-
-                                         // "8/8/8/5N2/8/p7/8/2NK3k w - - 0 1",   // Na2 - mate
+    "8/8/8/5N2/8/p7/8/2NK3k w - - 0 1",  // Na2 - mate
                                          // "8/3k4/8/8/8/4B3/4KB2/2B5 w - - 0 1", // draw
                                          // // 6-man positions
                                          // "8/8/1P6/5pr1/8/4R3/7k/2K5 w - - 0 1",  // Re5 - mate

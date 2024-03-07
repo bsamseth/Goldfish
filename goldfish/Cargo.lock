@@ -262,7 +262,7 @@ dependencies = [
  "chess",
  "criterion",
  "derive_more",
- "fathom-syzygy",
+ "fathom",
  "iai",
  "static_assertions",
  "tracing",
@@ -298,22 +298,6 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "chess",
-]
-
-[[package]]
-name = "fathom-syzygy"
-version = "0.1.0"
-dependencies = [
- "fathom-syzygy-sys",
- "thiserror",
-]
-
-[[package]]
-name = "fathom-syzygy-sys"
-version = "0.1.0"
-dependencies = [
- "cc",
- "libc",
 ]
 
 [[package]]

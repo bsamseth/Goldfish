@@ -1,10 +1,11 @@
 use chess::{Board, ChessMove, MoveGen};
 
+use fathom::Wdl;
+
 use super::Searcher;
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
 use crate::newtypes::{Depth, Ply, Value};
-use crate::tb::Wdl;
 use crate::tt::Bound;
 
 impl Searcher {
@@ -191,47 +192,48 @@ impl Searcher {
         ply: Ply,
         depth: Depth,
     ) -> Result<(), Value> {
-        if let Some(tb) = &self.tablebase {
-            if let Some(wdl) = tb.probe_wdl(board, self.stack_state(ply).halfmove_clock) {
-                self.logger.tb_hit();
-                let (value, bound) = match wdl {
-                    Wdl::Win => (Value::known_win_in(ply), Bound::Lower),
-                    Wdl::Loss => (Value::known_loss_in(ply), Bound::Upper),
-                    Wdl::Draw => (Value::DRAW, Bound::Exact),
-                    // Treat draws by rule 50 as draws, but slightly better/worse than normal
-                    // draws. This way, a cursed win is still better than a draw (because the
-                    // opponent might not play optimally), and a blessed loss is still worse than a
-                    // normal draw (because we'd rather not be reliant on rule 50 to hold a
-                    // draw).
-                    Wdl::CursedWin => (Value::DRAW + Value::new(1), Bound::Exact),
-                    Wdl::BlessedLoss => (Value::DRAW - Value::new(1), Bound::Exact),
-                };
+        if let Some(wdl) = self
+            .tablebase
+            .and_then(|tb| tb.probe_wdl(board, self.stack_state(ply).halfmove_clock))
+        {
+            self.logger.tb_hit();
+            let (value, bound) = match wdl {
+                Wdl::Win => (Value::known_win_in(ply), Bound::Lower),
+                Wdl::Loss => (Value::known_loss_in(ply), Bound::Upper),
+                Wdl::Draw => (Value::DRAW, Bound::Exact),
+                // Treat draws by rule 50 as draws, but slightly better/worse than normal
+                // draws. This way, a cursed win is still better than a draw (because the
+                // opponent might not play optimally), and a blessed loss is still worse than a
+                // normal draw (because we'd rather not be reliant on rule 50 to hold a
+                // draw).
+                Wdl::CursedWin => (Value::DRAW + Value::new(1), Bound::Exact),
+                Wdl::BlessedLoss => (Value::DRAW - Value::new(1), Bound::Exact),
+            };
 
-                // Apply the tb bounds to alpha/beta:
-                if bound & Bound::Lower && value > *alpha {
-                    *alpha = value;
-                }
-                if bound & Bound::Upper && value < *beta {
-                    *beta = value;
-                }
+            // Apply the tb bounds to alpha/beta:
+            if bound & Bound::Lower && value > *alpha {
+                *alpha = value;
+            }
+            if bound & Bound::Upper && value < *beta {
+                *beta = value;
+            }
 
-                // If the updated bounds leave a zero-width window, signal that an early return is
-                // possible. Exact bounds always leave a zero-width window.
-                if alpha >= beta {
-                    self.transposition_table.write().unwrap().store(
-                        self.stack_state(ply).zobrist,
-                        None,
-                        bound,
-                        value,
-                        // This could be stored with Depth::MAX, but that would potentially
-                        // saturate the tt with only tablebase entries, which is a waste of
-                        // a tt. Instead, give it a reasonable depth that should keep it around
-                        // for a while, but not forever. Five is a magic number, not tested extensively.
-                        depth + Depth::new(5),
-                        ply,
-                    );
-                    return Err(value);
-                }
+            // If the updated bounds leave a zero-width window, signal that an early return is
+            // possible. Exact bounds always leave a zero-width window.
+            if alpha >= beta {
+                self.transposition_table.write().unwrap().store(
+                    self.stack_state(ply).zobrist,
+                    None,
+                    bound,
+                    value,
+                    // This could be stored with Depth::MAX, but that would potentially
+                    // saturate the tt with only tablebase entries, which is a waste of
+                    // a tt. Instead, give it a reasonable depth that should keep it around
+                    // for a while, but not forever. Five is a magic number, not tested extensively.
+                    depth + Depth::new(5),
+                    ply,
+                );
+                return Err(value);
             }
         }
         Ok(())

@@ -3,6 +3,8 @@ use std::sync::{Arc, RwLock};
 use chess::{Board, ChessMove, MoveGen};
 use uci::UciPosition;
 
+use fathom::Tablebase;
+
 use super::stackstate::StackState;
 use super::Searcher;
 use crate::board::BoardExt;
@@ -11,7 +13,6 @@ use crate::logger::Logger;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::stop_signal::StopSignal;
-use crate::tb::Tablebase;
 use crate::tt::{Bound, TranspositionTable};
 
 impl Searcher {
@@ -21,7 +22,7 @@ impl Searcher {
         options: &[uci::GoOption],
         stop_signal: StopSignal,
         transposition_table: Arc<RwLock<TranspositionTable>>,
-        tablebase: Option<Arc<Tablebase>>,
+        tablebase: Option<&'static Tablebase>,
     ) -> Self {
         let mut board = position.start_pos;
         let mut root_position = board;
@@ -168,16 +169,17 @@ impl Searcher {
     /// A tablebase must be initialized, and the root position must be in the tablebase.
     pub fn filter_root_moves_using_tb(&mut self) {
         let hmc = self.stack_state(Ply::new(0)).halfmove_clock;
-        if let Some(probe) = self
+
+        if let Some((wdl, filter)) = self
             .tablebase
-            .as_ref()
-            .and_then(|tb| tb.probe_root(&self.root_position, hmc))
+            .and_then(|tb| tb.probe_dtz(&self.root_position, hmc))
         {
             self.logger.tb_hit();
-            probe.filter_moves(&mut self.root_moves);
+            self.root_moves.retain(|r| filter(&r.mv));
 
             if self.root_moves.len() < 2 {
-                self.root_moves[0].value = probe.score();
+                assert!(self.root_moves.len() == 1);
+                self.root_moves[0].value = wdl.into();
                 self.logger
                     .send_move(&self.root_moves[0], &[self.root_moves[0].mv], 0);
             }
