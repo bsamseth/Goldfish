@@ -15,6 +15,7 @@ use crate::{
     board::BoardExt,
     newtypes::{Depth, Ply, Value},
     tt::Bound,
+    tune,
 };
 
 impl Searcher {
@@ -98,4 +99,56 @@ impl Searcher {
 
         Ok(())
     }
+
+    /// Futility pruning
+    ///
+    /// This combines futilit pruning, extended futility pruning and razoring into one go.
+    /// The same idea goes for all three: If the static evaluation is sufficiently below alpha, we
+    /// can reduce the depth by 1 and continue. In the case of futility pruning, we skip straight
+    /// to quiescence search.
+    ///
+    /// Source: <http://www.frayn.net/beowulf/theory.html/>
+    pub fn futility_pruning(
+        &mut self,
+        board: &Board,
+        alpha: Value,
+        beta: Value,
+        depth: &mut Depth,
+        ply: Ply,
+    ) -> Result<(), Value> {
+        if board.in_check() {
+            return Ok(());
+        }
+
+        let eval = self.stack_state(ply).eval;
+
+        match depth.as_inner() {
+            3 if eval + tune::speculate::RAZOR_MARGIN <= alpha => {
+                *depth = Depth::new(2);
+            }
+            2 if eval + tune::speculate::EXTENDED_FUTILITY_MARGIN <= alpha => {
+                *depth = Depth::new(1);
+            }
+            1 if eval + tune::speculate::FUTILITY_MARGIN <= alpha => {
+                return Err(Value::from(self.quiescence_search(board, alpha, beta, ply)));
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+}
+
+/// Delta pruning (quiescence search)
+///
+/// If the static evaluation is sufficiently below alpha, we can assume that the position is
+/// losing, and we can prune the node.
+///
+/// TODO: Make two versions of this: One pre-move generation that checks for greates possible
+/// swing, and one that takes a move and checks if the captured piece is enough to swing.
+///
+pub fn delta_pruning(board: &Board, static_eval: Value, alpha: Value) -> Result<(), Value> {
+    if !board.in_check() && static_eval + tune::speculate::DELTA_MARGIN <= alpha {
+        return Err(alpha);
+    }
+    Ok(())
 }

@@ -1,6 +1,6 @@
 use chess::{Board, MoveGen};
 
-use super::{cuts, Searcher};
+use super::{cuts, speculate, Searcher};
 use crate::board::BoardExt;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Ply, Value};
@@ -20,6 +20,7 @@ impl Searcher {
         self.return_if_draw(board, ply)?;
 
         let mut best_value = cuts::standing_pat(board, &mut alpha, beta)?;
+        speculate::delta_pruning(board, best_value, alpha)?;
 
         let mut moves = MoveGen::new_legal(board);
         cuts::return_if_no_moves(&moves, board, ply)?;

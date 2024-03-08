@@ -13,3 +13,19 @@ pub mod time_control {
     /// If we have less than this much time left, just return a move as soon as possible (milliseconds).
     pub const MIN_SEARCH_TIME: usize = 25;
 }
+
+pub mod speculate {
+    use crate::newtypes::Value;
+
+    /// Razor margin in centipawns.
+    pub const RAZOR_MARGIN: Value = Value::new(650);
+
+    /// Extended futility margin in centipawns.
+    pub const EXTENDED_FUTILITY_MARGIN: Value = Value::new(500);
+
+    /// Futility margin in centipawns.
+    pub const FUTILITY_MARGIN: Value = Value::new(300);
+
+    /// Delta pruning margin in centipawns.
+    pub const DELTA_MARGIN: Value = Value::new(1200);
+}
