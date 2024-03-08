@@ -1,7 +1,9 @@
 use chess::{Board, MoveGen};
 
+use super::cuts;
 use super::Searcher;
 use crate::board::BoardExt;
+use crate::evaluate::Evaluate;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::tt::Bound;
@@ -16,20 +18,25 @@ impl Searcher {
         mut beta: Value,
         ply: Ply,
     ) -> Result<Value, Value> {
+        // Step 1: Early return if we don't have to expand this node:
         self.return_evaluation_if_at_forced_leaf(board, ply)?;
         self.return_if_draw(board, ply)?;
 
         let alpha_orig = alpha; // Save original alpha for later determinaiton of search bound type.
+        cuts::mate_distance_pruning(&mut alpha, &mut beta, ply)?;
         let tt_move = self.get_bounds_and_move_from_tt(&mut alpha, &mut beta, ply, depth)?;
+        self.check_tablebase(board, &mut alpha, &mut beta, ply, depth)?;
 
+        // Step 2: Quiescence search if at max depth.
         if depth == Depth::new(0) {
             return self.quiescence_search(board, alpha, beta, ply);
         }
 
-        self.logger.update_search(ply);
+        // Step 2: Expand the node.
+        self.logger.update_search(ply); // Only now do we say we're at a new node.
 
-        Searcher::mate_distance_pruning(&mut alpha, &mut beta, ply)?;
-        self.check_tablebase(board, &mut alpha, &mut beta, ply, depth)?;
+        self.stack_state_mut(ply).eval = board.evaluate();
+        self.null_move_pruning(board, &mut beta, depth, ply)?;
 
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)
@@ -54,7 +61,7 @@ impl Searcher {
 
             if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
-                // Rely on whatever we've found so far on only.
+                // Rely on whatever we've found so far.
                 return Err(best_value);
             }
 

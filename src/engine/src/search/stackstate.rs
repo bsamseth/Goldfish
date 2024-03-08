@@ -1,10 +1,26 @@
 use chess::ChessMove;
 
-#[derive(Debug, Clone, Copy, Default)]
+use crate::newtypes::Value;
+
+#[derive(Debug, Clone, Copy)]
 pub struct StackState {
+    pub eval: Value,
     pub killers: [Option<ChessMove>; 2],
     pub halfmove_clock: usize,
     pub zobrist: u64,
+    pub null_move: bool,
+}
+
+impl Default for StackState {
+    fn default() -> Self {
+        Self {
+            eval: -Value::INFINITE,
+            null_move: false,
+            killers: Default::default(),
+            halfmove_clock: Default::default(),
+            zobrist: Default::default(),
+        }
+    }
 }
 
 impl StackState {

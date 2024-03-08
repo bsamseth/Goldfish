@@ -1,3 +1,10 @@
+//! # Cutoffs
+//!
+//! This module contains functions that determine if a cutoff is possible during the search.
+//! All these functions are sound, meaning that they don't rely on speculative heuristics.
+//!
+//! Speculative cutoffs are implemented in [`super::speculate`].
+
 use chess::{Board, ChessMove, MoveGen};
 
 use fathom::Wdl;
@@ -112,77 +119,6 @@ impl Searcher {
         }
     }
 
-    /// Get a lower bound score of the position.
-    ///
-    /// If the side to move isn't in check, a lower bound evaluation of the position is the
-    /// evaluation of the position itself. This is because if there are no better captures
-    /// available, we could just choose to not capture anything ("stand pat" from poker, meaning to
-    /// not draw any new cards).
-    ///
-    /// Should this lower bound be better than beta, this will signal that an early return is
-    /// possible.
-    ///
-    /// `alpha` is updated in place if the lower bound is better than the current alpha.
-    pub fn standing_pat(board: &Board, alpha: &mut Value, beta: Value) -> Result<Value, Value> {
-        let mut best_value = -Value::INFINITE;
-        if !board.in_check() {
-            best_value = board.evaluate();
-
-            if best_value > *alpha {
-                *alpha = best_value;
-
-                if best_value >= beta {
-                    return Err(best_value);
-                }
-            }
-        }
-        Ok(best_value)
-    }
-
-    /// Early return if there are no legal moves in the position.
-    ///
-    /// If the side to move is in check, then the score is negative [`Value::CHECKMATE`].
-    /// Otherwise, the score is [`Value::DRAW`].
-    ///
-    /// If there are moves to play, this is a no-op.
-    pub fn return_if_no_moves(moves: &MoveGen, board: &Board, ply: Ply) -> Result<(), Value> {
-        if moves.len() == 0 {
-            if board.in_check() {
-                return Err(Value::mated_in(ply));
-            }
-            return Err(Value::DRAW);
-        }
-        Ok(())
-    }
-
-    /// Mate distance pruning
-    ///
-    /// Even if we mate at the next move our score would be at best CHECKMATE - ply, but if alpha
-    /// is already bigger because a shorter mate was found upward in the tree then there is no need
-    /// to search because we will never beat the current alpha. Same logic but with reversed signs
-    /// applies also in the opposite condition of being mated instead of giving mate.
-    ///
-    /// This may modify `alpha` and `beta` in place. If `alpha >= beta` after this, the function
-    /// signals that an early return is possible.
-    pub fn mate_distance_pruning(
-        alpha: &mut Value,
-        beta: &mut Value,
-        ply: Ply,
-    ) -> Result<(), Value> {
-        let worst_mate = Value::mated_in(ply);
-        let best_mate = Value::mate_in(ply + Ply::new(1));
-        if *alpha < worst_mate {
-            *alpha = worst_mate;
-        }
-        if *beta > best_mate {
-            *beta = best_mate;
-        }
-        if alpha >= beta {
-            return Err(*alpha);
-        }
-        Ok(())
-    }
-
     /// Adjust alpha/beta if the position is in the tablebase.
     pub fn check_tablebase(
         &mut self,
@@ -238,4 +174,71 @@ impl Searcher {
         }
         Ok(())
     }
+}
+
+/// Get a lower bound score of the position.
+///
+/// If the side to move isn't in check, a lower bound evaluation of the position is the
+/// evaluation of the position itself. This is because if there are no better captures
+/// available, we could just choose to not capture anything ("stand pat" from poker, meaning to
+/// not draw any new cards).
+///
+/// Should this lower bound be better than beta, this will signal that an early return is
+/// possible.
+///
+/// `alpha` is updated in place if the lower bound is better than the current alpha.
+pub fn standing_pat(board: &Board, alpha: &mut Value, beta: Value) -> Result<Value, Value> {
+    let mut best_value = -Value::INFINITE;
+    if !board.in_check() {
+        best_value = board.evaluate();
+
+        if best_value > *alpha {
+            *alpha = best_value;
+
+            if best_value >= beta {
+                return Err(best_value);
+            }
+        }
+    }
+    Ok(best_value)
+}
+
+/// Early return if there are no legal moves in the position.
+///
+/// If the side to move is in check, then the score is negative [`Value::CHECKMATE`].
+/// Otherwise, the score is [`Value::DRAW`].
+///
+/// If there are moves to play, this is a no-op.
+pub fn return_if_no_moves(moves: &MoveGen, board: &Board, ply: Ply) -> Result<(), Value> {
+    if moves.len() == 0 {
+        if board.in_check() {
+            return Err(Value::mated_in(ply));
+        }
+        return Err(Value::DRAW);
+    }
+    Ok(())
+}
+
+/// Mate distance pruning
+///
+/// Even if we mate at the next move our score would be at best CHECKMATE - ply, but if alpha
+/// is already bigger because a shorter mate was found upward in the tree then there is no need
+/// to search because we will never beat the current alpha. Same logic but with reversed signs
+/// applies also in the opposite condition of being mated instead of giving mate.
+///
+/// This may modify `alpha` and `beta` in place. If `alpha >= beta` after this, the function
+/// signals that an early return is possible.
+pub fn mate_distance_pruning(alpha: &mut Value, beta: &mut Value, ply: Ply) -> Result<(), Value> {
+    let worst_mate = Value::mated_in(ply);
+    let best_mate = Value::mate_in(ply + Ply::new(1));
+    if *alpha < worst_mate {
+        *alpha = worst_mate;
+    }
+    if *beta > best_mate {
+        *beta = best_mate;
+    }
+    if alpha >= beta {
+        return Err(*alpha);
+    }
+    Ok(())
 }
