@@ -13,7 +13,7 @@ impl Searcher {
     pub fn negamax(
         &mut self,
         board: &Board,
-        depth: Depth,
+        mut depth: Depth,
         mut alpha: Value,
         mut beta: Value,
         ply: Ply,
@@ -35,8 +35,12 @@ impl Searcher {
         // Step 2: Expand the node.
         self.logger.update_search(ply); // Only now do we say we're at a new node.
 
-        self.stack_state_mut(ply).eval = board.evaluate();
-        self.null_move_pruning(board, &mut beta, depth, ply)?;
+        if board.in_check() {
+            depth = depth + Depth::new(1); // Extend search if in check.
+        } else {
+            self.stack_state_mut(ply).eval = board.evaluate();
+            self.null_move_pruning(board, &mut beta, depth, ply)?;
+        }
 
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)
