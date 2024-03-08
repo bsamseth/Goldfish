@@ -63,13 +63,13 @@ impl Searcher {
         };
 
         let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
-
         let logger = Logger::new().silent(options.iter().any(|o| *o == uci::GoOption::Silent));
+        let limits = Limits::from(options).with_time_control(&root_position);
 
         Self {
             root_position,
             ss: stack_states,
-            limits: Limits::from(options),
+            limits,
             logger,
             stop_signal,
             root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
