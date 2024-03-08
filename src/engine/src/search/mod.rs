@@ -3,21 +3,23 @@ mod helpers;
 mod negamax;
 mod quiescence;
 mod root;
+mod run;
 mod stackstate;
 
 use std::sync::{Arc, RwLock};
 
-use chess::{Board, ChessMove};
-
-use fathom::Tablebase;
+use chess::{Board, MoveGen};
 
 use super::limits::Limits;
 use super::logger::Logger;
 use super::movelist::MoveVec;
-use super::newtypes::{Depth, Ply, Value};
+use super::newtypes::Ply;
 use super::stop_signal::StopSignal;
 use super::tt::TranspositionTable;
+use crate::board::BoardExt;
+use fathom::Tablebase;
 use stackstate::StackState;
+use uci::UciPosition;
 
 #[derive(Debug)]
 pub struct Searcher {
@@ -32,53 +34,47 @@ pub struct Searcher {
 }
 
 impl Searcher {
-    /// Run a search and return the best move.
-    ///
-    /// The search may stop for a variety of reasons, depending on the options set by the user,
-    /// or if the user sends a stop signal. Still, it should always eventually return.
-    pub fn run(&mut self) -> ChessMove {
-        assert!(
-            !self.root_moves.is_empty(),
-            "no legal moves in starting position, uci-crate promise violation"
-        );
-
-        self.filter_root_moves_using_tb();
-
-        // If there's only one legal move, we don't need to search.
-        // A general purpose UCI engine should actually search the position anyway, in order to
-        // determine the actual evaluation of the position. This, however, is an engine meant to
-        // play, and searching a position with only one legal move is a waste of time.
-        if self.root_moves.len() == 1 {
-            return self.root_moves[0].mv;
+    /// Create a new [`Searcher`].
+    pub fn new(
+        position: UciPosition,
+        options: &[uci::GoOption],
+        stop_signal: StopSignal,
+        transposition_table: Arc<RwLock<TranspositionTable>>,
+        tablebase: Option<&'static Tablebase>,
+    ) -> Self {
+        let mut board = position.start_pos;
+        let mut root_position = board;
+        let mut halfmove_clock = position.starting_halfmove_clock;
+        for mv in position.moves {
+            if board.halfmove_reset(mv) {
+                halfmove_clock = 0;
+            } else {
+                halfmove_clock += 1;
+            }
+            board.make_move(mv, &mut root_position);
+            board = root_position;
         }
 
-        let alpha = if let Some(mate_distance) = self.limits.mate {
-            Value::mate_in(mate_distance + Ply::new(1))
-        } else {
-            -Value::INFINITE
+        let mut stack_states = [StackState::default(); Ply::MAX.as_usize() + 1];
+        stack_states[0] = StackState {
+            halfmove_clock,
+            zobrist: root_position.get_hash(),
+            killers: [None; 2],
         };
 
-        for depth in 1..=self.limits.depth.as_inner() {
-            let depth = Depth::new(depth);
+        let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
 
-            if self.should_stop() {
-                break;
-            }
+        let logger = Logger::new().silent(options.iter().any(|o| *o == uci::GoOption::Silent));
 
-            self.logger.set_current_depth(depth);
-            self.search_root(depth, alpha, Value::INFINITE);
-
-            self.root_moves.sort();
-
-            // If we're in mate search mode, and we've found a mate, we can stop if the mate is
-            // within the distance we're looking for.
-            if let Some(mate) = self.limits.mate {
-                if self.root_moves[0].value >= Value::mate_in(mate) {
-                    break;
-                }
-            }
+        Self {
+            root_position,
+            ss: stack_states,
+            limits: Limits::from(options),
+            logger,
+            stop_signal,
+            root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
+            transposition_table,
+            tablebase,
         }
-
-        self.root_moves[0].mv
     }
 }
