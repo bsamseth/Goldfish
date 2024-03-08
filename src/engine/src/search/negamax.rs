@@ -39,6 +39,7 @@ impl Searcher {
             depth = depth + Depth::new(1); // Extend search if in check.
         } else {
             self.stack_state_mut(ply).eval = board.evaluate();
+            self.futility_pruning(board, alpha, beta, &mut depth, ply)?;
             self.null_move_pruning(board, &mut beta, depth, ply)?;
         }
 
