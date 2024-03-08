@@ -8,6 +8,7 @@ mod newtypes;
 mod search;
 mod stop_signal;
 mod tt;
+mod tune;
 
 use std::sync::{Arc, RwLock};
 
