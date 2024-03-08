@@ -82,6 +82,33 @@ impl Searcher {
         new_ss.zobrist = result.get_hash();
     }
 
+    /// Make a null move, return the new board and update the stack states.
+    ///
+    /// # Panics
+    /// Panics if the position is in check, as a null move is not possible in that case.
+    pub fn make_null_move(&mut self, board: &Board, ply: Ply) -> Board {
+        let board = board
+            .null_move()
+            .expect("not in check, so null move should be possible");
+
+        // These assignments look a little unsorted, but it was needed for the borrow checker.
+        let current_ss = self.stack_state_mut(ply);
+        current_ss.null_move = true;
+        let new_hmc = current_ss.halfmove_clock + 1;
+        let new_ss = self.stack_state_mut(ply + Ply::new(1));
+        new_ss.halfmove_clock = new_hmc;
+        new_ss.zobrist = board.get_hash();
+
+        board
+    }
+
+    /// Undo a null move.
+    ///
+    /// This does _not_ undo what [`Searcher::make_null_move`] does to the `ply+1` stack state.
+    pub fn undo_null_move(&mut self, ply: Ply) {
+        self.stack_state_mut(ply).null_move = false;
+    }
+
     /// Return `true` if the current position is a draw.
     pub fn is_draw(&self, board: &Board, ply: Ply) -> bool {
         if self.stack_state(ply).halfmove_clock >= 100 || board.has_insufficient_material() {

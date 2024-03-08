@@ -56,7 +56,7 @@ impl MoveVec {
 
     /// Sorts the moves with the given preferences first, then by value.
     ///
-    /// The preferences, if [`Some`] and valid moves, are placed first in the given order. Then the
+    /// The preferences, if valid moves, are placed first in the given order. Then the
     /// rest of the moves are sorted by value.
     pub fn sort_with_preference(
         mut self,

@@ -4,6 +4,7 @@ mod negamax;
 mod quiescence;
 mod root;
 mod run;
+mod speculate;
 mod stackstate;
 
 use std::sync::{Arc, RwLock};
@@ -17,6 +18,7 @@ use super::newtypes::Ply;
 use super::stop_signal::StopSignal;
 use super::tt::TranspositionTable;
 use crate::board::BoardExt;
+use crate::evaluate::Evaluate;
 use fathom::Tablebase;
 use stackstate::StackState;
 use uci::UciPosition;
@@ -56,11 +58,9 @@ impl Searcher {
         }
 
         let mut stack_states = [StackState::default(); Ply::MAX.as_usize() + 1];
-        stack_states[0] = StackState {
-            halfmove_clock,
-            zobrist: root_position.get_hash(),
-            killers: [None; 2],
-        };
+        stack_states[0].eval = root_position.evaluate();
+        stack_states[0].zobrist = root_position.get_hash();
+        stack_states[0].halfmove_clock = halfmove_clock;
 
         let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
         let logger = Logger::new().silent(options.iter().any(|o| *o == uci::GoOption::Silent));

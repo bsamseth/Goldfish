@@ -1,6 +1,6 @@
 use chess::{Board, MoveGen};
 
-use super::Searcher;
+use super::{cuts, Searcher};
 use crate::board::BoardExt;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Ply, Value};
@@ -19,10 +19,10 @@ impl Searcher {
         self.return_evaluation_if_at_forced_leaf(board, ply)?;
         self.return_if_draw(board, ply)?;
 
-        let mut best_value = Searcher::standing_pat(board, &mut alpha, beta)?;
+        let mut best_value = cuts::standing_pat(board, &mut alpha, beta)?;
 
         let mut moves = MoveGen::new_legal(board);
-        Searcher::return_if_no_moves(&moves, board, ply)?;
+        cuts::return_if_no_moves(&moves, board, ply)?;
 
         // If we're not in check, we only search captures.
         // In check we should also consider evasions.
