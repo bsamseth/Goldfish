@@ -1,65 +1,12 @@
-use std::sync::{Arc, RwLock};
-
-use chess::{Board, ChessMove, MoveGen};
-use uci::UciPosition;
-
-use fathom::Tablebase;
+use chess::{Board, ChessMove};
 
 use super::stackstate::StackState;
 use super::Searcher;
 use crate::board::BoardExt;
-use crate::limits::Limits;
-use crate::logger::Logger;
-use crate::movelist::MoveVec;
 use crate::newtypes::{Depth, Ply, Value};
-use crate::stop_signal::StopSignal;
-use crate::tt::{Bound, TranspositionTable};
+use crate::tt::Bound;
 
 impl Searcher {
-    /// Create a new [`Searcher`].
-    pub fn new(
-        position: UciPosition,
-        options: &[uci::GoOption],
-        stop_signal: StopSignal,
-        transposition_table: Arc<RwLock<TranspositionTable>>,
-        tablebase: Option<&'static Tablebase>,
-    ) -> Self {
-        let mut board = position.start_pos;
-        let mut root_position = board;
-        let mut halfmove_clock = position.starting_halfmove_clock;
-        for mv in position.moves {
-            if board.halfmove_reset(mv) {
-                halfmove_clock = 0;
-            } else {
-                halfmove_clock += 1;
-            }
-            board.make_move(mv, &mut root_position);
-            board = root_position;
-        }
-
-        let mut stack_states = [StackState::default(); Ply::MAX.as_usize() + 1];
-        stack_states[0] = StackState {
-            halfmove_clock,
-            zobrist: root_position.get_hash(),
-            killers: [None; 2],
-        };
-
-        let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
-
-        let logger = Logger::new().silent(options.iter().any(|o| *o == uci::GoOption::Silent));
-
-        Self {
-            root_position,
-            ss: stack_states,
-            limits: Limits::from(options),
-            logger,
-            stop_signal,
-            root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
-            transposition_table,
-            tablebase,
-        }
-    }
-
     /// Return `true` if the search should stop.
     ///
     /// The search should stop if any of the following conditions are met:
