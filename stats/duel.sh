@@ -2,16 +2,20 @@
 
 cutechess-cli \
 	-engine \
-	cmd=/home/bendik/goldfish/src/target/release-lto/goldfish \
-	name=alpha \
+	conf='Goldfish v2.0.0-rc2' \
 	-engine \
-	cmd=goldfish-1.5.1 \
+	conf='Goldfish v2.0.0-rc1' \
+	-engine \
+	conf='Goldfish v1.13.0' \
 	-each \
 	tc=40/60 \
 	proto=uci \
 	option.Hash=500 \
+	option.SyzygyPath=/home/bendik/goldfish/syzygy \
 	book=/home/bendik/goldfish/openingbooks/gm2001.bin \
 	bookdepth=6 \
-	-rounds 100 \
-	-pgnout /home/bendik/goldfish/stats/baseline.pgn \
-	-concurrency 10
+	-games 2 \
+	-rounds 50 \
+	-pgnout /home/bendik/goldfish/stats/match-history.pgn min fi \
+	-concurrency 10 \
+	-tournament round-robin
