@@ -32,9 +32,10 @@ impl Searcher {
             return self.quiescence_search(board, alpha, beta, ply);
         }
 
-        // Step 2: Expand the node.
+        // Step 3: Expand the node.
         self.logger.update_search(ply); // Only now do we say we're at a new node.
 
+        // Step 4: Speculative extensions / pruning.
         if board.in_check() {
             depth += Depth::new(1); // Extend search if in check.
         } else {
@@ -43,6 +44,10 @@ impl Searcher {
             self.null_move_pruning(board, &mut beta, depth, ply)?;
         }
 
+        // Step 5: Internal iterative deepening.
+        let tt_move = self.internal_iterative_deepening(board, tt_move, depth, alpha, beta, ply);
+
+        // Step 6: Move generation and ordering.
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)
             .sort_with_preference(
@@ -55,10 +60,10 @@ impl Searcher {
                 .filter_map(|x| *x),
             );
 
+        // Step 7: Recursively search all possible moves.
         let mut best_value = -Value::INFINITE;
         let mut best_move = None;
         let mut new_board = *board;
-
         for (mv_nr, mv) in moves.iter().map(|entry| entry.mv).enumerate() {
             self.make_move(board, mv, &mut new_board, ply);
 
@@ -83,6 +88,7 @@ impl Searcher {
             }
         }
 
+        // Step 8: Store and return result.
         let bound = if moves.len() == 0 {
             best_value = if board.in_check() {
                 Value::mated_in(ply)

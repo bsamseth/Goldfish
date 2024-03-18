@@ -15,7 +15,7 @@ pub mod time_control {
 }
 
 pub mod speculate {
-    use crate::newtypes::Value;
+    use crate::newtypes::{Depth, Value};
 
     /// Razor margin in centipawns.
     pub const RAZOR_MARGIN: Value = Value::new(650);
@@ -28,4 +28,7 @@ pub mod speculate {
 
     /// Delta pruning margin in centipawns.
     pub const DELTA_MARGIN: Value = Value::new(250);
+
+    /// Internal iterative deepening depth reduction.
+    pub const IID_DEPTH_REDUCTION: Depth = Depth::new(7);
 }
