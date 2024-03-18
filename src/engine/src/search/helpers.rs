@@ -159,6 +159,12 @@ impl Searcher {
             }
         }
     }
+
+    pub fn update_history_stats(&mut self, mv: Option<ChessMove>) {
+        if let Some(mv) = mv {
+            self.history_stats[mv.get_source().to_index()][mv.get_dest().to_index()] += 1;
+        }
+    }
 }
 
 impl From<Result<Value, Value>> for Value {

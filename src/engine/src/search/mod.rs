@@ -33,6 +33,7 @@ pub struct Searcher {
     root_moves: MoveVec,
     transposition_table: Arc<RwLock<TranspositionTable>>,
     tablebase: Option<&'static Tablebase>,
+    history_stats: [[usize; 64]; 64],
 }
 
 impl Searcher {
@@ -75,6 +76,7 @@ impl Searcher {
             root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
             transposition_table,
             tablebase,
+            history_stats: [[0; 64]; 64],
         }
     }
 }
