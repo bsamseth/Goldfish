@@ -29,10 +29,10 @@ impl Searcher {
                 return;
             }
 
+            self.root_moves[mv_nr].value = value;
+
             if value > alpha {
                 alpha = value;
-
-                self.root_moves[mv_nr].value = value;
 
                 if value >= beta {
                     return;
