@@ -1,6 +1,6 @@
 use chess::{Board, ChessMove, MoveGen, Piece};
 
-use crate::newtypes::Value;
+use crate::{newtypes::Value, tune};
 
 #[derive(Debug)]
 pub struct MoveVec(Vec<MoveEntry>);
@@ -41,6 +41,32 @@ impl MoveVec {
             }
 
             entry.value = Value::new(value);
+        }
+        self
+    }
+
+    /// Use move history statistics to adjust the move ordering.
+    ///
+    /// Each time a node is searched, a counter is incremented for that from-to square pair.
+    /// Order moves that tend to be best furhter up the list.
+    ///
+    /// Source: <http://www.frayn.net/beowulf/theory.html#history>
+    pub fn with_history_stats(mut self, stats: &[[usize; 64]; 64]) -> Self {
+        let max = self
+            .iter()
+            .map(|m| stats[m.mv.get_source().to_index()][m.mv.get_dest().to_index()])
+            .max()
+            .unwrap_or(1)
+            .max(1);
+
+        for entry in self.iter_mut() {
+            let value = i16::try_from(
+                stats[entry.mv.get_source().to_index()][entry.mv.get_dest().to_index()]
+                    * tune::move_ordering::MAX_HISTORY_STATS_IMPACT
+                    / max,
+            )
+            .expect("value is in range [0, MAX_HISTORY_STATS_IMPACT]");
+            entry.value += Value::new(value);
         }
         self
     }

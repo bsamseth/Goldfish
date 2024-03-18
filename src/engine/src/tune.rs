@@ -32,3 +32,11 @@ pub mod speculate {
     /// Internal iterative deepening depth reduction.
     pub const IID_DEPTH_REDUCTION: Depth = Depth::new(7);
 }
+
+pub mod move_ordering {
+    /// How many centipawns bonus to give to moves that are the most frequent in history stats.
+    ///
+    /// Other moves will be given a bonus scaled linearly on how frequent they are compared to the
+    /// most frequent move square.
+    pub const MAX_HISTORY_STATS_IMPACT: usize = 100;
+}

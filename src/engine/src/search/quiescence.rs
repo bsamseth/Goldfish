@@ -31,7 +31,10 @@ impl Searcher {
             let targets = board.color_combined(!board.side_to_move());
             moves.set_iterator_mask(*targets);
         }
-        let moves = MoveVec::from(moves).mvv_lva_rated(board).sorted();
+        let moves = MoveVec::from(moves)
+            .mvv_lva_rated(board)
+            .with_history_stats(&self.history_stats)
+            .sorted();
 
         let mut new_board = *board;
         for mv in moves.iter().map(|entry| entry.mv) {

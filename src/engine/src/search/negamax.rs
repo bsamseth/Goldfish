@@ -50,6 +50,7 @@ impl Searcher {
         // Step 6: Move generation and ordering.
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)
+            .with_history_stats(&self.history_stats)
             .sort_with_preference(
                 [
                     tt_move,
@@ -105,6 +106,7 @@ impl Searcher {
         };
 
         self.stack_state_mut(ply).update_killer(best_move);
+        self.update_history_stats(best_move);
         self.transposition_table.write().unwrap().store(
             self.stack_state(ply).zobrist,
             best_move,
