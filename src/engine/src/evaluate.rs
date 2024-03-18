@@ -121,6 +121,7 @@ pub trait Evaluate {
 }
 
 impl Evaluate for Board {
+    #[inline]
     fn evaluate(&self) -> Value {
         evaluate(self)
     }
@@ -170,6 +171,14 @@ fn evaluate_material(board: &Board) -> Value {
 
     score += count(my_pieces, queens).scaled_by(QUEEN_VALUE);
     score -= count(their_pieces, queens).scaled_by(QUEEN_VALUE);
+
+    // Bishop pair bonus.
+    if (bishops & my_pieces).popcnt() >= 2 {
+        score += 50;
+    }
+    if (bishops & their_pieces).popcnt() >= 2 {
+        score -= 50;
+    }
 
     Value::new(
         score
