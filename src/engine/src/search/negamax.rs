@@ -36,7 +36,7 @@ impl Searcher {
         self.logger.update_search(ply); // Only now do we say we're at a new node.
 
         if board.in_check() {
-            depth = depth + Depth::new(1); // Extend search if in check.
+            depth += Depth::new(1); // Extend search if in check.
         } else {
             self.stack_state_mut(ply).eval = board.evaluate();
             self.futility_pruning(board, alpha, beta, &mut depth, ply)?;

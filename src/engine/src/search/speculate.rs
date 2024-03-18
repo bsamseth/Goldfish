@@ -8,7 +8,7 @@
 //!
 //! Non-speculative cutoffs are implemented in [`super::cuts`].
 
-use chess::{Board, Piece};
+use chess::{Board, ChessMove, Piece};
 
 use super::Searcher;
 use crate::{
@@ -42,6 +42,7 @@ impl Searcher {
     /// # Assumptions
     /// The evaluation of the position should already be available in the stack state before
     /// calling this function.
+    #[inline]
     pub fn null_move_pruning(
         &mut self,
         board: &Board,
@@ -108,6 +109,7 @@ impl Searcher {
     /// to quiescence search.
     ///
     /// Source: <http://www.frayn.net/beowulf/theory.html/>
+    #[inline]
     pub fn futility_pruning(
         &mut self,
         board: &Board,
@@ -140,15 +142,19 @@ impl Searcher {
 
 /// Delta pruning (quiescence search)
 ///
-/// If the static evaluation is sufficiently below alpha, we can assume that the position is
-/// losing, and we can prune the node.
+/// If the static evaluation is so low that the move is unlikely to improve alpha, we can skip the move.
 ///
-/// TODO: Make two versions of this: One pre-move generation that checks for greates possible
-/// swing, and one that takes a move and checks if the captured piece is enough to swing.
+/// Returns true if the move should be skipped.
 ///
-pub fn delta_pruning(board: &Board, static_eval: Value, alpha: Value) -> Result<(), Value> {
-    if !board.in_check() && static_eval + tune::speculate::DELTA_MARGIN <= alpha {
-        return Err(alpha);
-    }
-    Ok(())
+/// # Panics
+/// This assumes that if the position is not in check, then the move is a capture. This should be
+/// the case during quiescence search.
+#[inline]
+pub fn delta_pruning(board: &Board, mv: ChessMove, static_eval: Value, alpha: Value) -> bool {
+    !board.in_check()
+        && mv.get_promotion().is_none()
+        && static_eval
+            + crate::evaluate::piece_value(board.piece_on(mv.get_dest()).unwrap())
+            + tune::speculate::DELTA_MARGIN
+            <= alpha
 }

@@ -20,7 +20,7 @@ impl Searcher {
         self.return_if_draw(board, ply)?;
 
         let mut best_value = cuts::standing_pat(board, &mut alpha, beta)?;
-        speculate::delta_pruning(board, best_value, alpha)?;
+        cuts::full_delta_pruning(board, best_value, alpha)?;
 
         let mut moves = MoveGen::new_legal(board);
         cuts::return_if_no_moves(&moves, board, ply)?;
@@ -35,6 +35,9 @@ impl Searcher {
 
         let mut new_board = *board;
         for mv in moves.iter().map(|entry| entry.mv) {
+            if speculate::delta_pruning(board, mv, best_value, alpha) {
+                continue;
+            }
             self.make_move(board, mv, &mut new_board, ply);
 
             let value =

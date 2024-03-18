@@ -7,7 +7,32 @@
 /// [cp-wiki]: https://www.chessprogramming.org/Simplified_Evaluation_Function
 use chess::{BitBoard, Board, Piece, Square};
 
-use crate::newtypes::Value;
+use crate::newtypes::{Value, ValueExt};
+
+// Piece values.
+/// The value of a pawn.
+pub const PAWN_VALUE: Value = Value::new(100);
+/// The value of a knight.
+pub const KNIGHT_VALUE: Value = Value::new(320);
+/// The value of a bishop.
+pub const BISHOP_VALUE: Value = Value::new(330);
+/// The value of a rook.
+pub const ROOK_VALUE: Value = Value::new(500);
+/// The value of a queen.
+pub const QUEEN_VALUE: Value = Value::new(900);
+/// The value of a king. (Not used in the evaluation function.)
+pub const KING_VALUE: Value = Value::new(20000);
+
+pub const fn piece_value(piece: Piece) -> Value {
+    match piece {
+        Piece::Pawn => PAWN_VALUE,
+        Piece::Knight => KNIGHT_VALUE,
+        Piece::Bishop => BISHOP_VALUE,
+        Piece::Rook => ROOK_VALUE,
+        Piece::Queen => QUEEN_VALUE,
+        Piece::King => KING_VALUE,
+    }
+}
 
 /// Piece-square tables (PSQTs).
 ///
@@ -131,20 +156,20 @@ fn evaluate_material(board: &Board) -> Value {
     #[allow(clippy::cast_possible_wrap)]
     let count = |color: &BitBoard, pieces: &BitBoard| (color & pieces).popcnt() as i32;
 
-    score += count(my_pieces, pawns) * 100;
-    score -= count(their_pieces, pawns) * 100;
+    score += count(my_pieces, pawns).scaled_by(PAWN_VALUE);
+    score -= count(their_pieces, pawns).scaled_by(PAWN_VALUE);
 
-    score += count(my_pieces, knights) * 320;
-    score -= count(their_pieces, knights) * 320;
+    score += count(my_pieces, knights).scaled_by(KNIGHT_VALUE);
+    score -= count(their_pieces, knights).scaled_by(KNIGHT_VALUE);
 
-    score += count(my_pieces, bishops) * 330;
-    score -= count(their_pieces, bishops) * 330;
+    score += count(my_pieces, bishops).scaled_by(BISHOP_VALUE);
+    score -= count(their_pieces, bishops).scaled_by(BISHOP_VALUE);
 
-    score += count(my_pieces, rooks) * 500;
-    score -= count(their_pieces, rooks) * 500;
+    score += count(my_pieces, rooks).scaled_by(ROOK_VALUE);
+    score -= count(their_pieces, rooks).scaled_by(ROOK_VALUE);
 
-    score += count(my_pieces, queens) * 900;
-    score -= count(their_pieces, queens) * 900;
+    score += count(my_pieces, queens).scaled_by(QUEEN_VALUE);
+    score -= count(their_pieces, queens).scaled_by(QUEEN_VALUE);
 
     Value::new(
         score

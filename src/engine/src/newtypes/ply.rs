@@ -1,7 +1,7 @@
-use derive_more::{Add, Sub};
+use derive_more::{Add, AddAssign, Sub, SubAssign};
 
 /// A [`Ply`] represents a halfmove in a chess game.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Add, Sub, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Add, AddAssign, Sub, SubAssign, PartialOrd, Ord)]
 pub struct Ply(Inner);
 
 type Inner = u8;
