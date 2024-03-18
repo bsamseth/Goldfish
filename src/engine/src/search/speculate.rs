@@ -138,6 +138,34 @@ impl Searcher {
         }
         Ok(())
     }
+
+    /// Internal iterative deepening
+    ///
+    /// When we have no good guess for the best move, do a reduced search first to find a likely
+    /// candidate. Only do this if a search would lead to a new entry in the TT.
+    #[inline]
+    pub fn internal_iterative_deepening(
+        &mut self,
+        board: &Board,
+        tt_move: Option<ChessMove>,
+        depth: Depth,
+        alpha: Value,
+        beta: Value,
+        ply: Ply,
+    ) -> Option<ChessMove> {
+        if tt_move.is_none() && depth > tune::speculate::IID_DEPTH_REDUCTION {
+            let depth = depth - tune::speculate::IID_DEPTH_REDUCTION;
+            let _ = self.negamax(board, depth, alpha, beta, ply);
+            if let Some((mv, _, _)) = self.transposition_table.read().unwrap().get(
+                self.stack_state(ply).zobrist,
+                depth,
+                ply,
+            ) {
+                return mv;
+            }
+        }
+        tt_move
+    }
 }
 
 /// Delta pruning (quiescence search)
