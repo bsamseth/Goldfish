@@ -5,7 +5,7 @@
 /// The evaluation is very simple, but should be sufficient to play a decent game of chess.
 ///
 /// [cp-wiki]: https://www.chessprogramming.org/Simplified_Evaluation_Function
-use chess::{BitBoard, Board, Color, Piece, Square};
+use chess::{BitBoard, Board, Piece, Square};
 
 use crate::newtypes::{Value, ValueExt};
 
@@ -136,7 +136,6 @@ fn evaluate(board: &Board) -> Value {
 
     score += evaluate_material(board);
     score += evaluate_piece_square_tables(board);
-    score += evaluate_mobility(board);
     score += Value::new(1); // Add bonus for tempo.
 
     score
@@ -269,118 +268,4 @@ fn is_endgame(board: &Board) -> bool {
         || ((their_pieces & rooks) == chess::EMPTY && (their_pieces & minor_pieces).popcnt() <= 1);
 
     definite_endgame || (me_endgame && them_endgame)
-}
-
-fn evaluate_mobility(board: &Board) -> Value {
-    let mobility = chess::ALL_SQUARES
-        .iter()
-        .filter_map(|&sq| {
-            let color = board.color_on(sq)?;
-            let piece = board.piece_on(sq)?;
-            let mobility = match piece {
-                Piece::Knight => 4 * count_knight_moves(sq),
-                Piece::Bishop => 5 * count_bishop_moves(color, board, sq),
-                Piece::Rook => 2 * count_rook_moves(color, board, sq),
-                Piece::Queen => {
-                    count_rook_moves(color, board, sq) + count_bishop_moves(color, board, sq)
-                }
-                _ => return None,
-            };
-
-            let mobility = i16::try_from(mobility).expect("mobility should not overflow an i16");
-
-            Some(if color == board.side_to_move() {
-                mobility
-            } else {
-                -mobility
-            })
-        })
-        .sum();
-
-    Value::new(mobility)
-}
-
-fn count_sliding_moves(
-    side_to_move: Color,
-    board: &Board,
-    square: Square,
-    direction: impl Fn(Square) -> Option<Square>,
-) -> usize {
-    let mut count = 0;
-    let mut s = square;
-    while let Some(next) = direction(s) {
-        s = next;
-
-        if let Some(color) = board.color_on(s) {
-            if color != side_to_move {
-                count += 1;
-            }
-            break;
-        }
-
-        count += 1;
-    }
-    count
-}
-
-fn count_bishop_moves(color: Color, board: &Board, sq: Square) -> usize {
-    count_sliding_moves(color, board, sq, |s| s.up().and_then(|s| s.left()))
-        + count_sliding_moves(color, board, sq, |s| s.up().and_then(|s| s.right()))
-        + count_sliding_moves(color, board, sq, |s| s.down().and_then(|s| s.left()))
-        + count_sliding_moves(color, board, sq, |s| s.down().and_then(|s| s.right()))
-}
-
-fn count_rook_moves(color: Color, board: &Board, sq: Square) -> usize {
-    count_sliding_moves(color, board, sq, |s| s.up())
-        + count_sliding_moves(color, board, sq, |s| s.down())
-        + count_sliding_moves(color, board, sq, |s| s.left())
-        + count_sliding_moves(color, board, sq, |s| s.right())
-}
-
-fn count_knight_moves(square: Square) -> usize {
-    [
-        square
-            .up()
-            .and_then(|s| s.up())
-            .and_then(|s| s.left())
-            .is_some(),
-        square
-            .up()
-            .and_then(|s| s.up())
-            .and_then(|s| s.right())
-            .is_some(),
-        square
-            .up()
-            .and_then(|s| s.left())
-            .and_then(|s| s.left())
-            .is_some(),
-        square
-            .up()
-            .and_then(|s| s.right())
-            .and_then(|s| s.right())
-            .is_some(),
-        square
-            .down()
-            .and_then(|s| s.down())
-            .and_then(|s| s.left())
-            .is_some(),
-        square
-            .down()
-            .and_then(|s| s.down())
-            .and_then(|s| s.right())
-            .is_some(),
-        square
-            .down()
-            .and_then(|s| s.left())
-            .and_then(|s| s.left())
-            .is_some(),
-        square
-            .down()
-            .and_then(|s| s.right())
-            .and_then(|s| s.right())
-            .is_some(),
-    ]
-    .iter()
-    .filter(|&&b| b)
-    .count()
 }
