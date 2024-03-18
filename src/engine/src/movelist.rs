@@ -45,6 +45,15 @@ impl MoveVec {
         self
     }
 
+    pub fn prefer_pawn_moves(mut self, board: &Board) -> Self {
+        for entry in self.iter_mut() {
+            if let Some(Piece::Pawn) = board.piece_on(entry.mv.get_source()) {
+                entry.value += Value::new(10);
+            }
+        }
+        self
+    }
+
     pub fn sort(&mut self) {
         self.sort_by_key(|m| -m.value);
     }
