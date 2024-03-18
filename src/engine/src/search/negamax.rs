@@ -50,7 +50,6 @@ impl Searcher {
         // Step 6: Move generation and ordering.
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)
-            .prefer_pawn_moves(board)
             .sort_with_preference(
                 [
                     tt_move,
