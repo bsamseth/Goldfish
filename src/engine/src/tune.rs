@@ -27,5 +27,5 @@ pub mod speculate {
     pub const FUTILITY_MARGIN: Value = Value::new(300);
 
     /// Delta pruning margin in centipawns.
-    pub const DELTA_MARGIN: Value = Value::new(1200);
+    pub const DELTA_MARGIN: Value = Value::new(250);
 }

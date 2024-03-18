@@ -25,6 +25,7 @@ impl Searcher {
     ///
     /// If we find a later move that actually improves alpha, we must search this properly to find
     /// its value. The idea is that this drawback is smaller than the improvements gained.
+    #[inline]
     pub fn pv_search(
         &mut self,
         board: &Board,
@@ -63,6 +64,7 @@ impl Searcher {
     ///
     ///   - We have reached the maximum ply allowed, or
     ///   - We have been told to stop searching.
+    #[inline]
     pub fn return_evaluation_if_at_forced_leaf(
         &self,
         board: &Board,
@@ -75,6 +77,7 @@ impl Searcher {
     }
 
     /// Early return with [`Value::DRAW`] if the position is a draw.
+    #[inline]
     pub fn return_if_draw(&self, board: &Board, ply: Ply) -> Result<(), Value> {
         if self.is_draw(board, ply) {
             return Err(Value::DRAW);
@@ -89,6 +92,7 @@ impl Searcher {
     ///
     /// The bounds are updated in place. If the update leaves a zero-width window, the function
     /// signals that an early return is possible.
+    #[inline]
     pub fn get_bounds_and_move_from_tt(
         &self,
         alpha: &mut Value,
@@ -120,6 +124,7 @@ impl Searcher {
     }
 
     /// Adjust alpha/beta if the position is in the tablebase.
+    #[inline]
     pub fn check_tablebase(
         &mut self,
         board: &Board,
@@ -187,6 +192,7 @@ impl Searcher {
 /// possible.
 ///
 /// `alpha` is updated in place if the lower bound is better than the current alpha.
+#[inline]
 pub fn standing_pat(board: &Board, alpha: &mut Value, beta: Value) -> Result<Value, Value> {
     let mut best_value = -Value::INFINITE;
     if !board.in_check() {
@@ -209,6 +215,7 @@ pub fn standing_pat(board: &Board, alpha: &mut Value, beta: Value) -> Result<Val
 /// Otherwise, the score is [`Value::DRAW`].
 ///
 /// If there are moves to play, this is a no-op.
+#[inline]
 pub fn return_if_no_moves(moves: &MoveGen, board: &Board, ply: Ply) -> Result<(), Value> {
     if moves.len() == 0 {
         if board.in_check() {
@@ -228,6 +235,7 @@ pub fn return_if_no_moves(moves: &MoveGen, board: &Board, ply: Ply) -> Result<()
 ///
 /// This may modify `alpha` and `beta` in place. If `alpha >= beta` after this, the function
 /// signals that an early return is possible.
+#[inline]
 pub fn mate_distance_pruning(alpha: &mut Value, beta: &mut Value, ply: Ply) -> Result<(), Value> {
     let worst_mate = Value::mated_in(ply);
     let best_mate = Value::mate_in(ply + Ply::new(1));
@@ -239,6 +247,26 @@ pub fn mate_distance_pruning(alpha: &mut Value, beta: &mut Value, ply: Ply) -> R
     }
     if alpha >= beta {
         return Err(*alpha);
+    }
+    Ok(())
+}
+
+/// Full delta pruning (quiescence search)
+///
+/// If the static evaluation is sufficiently below alpha so that any possible single move will not
+/// be enough to increase alpha, we can safely prune the entire node.
+///
+/// This can be called before move generation during quiescence search.
+///
+/// The greatest possible material swing is capturing a queen with a pawn while promoting.
+#[inline]
+pub fn full_delta_pruning(board: &Board, static_eval: Value, alpha: Value) -> Result<(), Value> {
+    if !board.in_check()
+        && static_eval + crate::evaluate::QUEEN_VALUE + crate::evaluate::QUEEN_VALUE
+            - crate::evaluate::PAWN_VALUE
+            <= alpha
+    {
+        return Err(alpha);
     }
     Ok(())
 }

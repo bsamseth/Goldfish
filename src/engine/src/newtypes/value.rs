@@ -108,3 +108,14 @@ impl From<fathom::Wdl> for Value {
         }
     }
 }
+
+/// A utility trait for operations involving [`Value`]s.
+pub trait ValueExt {
+    fn scaled_by(self, factor: Value) -> Self;
+}
+
+impl ValueExt for i32 {
+    fn scaled_by(self, factor: Value) -> Self {
+        self * factor.0 as i32
+    }
+}
