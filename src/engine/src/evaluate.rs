@@ -7,7 +7,10 @@
 /// [cp-wiki]: https://www.chessprogramming.org/Simplified_Evaluation_Function
 use chess::{BitBoard, Board, Piece, Square};
 
-use crate::newtypes::{Value, ValueExt};
+use crate::{
+    newtypes::{Value, ValueExt},
+    tune,
+};
 
 // Piece values.
 /// The value of a pawn.
@@ -174,10 +177,10 @@ fn evaluate_material(board: &Board) -> Value {
 
     // Bishop pair bonus.
     if (bishops & my_pieces).popcnt() >= 2 {
-        score += 50;
+        score += tune::evaluate::BISHOP_PAIR_BONUS;
     }
     if (bishops & their_pieces).popcnt() >= 2 {
-        score -= 50;
+        score -= tune::evaluate::BISHOP_PAIR_BONUS;
     }
 
     Value::new(

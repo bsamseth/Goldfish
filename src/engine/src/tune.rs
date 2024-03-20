@@ -40,3 +40,8 @@ pub mod move_ordering {
     /// most frequent move square.
     pub const MAX_HISTORY_STATS_IMPACT: usize = 100;
 }
+
+pub mod evaluate {
+    /// Bonus for having a bishop pair, in centipawns.
+    pub const BISHOP_PAIR_BONUS: i32 = 10;
+}
