@@ -38,7 +38,7 @@ pub mod move_ordering {
     ///
     /// Other moves will be given a bonus scaled linearly on how frequent they are compared to the
     /// most frequent move square.
-    pub const MAX_HISTORY_STATS_IMPACT: usize = 100;
+    pub const MAX_HISTORY_STATS_IMPACT: usize = 30;
 }
 
 pub mod evaluate {
