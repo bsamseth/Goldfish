@@ -1,5 +1,4 @@
 use crate::commands::GoOption;
-use crate::responses::EngineOptionSpesification;
 
 /// Engines must implement this trait to be compatible with this crate.
 pub trait UciEngine {
@@ -17,14 +16,24 @@ pub trait UciEngine {
     /// be replaced with spaces.
     fn author(&self) -> String;
 
-    /// The options supported by the engine.
+    /// Print the options supported by the engine.
     ///
-    /// This will be sent to the GUI in response to a `uci` command, and
-    /// might be used to configure the engine. See [`EngineOptionSpesification`].
+    /// This is requested when the GUI expects the engine to say what options it supports.
     ///
-    /// By default, this function returns an empty vector, i.e. no supported options.
-    fn options(&self) -> Vec<EngineOptionSpesification> {
-        vec![]
+    /// By default, this function does nothing, indicating no support for options.
+    fn print_options(&self) {}
+
+    /// The options supported by the engine, as a mutable reference.
+    ///
+    /// This is called when the GUI tries to set an option.
+    ///
+    /// By default this errors, as no options are supported by default.
+    ///
+    /// # Errors
+    /// If the option name is not recognized, or the value is invalid.
+    fn set_option(&mut self, name: &str, value: &str) -> anyhow::Result<()> {
+        let _ = (name, value);
+        anyhow::bail!("No options are supported by this engine.");
     }
 
     /// Recieve a `ucinewgame` command.
@@ -37,14 +46,6 @@ pub trait UciEngine {
     ///
     /// By default, this function does nothing.
     fn ucinewgame(&mut self) {}
-
-    /// Set an option to the given value.
-    ///
-    /// This will be called when the GUI sends a `setoption` command.
-    /// The engine should update its internal state to reflect the new value.
-    /// If the value is invalid, the engine might log an error, but should otherwise ignore
-    /// the command.
-    fn set_option(&mut self, name: &str, value: &str);
 
     /// Ensure the engine is ready to recieve commands.
     ///
