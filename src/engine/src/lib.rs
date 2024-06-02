@@ -5,6 +5,7 @@ mod limits;
 mod logger;
 mod movelist;
 mod newtypes;
+mod opts;
 mod search;
 mod stop_signal;
 mod tt;
@@ -12,7 +13,9 @@ mod tune;
 
 use std::sync::{Arc, RwLock};
 
+use anyhow::Context;
 use stop_signal::StopSignal;
+use uci::UciOptions;
 
 /// `Engine` implements the `uci::Engine` trait for the Goldfish engine.
 ///
@@ -32,6 +35,7 @@ pub struct Engine {
     searcher: Option<std::thread::JoinHandle<()>>,
     transposition_table: Arc<RwLock<tt::TranspositionTable>>,
     tablebase: Option<&'static fathom::Tablebase>,
+    options: opts::Opts,
 }
 
 impl uci::UciEngine for Engine {
@@ -43,31 +47,13 @@ impl uci::UciEngine for Engine {
         env!("CARGO_PKG_AUTHORS").to_string()
     }
 
-    fn options(&self) -> Vec<uci::EngineOptionSpesification> {
-        vec![
-            uci::EngineOptionSpesification {
-                name: "Hash".to_string(),
-                option_type: uci::EngineOptionType::Spin,
-                default: Some(format!("{DEFAULT_HASH_SIZE_MB}")),
-                min: Some(1),
-                max: Some(33_554_432), // Lots of memory, stockfish uses this max 🤷.
-                var: None,
-            },
-            uci::EngineOptionSpesification {
-                name: "SyzygyPath".to_string(),
-                option_type: uci::EngineOptionType::String,
-                default: None,
-                min: None,
-                max: None,
-                var: None,
-            },
-        ]
+    fn print_options(&self) {
+        self.options.print_options();
     }
 
-    fn set_option(&mut self, name: &str, value: &str) {
-        if let Err(e) = self._set_option(name, value) {
-            tracing::error!("failed to set option: {}", e);
-        }
+    fn set_option(&mut self, name: &str, value: &str) -> anyhow::Result<()> {
+        self.options.set_option(name, value)?;
+        self.synchronize_options(name)
     }
 
     fn go(
@@ -104,29 +90,36 @@ impl uci::UciEngine for Engine {
 }
 
 impl Engine {
-    fn _set_option(&mut self, name: &str, value: &str) -> anyhow::Result<()> {
+    fn synchronize_options(&mut self, option_name: &str) -> anyhow::Result<()> {
         // The UCI protocol states that options are only set when then
-        // engine is waiting. We enforce this defensively to make sure.
-        if self.searcher.is_some() {
-            anyhow::bail!("cannot set options while searching");
-        }
+        // engine is waiting.
+        assert!(self.searcher.is_none());
 
-        match name {
+        match option_name {
             "Hash" => {
-                let value = value.parse::<usize>()?;
+                let value = self.options.hash_size_mb;
                 tracing::info!("setting hash size to {} MB", value);
                 self.transposition_table.write().unwrap().resize(value * MB);
-                Ok(())
             }
             "SyzygyPath" => {
-                let path = std::path::PathBuf::from(value);
-                // Safety: There's no ongoing search, and only one option can be set any given
-                // time. This means nobody else is potentially loading/probing, so this is safe.
-                self.tablebase = Some(unsafe { fathom::Tablebase::load(path) }?);
-                Ok(())
+                let path = self
+                    .options
+                    .syzygy_path
+                    .clone()
+                    .expect("should be set at this point");
+                self.tablebase = Some({
+                    // Safety: There's no ongoing search, and only one option can be set any given
+                    // time. This means nobody else is potentially loading/probing, so this is safe.
+                    let loaded = unsafe { fathom::Tablebase::load(path) }?;
+                    // Safety: The tablebase is loaded, so it's safe to dereference because no
+                    // other thread can change the pointer.
+                    let loaded_ref = unsafe { loaded.as_ref() };
+                    loaded_ref.context("derefrencing tablebase pointer after load")?
+                });
             }
-            _ => Err(anyhow::anyhow!("invalid option {name}")),
-        }
+            _ => {}
+        };
+        Ok(())
     }
 }
 
