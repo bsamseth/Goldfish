@@ -3,6 +3,7 @@ mod probe;
 mod sys;
 mod wdl;
 
+use std::ptr::addr_of_mut;
 use std::{ffi::CString, path::Path};
 
 pub use error::Error;
@@ -30,7 +31,7 @@ impl Tablebase {
     /// corrupt probes that are in progress.
     ///
     /// This should only ever be called when not searching.
-    pub unsafe fn load<P: AsRef<Path>>(path: P) -> Result<&'static Self, Error> {
+    pub unsafe fn load<P: AsRef<Path>>(path: P) -> Result<*mut Self, Error> {
         let pathref = path.as_ref();
         let pathstr = pathref.to_str().ok_or(Error::InvalidPath)?;
         let c_string = CString::new(pathstr).map_err(|_| Error::InvalidPath)?;
@@ -47,6 +48,6 @@ impl Tablebase {
             return Err(Error::NoFilesFound);
         }
 
-        Ok(&TB)
+        Ok(addr_of_mut!(TB))
     }
 }
