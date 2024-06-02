@@ -10,6 +10,8 @@ authors = ["Bendik Samseth <b.samseth@gmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.86"
 chess = "3.2.0"
 thiserror = "1.0.53"
 tracing = "0.1.40"
+uciderive = { path = "../uciderive" }

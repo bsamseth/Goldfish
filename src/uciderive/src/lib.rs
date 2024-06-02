@@ -48,11 +48,10 @@ pub fn derive_uci_options(input: TokenStream) -> TokenStream {
 
     quote! {
         #[automatically_derived]
-        impl UciOptions for #ident {
+        impl uci::UciOptions for #ident {
             #print_options
             #set_option
         }
-
         #[automatically_derived]
         impl Default for #ident {
             #default_impl
@@ -157,15 +156,18 @@ fn impl_set_option(fields: &Fields<UciOptionAttrubute>) -> proc_macro2::TokenStr
         let UciOptionAttrubute {
             ident, name, ty, ..
         } = field;
-        let name = name.clone().map_or_else(
-            || {
-                ident
-                    .clone()
-                    .expect("only structs with named fields reach this")
-                    .to_string()
-            },
-            |name| name.value(),
-        );
+        let name = name
+            .clone()
+            .map_or_else(
+                || {
+                    ident
+                        .clone()
+                        .expect("only structs with named fields reach this")
+                        .to_string()
+                },
+                |name| name.value(),
+            )
+            .to_lowercase();
 
         let parse = quote! { value.parse().context(concat!("parsing UCI option ", #name))? };
 
@@ -183,7 +185,7 @@ fn impl_set_option(fields: &Fields<UciOptionAttrubute>) -> proc_macro2::TokenStr
 
     quote! {
         fn set_option(&mut self, name: &str, value: &str) -> Result<()> {
-            match name {
+            match name.to_lowercase().as_str() {
                 #(#field_setter)*
                 _ => return Err(anyhow::anyhow!("unknown UCI option: {name}")),
             }

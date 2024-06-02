@@ -76,9 +76,7 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
                     println!("id author {}", engine.author().replace('\n', " "));
 
                     println!();
-                    for option in engine.options() {
-                        println!("{option}");
-                    }
+                    engine.print_options();
                     println!("uciok");
                 }
                 UciCommand::Debug => unimplemented!(),
@@ -87,7 +85,9 @@ pub fn start(mut engine: impl UciEngine) -> Result<(), Error> {
                     println!("readyok");
                 }
                 UciCommand::SetOption(option) => {
-                    engine.set_option(&option.name, &option.value);
+                    if let Err(e) = engine.set_option(&option.name, &option.value) {
+                        tracing::error!("Error setting option: {e}");
+                    }
                 }
                 UciCommand::UciNewGame => {
                     engine.ucinewgame();

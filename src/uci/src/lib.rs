@@ -45,8 +45,10 @@ mod commands;
 mod error;
 mod responses;
 mod uciengine;
+mod ucioptions;
 
 pub use comm::start;
 pub use commands::GoOption;
-pub use responses::{EngineOptionSpesification, EngineOptionType, Info, InfoPart};
+pub use responses::{Info, InfoPart};
 pub use uciengine::{UciEngine, UciPosition};
+pub use ucioptions::UciOptions;
