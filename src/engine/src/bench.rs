@@ -27,8 +27,10 @@ impl Bench for Engine {
     }
 
     fn set_bench_options(&mut self) {
-        self.set_option("Hash", "128");
-        self.set_option("SyzygyPath", "../../../syzygy");
+        self.set_option("Hash", "128")
+            .expect("Failed to set Hash option");
+        self.set_option("SyzygyPath", "../../../syzygy")
+            .expect("Failed to set SyzygyPath option");
     }
 }
 
