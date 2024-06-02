@@ -1,7 +1,9 @@
-use derive_more::{Add, AddAssign, Sub, SubAssign};
+use derive_more::{Add, AddAssign, FromStr, Sub, SubAssign};
 
 /// A [`Depth`] represents a search depth in the engine.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Add, AddAssign, Sub, SubAssign, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Add, AddAssign, Sub, SubAssign, PartialOrd, Ord, FromStr,
+)]
 pub struct Depth(Inner);
 
 type Inner = u8;
