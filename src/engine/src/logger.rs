@@ -75,16 +75,13 @@ impl Logger {
     }
 
     pub fn send_status(&mut self) {
-        if self.silent {
-            return;
+        if !self.silent && self.search_start_time.elapsed().as_secs() >= 1 {
+            self.force_send_status();
         }
+    }
 
+    pub fn force_send_status(&mut self) {
         let delta = self.search_start_time.elapsed();
-
-        if delta.as_secs() < 1 {
-            return;
-        }
-
         let millis = delta.as_millis() as usize;
         let info = Info::new()
             .with(InfoPart::Depth(self.current_depth.as_usize()))
