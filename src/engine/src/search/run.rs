@@ -50,7 +50,7 @@ impl Searcher {
                 }
             }
         }
-
+        self.logger.force_send_status();
         self.root_moves[0].mv
     }
 }
