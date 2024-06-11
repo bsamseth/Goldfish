@@ -15,7 +15,7 @@ use crate::evaluate::Evaluate;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::tt::Bound;
 
-impl Searcher {
+impl Searcher<'_> {
     /// Principal Variation Search
     ///
     /// Search first move fully, then just check for moves that will improve alpha using a 1-point
@@ -102,8 +102,6 @@ impl Searcher {
     ) -> Result<Option<ChessMove>, Value> {
         if let Some((mv, bound, value)) =
             self.transposition_table
-                .read()
-                .unwrap()
                 .get(self.stack_state(ply).zobrist, depth, ply)
         {
             if bound & Bound::Lower && *alpha < value {
@@ -162,7 +160,7 @@ impl Searcher {
             // If the updated bounds leave a zero-width window, signal that an early return is
             // possible. Exact bounds always leave a zero-width window.
             if alpha >= beta {
-                self.transposition_table.write().unwrap().store(
+                self.transposition_table.store(
                     self.stack_state(ply).zobrist,
                     None,
                     bound,

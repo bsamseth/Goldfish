@@ -3,7 +3,7 @@ use chess::ChessMove;
 use super::Searcher;
 use crate::newtypes::{Depth, Ply, Value};
 
-impl Searcher {
+impl Searcher<'_> {
     /// Run a search and return the best move.
     ///
     /// The search may stop for a variety of reasons, depending on the options set by the user,

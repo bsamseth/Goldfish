@@ -8,7 +8,7 @@ use crate::movelist::MoveVec;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::tt::Bound;
 
-impl Searcher {
+impl Searcher<'_> {
     /// Negamax search with alpha-beta pruning.
     pub fn negamax(
         &mut self,
@@ -107,7 +107,7 @@ impl Searcher {
 
         self.stack_state_mut(ply).update_killer(best_move);
         self.update_history_stats(best_move);
-        self.transposition_table.write().unwrap().store(
+        self.transposition_table.store(
             self.stack_state(ply).zobrist,
             best_move,
             bound,

@@ -5,7 +5,7 @@ use crate::board::BoardExt;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Ply, Value};
 
-impl Searcher {
+impl Searcher<'_> {
     /// Quiescence search with alpha-beta pruning.
     pub fn quiescence_search(
         &mut self,

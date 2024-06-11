@@ -1,4 +1,7 @@
-use crate::newtypes::{Depth, Ply};
+use crate::{
+    newtypes::{Depth, Ply},
+    opts::OPTS,
+};
 use chess::Board;
 use uci::GoOption;
 
@@ -84,17 +87,15 @@ impl Limits {
         };
 
         // How much time do we have to spend on the remaining moves?
-        let max_search_time = time_left * crate::tune::time_control::TIME_BUFFER_PERCENTAGE / 100;
+        let max_search_time = time_left * OPTS.tc_time_buffer_percentage / 100;
 
-        if max_search_time < crate::tune::time_control::MIN_SEARCH_TIME {
+        if max_search_time < OPTS.tc_min_search_time_ms {
             self.movetime = 1; // Return a move as soon as possible.
             return self;
         }
 
         // Assume this many moves left in the game/until time control.
-        let moves_to_go = self
-            .moves_to_go
-            .unwrap_or(crate::tune::time_control::DEFAULT_MOVES_TO_GO);
+        let moves_to_go = self.moves_to_go.unwrap_or(OPTS.tc_default_moves_to_go);
         assert!(
             moves_to_go > 0,
             "moves_to_go must be positive, UCI protocol violation"

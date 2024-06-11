@@ -7,14 +7,10 @@ mod movelist;
 mod newtypes;
 mod opts;
 mod search;
-mod stop_signal;
 mod tt;
-mod tune;
-
-use std::sync::{Arc, RwLock};
 
 use anyhow::Context;
-use stop_signal::StopSignal;
+use search::Searcher;
 use uci::UciOptions;
 
 /// `Engine` implements the `uci::Engine` trait for the Goldfish engine.
@@ -29,77 +25,86 @@ use uci::UciOptions;
 ///
 /// start(Engine::default()).unwrap();
 /// ```
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Engine {
-    stop_signal: StopSignal,
-    searcher: Option<std::thread::JoinHandle<()>>,
-    transposition_table: Arc<RwLock<tt::TranspositionTable>>,
+    transposition_table: tt::TranspositionTable,
     tablebase: Option<&'static fathom::Tablebase>,
     options: opts::Opts,
 }
 
-impl uci::UciEngine for Engine {
-    fn name(&self) -> String {
-        format!("Goldfish {}", env!("CARGO_PKG_VERSION"))
-    }
-
-    fn author(&self) -> String {
-        env!("CARGO_PKG_AUTHORS").to_string()
-    }
-
-    fn print_options(&self) {
-        self.options.print_options();
-    }
-
-    fn set_option(&mut self, name: &str, value: &str) -> anyhow::Result<()> {
-        self.options.set_option(name, value)?;
-        self.synchronize_options(name)
-    }
-
-    fn go(
-        &mut self,
-        position: uci::UciPosition,
-        options: Vec<uci::GoOption>,
-        best_move: std::sync::mpsc::Sender<chess::ChessMove>,
-    ) {
-        if self.searcher.is_some() {
-            self.stop();
-        }
-
-        self.stop_signal = StopSignal::default();
-        self.searcher = Some(std::thread::spawn({
-            let ss = self.stop_signal.clone();
-            let tt = self.transposition_table.clone();
-            let tb = self.tablebase;
-            move || {
-                let mut searcher = search::Searcher::new(position, &options, ss, tt, tb);
-                let bm = searcher.run();
-                best_move
-                    .send(bm)
-                    .expect("should be able to send best move back to GUI");
-            }
-        }));
-    }
-
-    fn stop(&mut self) {
-        self.stop_signal.stop();
-        if let Some(s) = self.searcher.take() {
-            s.join().unwrap();
+impl Default for Engine {
+    fn default() -> Self {
+        let options = opts::Opts::default();
+        Self {
+            transposition_table: tt::TranspositionTable::new(1024 * 1024 * options.hash_size_mb),
+            tablebase: None,
+            options,
         }
     }
 }
 
 impl Engine {
-    fn synchronize_options(&mut self, option_name: &str) -> anyhow::Result<()> {
-        // The UCI protocol states that options are only set when then
-        // engine is waiting.
-        assert!(self.searcher.is_none());
+    /// Start the engine's UCI loop.
+    pub fn repl(&mut self) {
+        let interface = uci::Interface::default();
+        let mut position = uci::Position::default();
 
+        // Safety: No other threads are running (with access to the options), so it's safe to
+        // store something into the options as nobody else has a reference to it.
+        unsafe { opts::OPTS.store(std::ptr::addr_of_mut!(self.options)) };
+
+        while let Ok(cmd) = interface.commands.recv() {
+            match cmd {
+                uci::Command::Stop => {}
+                uci::Command::Quit => return,
+                uci::Command::Uci => {
+                    println!("id name Goldfish {}", env!("CARGO_PKG_VERSION"));
+                    println!("id author {}", env!("CARGO_PKG_AUTHORS"));
+                    println!();
+                    self.options.print_options();
+                    println!("uciok");
+                }
+                uci::Command::SetOption(uci::Option { name, value }) => {
+                    // Safety: No other threads are running (with access to the options), so it's safe
+                    // to modify the options.
+                    if let Err(e) = self.options.set_option(&name, &value) {
+                        tracing::warn!("{e}");
+                        continue;
+                    }
+                    if let Err(e) = self.synchronize_options(&name) {
+                        tracing::warn!("{e}");
+                        continue;
+                    }
+                }
+                uci::Command::IsReady => println!("readyok"),
+                uci::Command::UciNewGame => {
+                    self.transposition_table.reset();
+                }
+                uci::Command::Position(pos) => position = pos,
+                uci::Command::Go(go_options) => {
+                    let bm = Searcher::best_move(
+                        &position,
+                        &go_options,
+                        interface.stop.clone(),
+                        &mut self.transposition_table,
+                        self.tablebase,
+                    );
+
+                    println!("bestmove {bm}");
+                }
+                uci::Command::Unknown(e) => tracing::warn!("{e}"),
+                uci::Command::PonderHit => todo!(),
+                uci::Command::Debug => todo!(),
+            }
+        }
+    }
+
+    fn synchronize_options(&mut self, option_name: &str) -> anyhow::Result<()> {
         match option_name {
             "Hash" => {
                 let value = self.options.hash_size_mb;
                 tracing::info!("setting hash size to {} MB", value);
-                self.transposition_table.write().unwrap().resize(value * MB);
+                self.transposition_table.resize(value * 1024 * 1024);
             }
             "SyzygyPath" => {
                 let path = self
@@ -122,6 +127,3 @@ impl Engine {
         Ok(())
     }
 }
-
-const MB: usize = 1024 * 1024;
-const DEFAULT_HASH_SIZE_MB: usize = 16;

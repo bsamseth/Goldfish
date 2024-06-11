@@ -1,38 +1,38 @@
-use crate::Engine;
-use uci::{GoOption, UciEngine, UciPosition};
-
-pub trait Bench {
-    /// Bench the given position to a given depth.
-    ///
-    /// The `position` should be a FEN string, optionally followed by `moves` and a list of
-    /// moves to play from the given position. I.e. the notation used in the `position` UCI command,
-    /// but without the `position` keyword.
-    fn bench(&mut self, position: &str, depth: usize);
-
-    /// Set the bench options for the engine.
-    fn set_bench_options(&mut self);
-}
-
-impl Bench for Engine {
-    fn bench(&mut self, position: &str, depth: usize) {
-        self.ucinewgame();
-        self.ready();
-        let position = position.parse::<UciPosition>().unwrap();
-        let go_options = vec![GoOption::Depth(depth), GoOption::Silent];
-
-        let (tx, rx) = std::sync::mpsc::channel();
-        self.go(position, go_options, tx);
-
-        assert!(rx.recv().is_ok());
-    }
-
-    fn set_bench_options(&mut self) {
-        self.set_option("Hash", "128")
-            .expect("Failed to set Hash option");
-        self.set_option("SyzygyPath", "../../../syzygy")
-            .expect("Failed to set SyzygyPath option");
-    }
-}
+//use crate::Engine;
+//use uci::{GoOption, UciEngine, UciPosition};
+//
+//pub trait Bench {
+//    /// Bench the given position to a given depth.
+//    ///
+//    /// The `position` should be a FEN string, optionally followed by `moves` and a list of
+//    /// moves to play from the given position. I.e. the notation used in the `position` UCI command,
+//    /// but without the `position` keyword.
+//    fn bench(&mut self, position: &str, depth: usize);
+//
+//    /// Set the bench options for the engine.
+//    fn set_bench_options(&mut self);
+//}
+//
+//impl Bench for Engine {
+//    fn bench(&mut self, position: &str, depth: usize) {
+//        self.ucinewgame();
+//        self.ready();
+//        let position = position.parse::<UciPosition>().unwrap();
+//        let go_options = vec![GoOption::Depth(depth), GoOption::Silent];
+//
+//        let (tx, rx) = std::sync::mpsc::channel();
+//        self.go(position, go_options, tx);
+//
+//        assert!(rx.recv().is_ok());
+//    }
+//
+//    fn set_bench_options(&mut self) {
+//        self.set_option("Hash", "128")
+//            .expect("Failed to set Hash option");
+//        self.set_option("SyzygyPath", "../../../syzygy")
+//            .expect("Failed to set SyzygyPath option");
+//    }
+//}
 
 pub const BENCH_CASES: [&str; 3] = [
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",

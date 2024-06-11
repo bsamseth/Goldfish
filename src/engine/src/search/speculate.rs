@@ -11,14 +11,14 @@
 use chess::{Board, ChessMove, Piece};
 
 use super::Searcher;
+use crate::opts::OPTS;
 use crate::{
     board::BoardExt,
     newtypes::{Depth, Ply, Value},
     tt::Bound,
-    tune,
 };
 
-impl Searcher {
+impl Searcher<'_> {
     /// Null move pruning.
     ///
     /// If we have a position that is so strong that even if we don't move (i.e. pass), we still
@@ -86,7 +86,7 @@ impl Searcher {
                 value = *beta;
             }
 
-            self.transposition_table.write().unwrap().store(
+            self.transposition_table.store(
                 self.stack_state(ply).zobrist,
                 None,
                 Bound::Lower,
@@ -125,13 +125,13 @@ impl Searcher {
         let eval = self.stack_state(ply).eval;
 
         match depth.as_inner() {
-            3 if eval + tune::speculate::RAZOR_MARGIN <= alpha => {
+            3 if eval + OPTS.razor_margin <= alpha => {
                 *depth = Depth::new(2);
             }
-            2 if eval + tune::speculate::EXTENDED_FUTILITY_MARGIN <= alpha => {
+            2 if eval + OPTS.extended_futility_margin <= alpha => {
                 *depth = Depth::new(1);
             }
-            1 if eval + tune::speculate::FUTILITY_MARGIN <= alpha => {
+            1 if eval + OPTS.futility_margin <= alpha => {
                 return Err(Value::from(self.quiescence_search(board, alpha, beta, ply)));
             }
             _ => {}
@@ -153,14 +153,13 @@ impl Searcher {
         beta: Value,
         ply: Ply,
     ) -> Option<ChessMove> {
-        if tt_move.is_none() && depth > tune::speculate::IID_DEPTH_REDUCTION {
-            let depth = depth - tune::speculate::IID_DEPTH_REDUCTION;
+        if tt_move.is_none() && depth > OPTS.iid_depth_reduction {
+            let depth = depth - OPTS.iid_depth_reduction;
             let _ = self.negamax(board, depth, alpha, beta, ply);
-            if let Some((mv, _, _)) = self.transposition_table.read().unwrap().get(
-                self.stack_state(ply).zobrist,
-                depth,
-                ply,
-            ) {
+            if let Some((mv, _, _)) =
+                self.transposition_table
+                    .get(self.stack_state(ply).zobrist, depth, ply)
+            {
                 return mv;
             }
         }
@@ -183,6 +182,6 @@ pub fn delta_pruning(board: &Board, mv: ChessMove, static_eval: Value, alpha: Va
         && mv.get_promotion().is_none()
         && static_eval
             + crate::evaluate::piece_value(board.piece_on(mv.get_dest()).unwrap())
-            + tune::speculate::DELTA_MARGIN
+            + OPTS.delta_margin
             <= alpha
 }
