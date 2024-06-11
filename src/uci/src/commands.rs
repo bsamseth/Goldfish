@@ -1,15 +1,20 @@
 use chess::ChessMove;
 
-use crate::UciPosition;
+#[derive(Debug, Clone, Default)]
+pub struct Position {
+    pub start_pos: chess::Board,
+    pub moves: Vec<chess::ChessMove>,
+    pub starting_halfmove_clock: usize,
+}
 
 #[derive(Debug)]
-pub(crate) enum UciCommand {
+pub enum Command {
     Uci,
     Debug,
     IsReady,
-    SetOption(EngineOption),
+    SetOption(Option),
     UciNewGame,
-    Position(UciPosition),
+    Position(Position),
     Go(Vec<GoOption>),
     Stop,
     PonderHit,
@@ -31,47 +36,47 @@ pub enum GoOption {
     Mate(usize),
     MoveTime(usize),
     Infinite,
-    // Non-standard:
+    // Non-standard: Provides a "be less verbose" flag to the engine.
     Silent,
 }
 
 #[derive(Debug)]
-pub struct EngineOption {
+pub struct Option {
     pub name: String,
     pub value: String,
 }
 
-impl From<&str> for UciCommand {
+impl From<&str> for Command {
     fn from(s: &str) -> Self {
-        match s.parse::<UciCommand>() {
+        match s.parse::<Command>() {
             Ok(command) => command,
-            Err(e) => UciCommand::Unknown(e.to_string()),
+            Err(e) => Command::Unknown(e.to_string()),
         }
     }
 }
 
-impl std::str::FromStr for UciCommand {
+impl std::str::FromStr for Command {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (command, rest) = s.split_once(' ').unwrap_or((s, ""));
         match command {
-            "uci" => Ok(UciCommand::Uci),
-            "debug" => Ok(UciCommand::Debug),
-            "isready" => Ok(UciCommand::IsReady),
-            "setoption" => Ok(UciCommand::SetOption(rest.parse()?)),
-            "ucinewgame" => Ok(UciCommand::UciNewGame),
-            "position" => Ok(UciCommand::Position(rest.parse()?)),
-            "go" => Ok(UciCommand::Go(parse_go_opitons(rest)?)),
-            "stop" => Ok(UciCommand::Stop),
-            "ponderhit" => Ok(UciCommand::PonderHit),
-            "quit" => Ok(UciCommand::Quit),
+            "uci" => Ok(Command::Uci),
+            "debug" => Ok(Command::Debug),
+            "isready" => Ok(Command::IsReady),
+            "setoption" => Ok(Command::SetOption(rest.parse()?)),
+            "ucinewgame" => Ok(Command::UciNewGame),
+            "position" => Ok(Command::Position(rest.parse()?)),
+            "go" => Ok(Command::Go(parse_go_opitons(rest)?)),
+            "stop" => Ok(Command::Stop),
+            "ponderhit" => Ok(Command::PonderHit),
+            "quit" => Ok(Command::Quit),
             _ => Err(format!("Invalid UCI command: {s}")),
         }
     }
 }
 
-impl std::str::FromStr for EngineOption {
+impl std::str::FromStr for Option {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -96,16 +101,16 @@ impl std::str::FromStr for EngineOption {
             return Err(format!("Invalid engine option: {s}"));
         }
 
-        Ok(EngineOption {
+        Ok(Option {
             name: name.unwrap().to_string(),
             value: value.unwrap().to_string(),
         })
     }
 }
 
-impl std::str::FromStr for UciPosition {
+impl std::str::FromStr for Position {
     type Err = String;
-    fn from_str(s: &str) -> Result<UciPosition, String> {
+    fn from_str(s: &str) -> Result<Position, String> {
         const START_POS_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         let split = s.split_whitespace().collect::<Vec<_>>();
         let (fen, rest) = match split.first() {
@@ -137,7 +142,7 @@ impl std::str::FromStr for UciPosition {
             .parse()
             .map_err(|e| format!("{e}"))?;
 
-        Ok(UciPosition {
+        Ok(Position {
             start_pos,
             moves,
             starting_halfmove_clock,
