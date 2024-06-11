@@ -64,12 +64,6 @@ pub struct TranspositionTable {
     count: usize,
 }
 
-impl Default for TranspositionTable {
-    fn default() -> Self {
-        Self::new(crate::DEFAULT_HASH_SIZE_MB * crate::MB)
-    }
-}
-
 impl TranspositionTable {
     /// Creates a new transposition table with the given size in bytes.
     pub fn new(size: usize) -> Self {
@@ -88,6 +82,12 @@ impl TranspositionTable {
         let count = size / std::mem::size_of::<Option<Entry>>();
         self.entries.clear();
         self.entries.resize(count, None);
+        self.count = 0;
+    }
+
+    /// Reset all entries to [`None`].
+    pub fn reset(&mut self) {
+        self.entries.fill(None);
         self.count = 0;
     }
 

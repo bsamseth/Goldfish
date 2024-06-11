@@ -6,7 +6,7 @@ use crate::board::BoardExt;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::tt::Bound;
 
-impl Searcher {
+impl Searcher<'_> {
     /// Return `true` if the search should stop.
     ///
     /// The search should stop if any of the following conditions are met:
@@ -15,7 +15,7 @@ impl Searcher {
     ///   - The time limit has been reached.
     ///   - The node limit has been reached.
     pub fn should_stop(&self) -> bool {
-        self.stop_signal.check()
+        self.stop_signal.load(std::sync::atomic::Ordering::Relaxed)
             || self.logger.exceeds_time_limit(self.limits.movetime)
             || self.logger.exceeds_node_limit(self.limits.nodes)
     }
@@ -46,11 +46,10 @@ impl Searcher {
         board = board.make_move_new(first_move);
         pv.push(first_move);
 
-        while let Some((Some(mv), Bound::Exact, _)) = self.transposition_table.read().unwrap().get(
-            board.get_hash(),
-            Depth::new(0),
-            Ply::new(0),
-        ) {
+        while let Some((Some(mv), Bound::Exact, _)) =
+            self.transposition_table
+                .get(board.get_hash(), Depth::new(0), Ply::new(0))
+        {
             pv.push(mv);
             board = board.make_move_new(mv);
 

@@ -9,7 +9,7 @@ use chess::{BitBoard, Board, Piece, Square};
 
 use crate::{
     newtypes::{Value, ValueExt},
-    tune,
+    opts::OPTS,
 };
 
 // Piece values.
@@ -177,10 +177,10 @@ fn evaluate_material(board: &Board) -> Value {
 
     // Bishop pair bonus.
     if (bishops & my_pieces).popcnt() >= 2 {
-        score += tune::evaluate::BISHOP_PAIR_BONUS;
+        score += OPTS.bishop_pair_bonus;
     }
     if (bishops & their_pieces).popcnt() >= 2 {
-        score -= tune::evaluate::BISHOP_PAIR_BONUS;
+        score -= OPTS.bishop_pair_bonus;
     }
 
     Value::new(

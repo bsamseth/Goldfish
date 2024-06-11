@@ -1,6 +1,6 @@
 use chess::{Board, ChessMove, MoveGen, Piece};
 
-use crate::{newtypes::Value, tune};
+use crate::{newtypes::Value, opts::OPTS};
 
 #[derive(Debug)]
 pub struct MoveVec(Vec<MoveEntry>);
@@ -62,7 +62,7 @@ impl MoveVec {
         for entry in self.iter_mut() {
             let value = i16::try_from(
                 stats[entry.mv.get_source().to_index()][entry.mv.get_dest().to_index()]
-                    * tune::move_ordering::MAX_HISTORY_STATS_IMPACT
+                    * OPTS.max_history_stats_impact
                     / max,
             )
             .expect("value is in range [0, MAX_HISTORY_STATS_IMPACT]");

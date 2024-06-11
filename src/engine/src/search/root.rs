@@ -2,7 +2,7 @@ use super::Searcher;
 use crate::movelist::MoveEntry;
 use crate::newtypes::{Depth, Ply, Value};
 
-impl Searcher {
+impl Searcher<'_> {
     /// Search the root position to `depth` moves deep.
     pub fn search_root(&mut self, depth: Depth, mut alpha: Value, beta: Value) {
         assert!(depth > Depth::new(0), "depth must be greater than 0");
@@ -41,7 +41,7 @@ impl Searcher {
                 self.logger.send_move(
                     &self.root_moves[mv_nr],
                     &self.build_pv(depth),
-                    self.transposition_table.read().unwrap().hashfull(),
+                    self.transposition_table.hashfull(),
                 );
             }
         }

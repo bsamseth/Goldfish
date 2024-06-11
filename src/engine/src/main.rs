@@ -15,6 +15,6 @@ fn main() -> Result<()> {
         env!("CARGO_PKG_VERSION")
     );
 
-    uci::start(Engine::default())?;
+    Engine::default().repl();
     Ok(())
 }
