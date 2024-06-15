@@ -51,7 +51,7 @@ pub struct Opts {
     /// How many centipawns bonus to give to moves that are the most frequent in history stats.
     /// Other moves will be given a bonus scaled linearly on how frequent they are compared to the
     /// most frequent move square.
-    #[uci(default = "30", kind = "spin", min = "0", max = "200")]
+    #[uci(default = "10", kind = "spin", min = "0")]
     pub max_history_stats_impact: usize,
 
     // Evaluation options:
