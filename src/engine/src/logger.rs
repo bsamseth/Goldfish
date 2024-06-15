@@ -88,7 +88,11 @@ impl Logger {
             .with(InfoPart::SelDepth(self.current_max_ply.as_usize()))
             .with(InfoPart::Nodes(self.total_nodes))
             .with(InfoPart::Time(millis))
-            .with(InfoPart::Nps(self.total_nodes * 1000 / millis))
+            .with(InfoPart::Nps(if millis > 0 {
+                self.total_nodes * 1000 / millis
+            } else {
+                0
+            }))
             .with(InfoPart::TbHits(self.tb_hits))
             .with(InfoPart::CurrMove(self.current_move))
             .with(InfoPart::CurrMoveNumber(self.current_move_number));
