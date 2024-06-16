@@ -19,7 +19,7 @@ use super::tt::TranspositionTable;
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
 use fathom::Tablebase;
-pub use stackstate::StackState;
+use stackstate::StackState;
 use uci::Position;
 
 #[derive(Debug)]
