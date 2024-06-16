@@ -1,5 +1,6 @@
 pub mod bench;
 mod board;
+mod chessmove;
 mod evaluate;
 mod limits;
 mod logger;
