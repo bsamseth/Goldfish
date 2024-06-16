@@ -1,5 +1,6 @@
 use chess::{Board, ChessMove, MoveGen, Piece};
 
+use crate::chessmove::ChessMoveExt;
 use crate::{newtypes::Value, opts::OPTS};
 
 #[derive(Debug)]
@@ -31,7 +32,7 @@ impl MoveVec {
             }
 
             // Capture? Prefer captures with higher value victims, by lower value attackers.
-            if let Some(target) = board.piece_on(entry.mv.get_dest()) {
+            if let Some(target) = entry.mv.captures(board) {
                 value += 10 * piece_value(target)
                     - piece_value(
                         board

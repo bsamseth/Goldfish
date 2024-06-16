@@ -11,6 +11,7 @@
 use chess::{Board, ChessMove, Piece};
 
 use super::Searcher;
+use crate::chessmove::ChessMoveExt;
 use crate::opts::OPTS;
 use crate::{
     board::BoardExt,
@@ -181,7 +182,7 @@ pub fn delta_pruning(board: &Board, mv: ChessMove, static_eval: Value, alpha: Va
     !board.in_check()
         && mv.get_promotion().is_none()
         && static_eval
-            + crate::evaluate::piece_value(board.piece_on(mv.get_dest()).unwrap())
+            + crate::evaluate::piece_value(mv.captures(board).unwrap())
             + OPTS.delta_margin
             <= alpha
 }
