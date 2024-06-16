@@ -22,9 +22,8 @@ use uci::UciOptions;
 /// # Examples
 /// ```no_run
 /// use engine::Engine;
-/// use uci::start;
 ///
-/// start(Engine::default()).unwrap();
+/// Engine::default().repl();
 /// ```
 #[derive(Debug)]
 pub struct Engine {
@@ -113,6 +112,7 @@ impl Engine {
                     .syzygy_path
                     .clone()
                     .expect("should be set at this point");
+                tracing::info!("loading tablebase from path: {path:?}");
                 self.tablebase = Some({
                     // Safety: There's no ongoing search, and only one option can be set any given
                     // time. This means nobody else is potentially loading/probing, so this is safe.
