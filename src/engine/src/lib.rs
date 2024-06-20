@@ -23,7 +23,7 @@ use uci::UciOptions;
 /// ```no_run
 /// use engine::Engine;
 ///
-/// Engine::default().repl();
+/// Engine::default().repl(|| std::io::stdin().lock());
 /// ```
 #[derive(Debug)]
 pub struct Engine {
@@ -43,10 +43,22 @@ impl Default for Engine {
     }
 }
 
+pub enum InputSource {
+    Stdin,
+    Reader(String),
+}
+
 impl Engine {
     /// Start the engine's UCI loop.
-    pub fn repl(&mut self) {
-        let interface = uci::Interface::default();
+    pub fn repl(&mut self, input: InputSource) {
+        let (interface, do_agg) = match input {
+            InputSource::Stdin => (uci::Interface::default(), false),
+            InputSource::Reader(reader) => (uci::Interface::from_reader(reader.as_bytes()), true),
+        };
+
+        let mut total_nodes = 0;
+        let mut total_time = 0;
+
         let mut position = uci::Position::default();
 
         // Safety: No other threads are running (with access to the options), so it's safe to
@@ -56,7 +68,7 @@ impl Engine {
         while let Ok(cmd) = interface.commands.recv() {
             match cmd {
                 uci::Command::Stop => {}
-                uci::Command::Quit => return,
+                uci::Command::Quit => break,
                 uci::Command::Uci => {
                     println!("id name Goldfish {}", env!("CARGO_PKG_VERSION"));
                     println!("id author {}", env!("CARGO_PKG_AUTHORS"));
@@ -64,7 +76,7 @@ impl Engine {
                     self.options.print_options();
                     println!("uciok");
                 }
-                uci::Command::SetOption(uci::Option { name, value }) => {
+                uci::Command::SetOption(uci::EngineOption { name, value }) => {
                     // Safety: No other threads are running (with access to the options), so it's safe
                     // to modify the options.
                     if let Err(e) = self.options.set_option(&name, &value) {
@@ -82,7 +94,8 @@ impl Engine {
                 }
                 uci::Command::Position(pos) => position = pos,
                 uci::Command::Go(go_options) => {
-                    let bm = Searcher::best_move(
+                    tracing::info!("position: {}", position.start_pos);
+                    let (bm, logger) = Searcher::best_move(
                         &position,
                         &go_options,
                         interface.stop.clone(),
@@ -91,11 +104,21 @@ impl Engine {
                     );
 
                     println!("bestmove {bm}");
+
+                    if do_agg {
+                        total_nodes += logger.total_nodes;
+                        total_time += logger.search_start_time.elapsed().as_millis();
+                    }
                 }
                 uci::Command::Unknown(e) => tracing::warn!("{e}"),
                 uci::Command::PonderHit => todo!(),
                 uci::Command::Debug => todo!(),
             }
+        }
+
+        if do_agg {
+            println!("info string total nodes: {total_nodes}");
+            println!("info string total time: {total_time} ms");
         }
     }
 

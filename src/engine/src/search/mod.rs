@@ -43,7 +43,7 @@ impl<'a> Searcher<'a> {
         stop_signal: Arc<AtomicBool>,
         transposition_table: &'a mut TranspositionTable,
         tablebase: Option<&'static Tablebase>,
-    ) -> ChessMove {
+    ) -> (ChessMove, Logger) {
         let mut board = position.start_pos;
         let mut root_position = board;
         let mut halfmove_clock = position.starting_halfmove_clock;
@@ -78,6 +78,7 @@ impl<'a> Searcher<'a> {
             history_stats: [[0; 64]; 64],
         };
 
-        searcher.run()
+        let bm = searcher.run();
+        (bm, searcher.logger)
     }
 }
