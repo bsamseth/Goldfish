@@ -10,7 +10,7 @@ use crate::{
 pub struct Logger {
     pub search_start_time: std::time::Instant,
     last_log_time: std::time::Instant,
-    total_nodes: usize,
+    pub total_nodes: usize,
     tb_hits: usize,
     current_depth: Depth,
     current_max_ply: Ply,

@@ -12,7 +12,7 @@ pub enum Command {
     Uci,
     Debug,
     IsReady,
-    SetOption(Option),
+    SetOption(EngineOption),
     UciNewGame,
     Position(Position),
     Go(Vec<GoOption>),
@@ -41,7 +41,7 @@ pub enum GoOption {
 }
 
 #[derive(Debug)]
-pub struct Option {
+pub struct EngineOption {
     pub name: String,
     pub value: String,
 }
@@ -76,7 +76,7 @@ impl std::str::FromStr for Command {
     }
 }
 
-impl std::str::FromStr for Option {
+impl std::str::FromStr for EngineOption {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -101,7 +101,7 @@ impl std::str::FromStr for Option {
             return Err(format!("Invalid engine option: {s}"));
         }
 
-        Ok(Option {
+        Ok(EngineOption {
             name: name.unwrap().to_string(),
             value: value.unwrap().to_string(),
         })
