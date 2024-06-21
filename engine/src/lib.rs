@@ -11,6 +11,7 @@ mod search;
 mod tt;
 
 use anyhow::Context;
+use chess::ChessMove;
 use search::Searcher;
 use uci::UciOptions;
 
@@ -94,7 +95,16 @@ impl Engine {
                 }
                 uci::Command::Position(pos) => position = pos,
                 uci::Command::Go(go_options) => {
-                    tracing::info!("position: {}", position.start_pos);
+                    tracing::info!(
+                        "position: {} {}",
+                        position.start_pos,
+                        position
+                            .moves
+                            .iter()
+                            .map(std::string::ToString::to_string)
+                            .collect::<Vec<String>>()
+                            .join(" ")
+                    );
                     let (bm, logger) = Searcher::best_move(
                         &position,
                         &go_options,
