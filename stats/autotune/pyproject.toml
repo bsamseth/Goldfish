@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ucituner"
+version = "0.1.0"
+description = ""
+authors = ["Bendik Samseth <b.samseth@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.7.4"
+chess = "^1.10.0"
+matplotlib = "^3.9.0"
+pyqt6 = "^6.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
