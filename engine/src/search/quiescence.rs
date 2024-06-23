@@ -1,5 +1,6 @@
 use chess::{Board, MoveGen};
 
+use super::PvNode;
 use super::{cuts, speculate, Searcher};
 use crate::board::BoardExt;
 use crate::movelist::MoveVec;
@@ -7,7 +8,7 @@ use crate::newtypes::{Ply, Value};
 
 impl Searcher<'_> {
     /// Quiescence search with alpha-beta pruning.
-    pub fn quiescence_search(
+    pub fn quiescence_search<const PV: PvNode>(
         &mut self,
         board: &Board,
         mut alpha: Value,
@@ -43,8 +44,12 @@ impl Searcher<'_> {
             }
             self.make_move(board, mv, &mut new_board, ply);
 
-            let value =
-                -Value::from(self.quiescence_search(&new_board, -beta, -alpha, ply + Ply::new(1)));
+            let value = -Value::from(self.quiescence_search::<PV>(
+                &new_board,
+                -beta,
+                -alpha,
+                ply + Ply::new(1),
+            ));
 
             if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.

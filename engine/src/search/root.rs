@@ -1,6 +1,7 @@
 use super::Searcher;
 use crate::movelist::MoveEntry;
 use crate::newtypes::{Depth, Ply, Value};
+use crate::search::PV_NODE;
 
 impl Searcher<'_> {
     /// Search the root position to `depth` moves deep.
@@ -21,7 +22,7 @@ impl Searcher<'_> {
 
             self.make_move(&root_board, mv.mv, &mut board, Ply::new(0));
 
-            let value = self.pv_search(&board, depth, alpha, beta, Ply::new(0), mv_nr);
+            let value = self.pv_search::<PV_NODE>(&board, depth, alpha, beta, Ply::new(0), mv_nr);
 
             if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
