@@ -23,7 +23,6 @@ impl Searcher<'_> {
         self.return_evaluation_if_at_forced_leaf(board, ply)?;
         self.return_if_draw(board, ply)?;
 
-        let alpha_orig = alpha; // Save original alpha for later determinaiton of search bound type.
         cuts::mate_distance_pruning(&mut alpha, &mut beta, ply)?;
         let tt_move = self.get_bounds_and_move_from_tt(&mut alpha, &mut beta, ply, depth)?;
         self.check_tablebase(board, &mut alpha, &mut beta, ply, depth)?;
@@ -99,12 +98,12 @@ impl Searcher<'_> {
                 Value::DRAW
             };
             Bound::Exact
-        } else if best_value <= alpha_orig {
-            Bound::Upper
         } else if best_value >= beta {
             Bound::Lower
-        } else {
+        } else if PV && best_move.is_some() {
             Bound::Exact
+        } else {
+            Bound::Upper
         };
 
         self.stack_state_mut(ply).update_killer(best_move);
