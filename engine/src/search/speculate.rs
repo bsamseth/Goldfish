@@ -10,7 +10,8 @@
 
 use chess::{Board, ChessMove, Piece};
 
-use super::Searcher;
+use super::PvNode;
+use super::{Searcher, NON_PV_NODE};
 use crate::chessmove::ChessMoveExt;
 use crate::opts::OPTS;
 use crate::{
@@ -71,7 +72,7 @@ impl Searcher<'_> {
         // This is so that 1) it's the other side's turn in sibling nodes, and 2) this allows
         // recursive null moves.
         let new_depth = Depth::new(depth.as_inner().saturating_sub(3));
-        let mut value = -Value::from(self.negamax(
+        let mut value = -Value::from(self.negamax::<NON_PV_NODE>(
             &board,
             new_depth,
             -*beta,
@@ -111,7 +112,7 @@ impl Searcher<'_> {
     ///
     /// Source: <http://www.frayn.net/beowulf/theory.html/>
     #[inline]
-    pub fn futility_pruning(
+    pub fn futility_pruning<const PV: PvNode>(
         &mut self,
         board: &Board,
         alpha: Value,
@@ -133,7 +134,9 @@ impl Searcher<'_> {
                 *depth = Depth::new(1);
             }
             1 if eval + OPTS.futility_margin <= alpha => {
-                return Err(Value::from(self.quiescence_search(board, alpha, beta, ply)));
+                return Err(Value::from(
+                    self.quiescence_search::<PV>(board, alpha, beta, ply),
+                ));
             }
             _ => {}
         }
@@ -145,7 +148,7 @@ impl Searcher<'_> {
     /// When we have no good guess for the best move, do a reduced search first to find a likely
     /// candidate. Only do this if a search would lead to a new entry in the TT.
     #[inline]
-    pub fn internal_iterative_deepening(
+    pub fn internal_iterative_deepening<const PV: PvNode>(
         &mut self,
         board: &Board,
         tt_move: Option<ChessMove>,
@@ -154,9 +157,9 @@ impl Searcher<'_> {
         beta: Value,
         ply: Ply,
     ) -> Option<ChessMove> {
-        if tt_move.is_none() && depth > OPTS.iid_depth_reduction {
+        if tt_move.is_none() && depth >= OPTS.iid_depth_lower_bound {
             let depth = depth - OPTS.iid_depth_reduction;
-            let _ = self.negamax(board, depth, alpha, beta, ply);
+            let _ = self.negamax::<PV>(board, depth, alpha, beta, ply);
             if let Some((mv, _, _)) =
                 self.transposition_table
                     .get(self.stack_state(ply).zobrist, depth, ply)

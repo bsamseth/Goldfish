@@ -1,6 +1,7 @@
 use chess::{Board, MoveGen};
 
 use super::cuts;
+use super::PvNode;
 use super::Searcher;
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
@@ -10,7 +11,7 @@ use crate::tt::Bound;
 
 impl Searcher<'_> {
     /// Negamax search with alpha-beta pruning.
-    pub fn negamax(
+    pub fn negamax<const PV: PvNode>(
         &mut self,
         board: &Board,
         mut depth: Depth,
@@ -29,7 +30,7 @@ impl Searcher<'_> {
 
         // Step 2: Quiescence search if at max depth.
         if depth == Depth::new(0) {
-            return self.quiescence_search(board, alpha, beta, ply);
+            return self.quiescence_search::<PV>(board, alpha, beta, ply);
         }
 
         // Step 3: Expand the node.
@@ -40,12 +41,13 @@ impl Searcher<'_> {
             depth += Depth::new(1); // Extend search if in check.
         } else {
             self.stack_state_mut(ply).eval = board.evaluate();
-            self.futility_pruning(board, alpha, beta, &mut depth, ply)?;
+            self.futility_pruning::<PV>(board, alpha, beta, &mut depth, ply)?;
             self.null_move_pruning(board, &mut beta, depth, ply)?;
         }
 
         // Step 5: Internal iterative deepening.
-        let tt_move = self.internal_iterative_deepening(board, tt_move, depth, alpha, beta, ply);
+        let tt_move =
+            self.internal_iterative_deepening::<PV>(board, tt_move, depth, alpha, beta, ply);
 
         // Step 6: Move generation and ordering.
         let moves = MoveVec::from(MoveGen::new_legal(board))
@@ -68,7 +70,7 @@ impl Searcher<'_> {
         for (mv_nr, mv) in moves.iter().map(|entry| entry.mv).enumerate() {
             self.make_move(board, mv, &mut new_board, ply);
 
-            let value = self.pv_search(&new_board, depth, alpha, beta, ply, mv_nr);
+            let value = self.pv_search::<PV>(&new_board, depth, alpha, beta, ply, mv_nr);
 
             if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.

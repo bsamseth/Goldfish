@@ -11,7 +11,6 @@ mod search;
 mod tt;
 
 use anyhow::Context;
-use chess::ChessMove;
 use search::Searcher;
 use uci::UciOptions;
 

@@ -31,7 +31,7 @@ pub struct Opts {
     // Search speculation options:
     //
     /// Razor margin in centipawns.
-    #[uci(default = "650", kind = "spin", min = "0")]
+    #[uci(default = "600", kind = "spin", min = "0")]
     pub razor_margin: Value,
     /// Extended futility margin in centipawns.
     #[uci(default = "500", kind = "spin", min = "0")]
@@ -43,8 +43,11 @@ pub struct Opts {
     #[uci(default = "250", kind = "spin", min = "0")]
     pub delta_margin: Value,
     /// Internal iterative deepening depth reduction.
-    #[uci(default = "7", kind = "spin", min = "0")]
+    #[uci(default = "2", kind = "spin", min = "0", max = "4")]
     pub iid_depth_reduction: Depth,
+    /// Internal iterative deepening lower depth limit.
+    #[uci(default = "5", kind = "spin", min = "3")]
+    pub iid_depth_lower_bound: Depth,
 
     // Move ordering options:
     //

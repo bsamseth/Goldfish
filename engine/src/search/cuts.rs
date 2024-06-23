@@ -9,7 +9,7 @@ use chess::{Board, ChessMove, MoveGen};
 
 use fathom::Wdl;
 
-use super::Searcher;
+use super::{PvNode, Searcher, NON_PV_NODE};
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
 use crate::newtypes::{Depth, Ply, Value};
@@ -26,7 +26,7 @@ impl Searcher<'_> {
     /// If we find a later move that actually improves alpha, we must search this properly to find
     /// its value. The idea is that this drawback is smaller than the improvements gained.
     #[inline]
-    pub fn pv_search(
+    pub fn pv_search<const PV: PvNode>(
         &mut self,
         board: &Board,
         depth: Depth,
@@ -36,7 +36,7 @@ impl Searcher<'_> {
         mv_nr: usize,
     ) -> Value {
         if depth > Depth::new(1) && mv_nr > 0 {
-            let value = -Value::from(self.negamax(
+            let value = -Value::from(self.negamax::<NON_PV_NODE>(
                 board,
                 depth - Depth::new(1),
                 -alpha - Value::new(1),
@@ -49,7 +49,7 @@ impl Searcher<'_> {
             }
         }
 
-        -Value::from(self.negamax(
+        -Value::from(self.negamax::<PV>(
             board,
             depth - Depth::new(1),
             -beta,
@@ -77,6 +77,7 @@ impl Searcher<'_> {
     }
 
     /// Early return with [`Value::DRAW`] if the position is a draw.
+    /// TODO: check for upcomming draw by repetition and increase alpha if alpha<draw
     #[inline]
     pub fn return_if_draw(&self, board: &Board, ply: Ply) -> Result<(), Value> {
         if self.is_draw(board, ply) {
