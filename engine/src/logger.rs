@@ -60,13 +60,7 @@ impl Logger {
         self.total_nodes += 1;
         self.current_max_ply = self.current_max_ply.max(current_ply);
 
-        self.send_optional_status();
-    }
-
-    pub fn send_optional_status(&mut self) {
-        if self.last_log_time.elapsed().as_secs() >= 1 {
-            self.send_status();
-        }
+        self.send_status();
     }
 
     pub fn silent(mut self, silent: bool) -> Self {
