@@ -1,0 +1,11 @@
+{
+	"options": [
+		{
+			"name": "max_history_stats_impact",
+			"bounds": [
+				7,
+				13
+			]
+		}
+	]
+}
