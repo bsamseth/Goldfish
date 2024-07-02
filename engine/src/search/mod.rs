@@ -35,9 +35,9 @@ pub struct Searcher<'a> {
     history_stats: [[usize; 64]; 64],
 }
 
-type PvNode = bool;
-const PV_NODE: bool = true;
-const NON_PV_NODE: bool = false;
+pub type PvNode = bool;
+pub const PV_NODE: bool = true;
+pub const NON_PV_NODE: bool = false;
 
 impl<'a> Searcher<'a> {
     /// Create a new [`Searcher`].
