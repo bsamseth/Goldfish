@@ -23,7 +23,7 @@ use uci::UciOptions;
 /// ```no_run
 /// use engine::Engine;
 ///
-/// Engine::default().repl(|| std::io::stdin().lock());
+/// Engine::default().repl(engine::InputSource::Stdin);
 /// ```
 #[derive(Debug)]
 pub struct Engine {
