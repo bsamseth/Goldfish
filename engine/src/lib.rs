@@ -35,8 +35,10 @@ pub struct Engine {
 impl Default for Engine {
     fn default() -> Self {
         let options = opts::Opts::default();
+        let mut transposition_table = tt::TranspositionTable::default();
+        transposition_table.resize(1024 * 1024 * options.hash_size_mb);
         Self {
-            transposition_table: tt::TranspositionTable::new(1024 * 1024 * options.hash_size_mb),
+            transposition_table,
             tablebase: None,
             options,
         }
@@ -89,9 +91,7 @@ impl Engine {
                     }
                 }
                 uci::Command::IsReady => println!("readyok"),
-                uci::Command::UciNewGame => {
-                    self.transposition_table.reset();
-                }
+                uci::Command::UciNewGame => {}
                 uci::Command::Position(pos) => position = pos,
                 uci::Command::Go(go_options) => {
                     tracing::info!(
@@ -104,6 +104,7 @@ impl Engine {
                             .collect::<Vec<String>>()
                             .join(" ")
                     );
+                    self.transposition_table.new_search();
                     let (bm, logger) = Searcher::best_move(
                         &position,
                         &go_options,
