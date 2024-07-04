@@ -6,7 +6,7 @@
 
 use chess::{ChessMove, Piece, Square};
 
-use crate::newtypes::{Depth, Ply, Value};
+use crate::newtypes::{Depth, NonMaxI16, Ply, Value};
 
 const DEPTH_ENTRY_OFFSET: i16 = -3;
 
@@ -28,15 +28,18 @@ pub type Found = bool;
 ///
 /// These fields are in the same order as accessed by `probe()`, since memory is fastest sequentially.
 /// Equally, the store order in `save()` matches this order.
-#[derive(Debug, Clone, Copy, Default)]
+///
+/// Note: This struct is trivially memcpy-able, but is _not_ marked as [`Copy`]. This is because
+/// we want very deliberate move semantics and avoid accidentally writing to copies.
+#[derive(Debug, Clone, Default)]
 #[repr(C)]
 struct Entry {
     key16: u16,
     depth8: u8,
     gen_and_bound8: u8,
     move16: Option<Move16>,
-    value: TtValue,
-    evaluation: TtValue,
+    value: Option<TtValue>,
+    evaluation: Option<TtValue>,
 }
 static_assertions::assert_eq_size!(Entry, [u8; 10]);
 
@@ -50,11 +53,11 @@ pub struct EntryWriter(*mut Entry);
 /// Data from the transposition table, absent bookkeeping information.
 ///
 /// This is the data type that is read from during search.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Data {
     pub mv: Option<ChessMove>,
-    pub value: TtValue,
-    pub eval: TtValue,
+    pub value: Option<Value>,
+    pub eval: Option<Value>,
     pub depth: Depth,
     pub bound: Bound,
     pub is_pv: bool,
@@ -88,15 +91,17 @@ pub enum Bound {
     Exact = Self::Lower as u8 | Self::Upper as u8,
 }
 
-/// A [`Value`] with special handling for mate scores.
+/// A [`Value`] with special handling for mate scores and allowing efficient [`Option`] representation.
 ///
-/// In short, mates are scored as the distance to the mate from the root position, but that
+/// Mates are scored as the distance to the mate from the root position, but that
 /// distance might be different between two nodes that are transpositions of each other.
 /// Therefore, we store instead the distance to the mate from the current position, which
 /// would be the same for both nodes. More detailed explenation below.
 /// [`https://github.com/maksimKorzh/chess_programming/blob/master/src/bbc/tt_search_mating_scores/TT_mate_scoring.txt`]
+///
+/// Further, this uses [`NonMaxI16`] to allow for efficient [`Option`] representation.
 #[derive(Debug, Clone, Copy, Default)]
-struct TtValue(Value);
+struct TtValue(NonMaxI16);
 
 /// A cluster of entries in the transposition table.
 ///
@@ -121,15 +126,24 @@ pub struct TranspositionTable {
 }
 
 impl TranspositionTable {
+    /// Create a new transposition table with the given size in bytes.
+    pub fn new(size: usize) -> Self {
+        let mut tt = Self::default();
+        tt.resize(size);
+        tt
+    }
+
     /// Resizes the table to the given size in bytes.
     ///
     /// This clears the table, and all entries are lost.
     /// This is required, because the indices are only consistent for a given size.
-    pub fn resize(&mut self, size: usize) {
+    pub fn resize(&mut self, size: usize) -> &mut Self {
         let cluster_count = size / std::mem::size_of::<Cluster>();
 
+        self.generation = 0;
         self.clusters.clear();
         self.clusters.resize(cluster_count, Cluster::default());
+        self
     }
 
     /// Return an approximation of the number of used entries in the table, as a permill of the total size.
@@ -153,7 +167,11 @@ impl TranspositionTable {
         self.generation += Entry::GENERATION_DELTA;
     }
 
-    pub fn probe(&mut self, key: Key) -> (Found, Data, EntryWriter) {
+    pub fn generation(&self) -> u8 {
+        self.generation
+    }
+
+    pub fn probe(&mut self, key: Key) -> (Option<Data>, EntryWriter) {
         #[allow(clippy::cast_possible_truncation)]
         let key16 = key as u16; // Use the low 16 bits as key within the cluster.
         let generation = self.generation;
@@ -161,8 +179,8 @@ impl TranspositionTable {
 
         if let Some(entry) = cluster.entries.iter_mut().find(|e| e.key16 == key16) {
             let data = entry.read();
-            let writer = EntryWriter(entry);
-            return (true, data, writer);
+            let writer = EntryWriter(std::ptr::from_mut(entry));
+            return (Some(data), writer);
         }
 
         // Find an entry to replace according to the replacement strategy.
@@ -173,7 +191,7 @@ impl TranspositionTable {
         // Safety: Each cluster has a non-zero number of entries, so the minimum is always present.
         let entry = unsafe { entry.unwrap_unchecked() };
 
-        (false, entry.read(), EntryWriter(entry))
+        (None, EntryWriter(std::ptr::from_mut(entry)))
     }
 
     fn cluster_for<'a, 'b: 'a>(&'b mut self, key: Key) -> &'a mut Cluster {
@@ -193,12 +211,12 @@ fn mul_hi64(a: u64, b: u64) -> u64 {
     (r >> 64) as u64
 }
 
-impl From<&Entry> for Data {
-    fn from(entry: &Entry) -> Self {
+impl Data {
+    fn from_entry(entry: &Entry, ply: Ply, halfmove_count: usize) -> Self {
         Self {
             mv: entry.move16.map(From::from),
-            value: entry.value,
-            eval: entry.evaluation,
+            value: entry.value.map(|v| v.into(ply, halfmove_count)),
+            eval: entry.evaluation.map(|v| v.into(ply, halfmove_count)),
             // Safety: The depth is guaranteed to be in bounds.
             #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
             depth: Depth::new((i16::from(entry.depth8) + DEPTH_ENTRY_OFFSET) as u8),
@@ -212,11 +230,11 @@ impl Entry {
     fn save<const PV: crate::search::PvNode>(
         &mut self,
         key: Key,
-        value: Value,
+        value: Option<Value>,
         bound: Bound,
         depth: Depth,
         mv: Option<ChessMove>,
-        eval: Value,
+        eval: Option<Value>,
         generation: u8,
         ply: Ply,
     ) {
@@ -246,8 +264,8 @@ impl Entry {
             self.key16 = key16;
             self.depth8 = d;
             self.gen_and_bound8 = generation | pv_bit | bound as u8;
-            self.value = TtValue::from(value, ply);
-            self.evaluation = TtValue::from(eval, ply);
+            self.value = value.map(|v| TtValue::from(v, ply));
+            self.evaluation = eval.map(|v| TtValue::from(v, ply));
         }
     }
 
@@ -270,7 +288,7 @@ impl Entry {
     }
 
     fn read(&self) -> Data {
-        self.into()
+        Data::from_entry(self, Ply::ZERO, 0)
     }
 }
 
@@ -280,21 +298,23 @@ impl EntryWriter {
     /// # Safety
     /// Calling this function is safe if the [`EntryWriter`] is only used within the same search,
     /// that it was created in.
+    // TODO: Use a builder pattern to make this easier to read at call site.
     unsafe fn save<const PV: crate::search::PvNode>(
-        &mut self,
+        &self,
         key: Key,
-        value: Value,
+        value: Option<Value>,
         bound: Bound,
         depth: Depth,
         mv: Option<ChessMove>,
-        eval: Value,
+        eval: Option<Value>,
         generation: u8,
         ply: Ply,
     ) {
         // Safety: The contained pointer will be valid as the table is only invalidated between
         // searches. Within a search, the pointer is valid, and [`EntryWriter`]s are only created
         // by probing, which is done during search.
-        unsafe { *self.0 }.save::<PV>(key, value, bound, depth, mv, eval, generation, ply);
+        unsafe { self.0.as_mut().unwrap_unchecked() }
+            .save::<PV>(key, value, bound, depth, mv, eval, generation, ply);
     }
 }
 
@@ -326,7 +346,7 @@ impl From<ChessMove> for Move16 {
             Piece::Knight => 4,
             _ => unreachable!(),
         });
-        let mv = from | (to << 6) | (promotion << 12);
+        let mv = to | (from << 6) | (promotion << 12);
         // Safety: All moves are to and from distinct squares, so `mv` cannot be zero.
         debug_assert_ne!(mv, 0);
         Self(unsafe { std::num::NonZeroU16::new_unchecked(mv) })
@@ -355,23 +375,276 @@ impl std::ops::BitAnd for Bound {
 }
 
 impl TtValue {
+    /// Convert from a [`Value`] to a [`TtValue`].
+    ///
+    /// Adjusts a mate or TB score from "plies to mate from the root"
+    /// to "plies to mate from the current position". Standard scores are unchanged.
+    /// The function is called before storing a value in the transposition table.
     fn from(value: Value, ply: Ply) -> Self {
-        if value.is_winning_checkmate() {
-            Self(value + Value::new(i16::from(ply.as_inner())))
-        } else if value.is_losing_checkmate() {
-            Self(value - Value::new(i16::from(ply.as_inner())))
+        if value.is_known_win() {
+            Self(
+                NonMaxI16::new(value.as_inner() + ply.as_inner() as i16)
+                    .expect("different to i16::MAX"),
+            )
+        } else if value.is_known_loss() {
+            Self(
+                NonMaxI16::new(value.as_inner() - ply.as_inner() as i16)
+                    .expect("different to i16::MAX"),
+            )
         } else {
-            Self(value)
+            // SAFETY: `value` is neither very large, nor very small, so the conversion is safe.
+            Self(unsafe { NonMaxI16::new_unchecked(value.as_inner()) })
         }
     }
 
-    fn into(self, ply: Ply) -> Value {
-        if self.0.is_winning_checkmate() {
-            self.0 - Value::new(i16::from(ply.as_inner()))
-        } else if self.0.is_losing_checkmate() {
-            self.0 + Value::new(i16::from(ply.as_inner()))
-        } else {
-            self.0
+    /// Convert from a [`TtValue`] to a [`Value`].
+    ///
+    /// Inverse of [`TtValue::from`] it adjusts a mate or TB score
+    /// from the transposition table (which refers to the plies to mate/be mated from
+    /// current position) to "plies to mate/be mated (TB win/loss) from the root".
+    fn into(self, ply: Ply, halfmove_count: usize) -> Value {
+        let value = Value::new(self.0.get());
+        if value.is_known_win() {
+            let value = value - Value::new(ply.as_inner() as i16);
+            // Downgrade potentially false mates/tb wins.
+            if value
+                .mate_distance()
+                .or_else(|| value.known_win_distance())
+                .is_some_and(|dist| halfmove_count <= 100 && dist > 100 - halfmove_count)
+            {
+                return Value::known_win_in(Ply::MAX) - Value::ONE;
+            }
+            return value;
+        } else if value.is_known_loss() {
+            let value = value + Value::new(ply.as_inner() as i16);
+            // Downgrade potentially false mates/tb losses.
+            if (-value)
+                .mate_distance()
+                .or_else(|| (-value).known_win_distance())
+                .is_some_and(|dist| halfmove_count <= 100 && dist > 100 - halfmove_count)
+            {
+                return Value::known_loss_in(Ply::MAX) + Value::ONE;
+            }
+
+            return value;
         }
+
+        value
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bound() {
+        assert!(!(Bound::Lower & Bound::Upper));
+        assert!(Bound::Lower & Bound::Lower);
+        assert!(Bound::Upper & Bound::Upper);
+        assert!(Bound::Lower & Bound::Exact);
+        assert!(Bound::Upper & Bound::Exact);
+        assert!(Bound::Exact & Bound::Exact);
+    }
+
+    #[test]
+    fn test_move16() {
+        for mv in [
+            ChessMove::new(Square::A1, Square::H8, Some(Piece::Queen)),
+            ChessMove::new(Square::A6, Square::A1, Some(Piece::Knight)),
+            ChessMove::new(Square::H6, Square::B4, Some(Piece::Bishop)),
+            ChessMove::new(Square::H7, Square::B3, Some(Piece::Rook)),
+            ChessMove::new(Square::C7, Square::G8, None),
+        ] {
+            assert_eq!(mv, ChessMove::from(Move16::from(mv)));
+        }
+    }
+
+    #[test]
+    fn test_tt_value() {
+        assert_eq!(
+            Value::DRAW,
+            TtValue::from(Value::DRAW, Ply::ONE).into(Ply::ONE, 0)
+        );
+        assert_eq!(
+            Value::ONE,
+            TtValue::from(Value::ONE, Ply::ONE).into(Ply::ONE, 0)
+        );
+        assert_eq!(
+            Value::mated_in(Ply::ONE),
+            TtValue::from(Value::mated_in(Ply::ONE), Ply::ONE).into(Ply::ONE, 0)
+        );
+        assert_eq!(
+            Value::known_win_in(Ply::ONE),
+            TtValue::from(Value::known_win_in(Ply::ONE), Ply::ONE).into(Ply::ONE, 0)
+        );
+
+        // Non-downgrade edge cases:
+        assert_eq!(
+            Value::mate_in(Ply::new(42)),
+            TtValue::from(Value::mate_in(Ply::new(42)), Ply::ONE).into(Ply::ONE, 100 - 42)
+        );
+        assert_eq!(
+            Value::mated_in(Ply::new(42)),
+            TtValue::from(Value::mated_in(Ply::new(42)), Ply::ONE).into(Ply::ONE, 100 - 42)
+        );
+
+        // Downgrade examples.
+        assert_eq!(
+            Value::known_win_in(Ply::MAX) - Value::ONE,
+            TtValue::from(Value::mate_in(Ply::MAX), Ply::ONE).into(Ply::ONE, 0)
+        );
+        assert_eq!(
+            Value::known_win_in(Ply::MAX) - Value::ONE,
+            TtValue::from(Value::known_win_in(Ply::MAX), Ply::ONE).into(Ply::ONE, 0)
+        );
+        assert_eq!(
+            Value::known_loss_in(Ply::MAX) + Value::ONE,
+            TtValue::from(Value::mated_in(Ply::MAX), Ply::ONE).into(Ply::ONE, 0)
+        );
+        assert_eq!(
+            Value::known_loss_in(Ply::MAX) + Value::ONE,
+            TtValue::from(Value::known_loss_in(Ply::MAX), Ply::ONE).into(Ply::ONE, 0)
+        );
+
+        // Downgrade edge cases.
+        assert_eq!(
+            Value::known_win_in(Ply::MAX) - Value::ONE,
+            TtValue::from(Value::mate_in(Ply::new(42)), Ply::ONE).into(Ply::ONE, 100 - 41)
+        );
+        assert_eq!(
+            Value::known_loss_in(Ply::MAX) + Value::ONE,
+            TtValue::from(Value::mated_in(Ply::new(42)), Ply::ONE).into(Ply::ONE, 100 - 41)
+        );
+    }
+
+    #[test]
+    fn test_tt_value_halfmove_downgrading() {
+        // Wins in 255 plies are downgraded regardless of the halfmove count.
+        let v = Value::known_win_in(Ply::MAX);
+        let ttv = TtValue::from(v, Ply::ONE);
+        assert_eq!(
+            Value::known_win_in(Ply::MAX) - Value::ONE,
+            ttv.into(Ply::ONE, 0)
+        );
+
+        // Same for losses.
+        let v = Value::known_loss_in(Ply::MAX);
+        let ttv = TtValue::from(v, Ply::ONE);
+        assert_eq!(
+            Value::known_loss_in(Ply::MAX) + Value::ONE,
+            ttv.into(Ply::ONE, 0)
+        );
+
+        for ply in (0..=u8::MAX).map(Ply::new) {
+            for halfmove_count in 0..=100 {
+                let v = Value::mate_in(ply);
+                let ttv = TtValue::from(v, Ply::ONE);
+                let remaining_plies = 100 - halfmove_count;
+
+                let expected = if ply.as_inner() as usize > remaining_plies {
+                    Value::known_win_in(Ply::MAX) - Value::ONE
+                } else {
+                    v
+                };
+
+                assert_eq!(
+                    expected,
+                    ttv.into(Ply::ONE, halfmove_count),
+                    "mate_in({ply:?}) at halfmove_count={halfmove_count}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_tt_basic() {
+        const PV: bool = true;
+        let mut tt = TranspositionTable::new(64);
+
+        let key: Key = 0x1234_5678_9abc_def0;
+        let (None, writer) = tt.probe(key) else {
+            panic!("expected None");
+        };
+
+        // SAFETY: The table hasn't been dropped or resized since the writer was created, so the
+        // pointer is still valid. Same goes for the next few unsafe blocks.
+        unsafe {
+            writer.save::<PV>(
+                key,
+                Some(Value::ONE),
+                Bound::Exact,
+                Depth::new(6),
+                Some(ChessMove::new(Square::A1, Square::H8, Some(Piece::Queen))),
+                Some(Value::DRAW),
+                tt.generation(),
+                Ply::ONE,
+            );
+        }
+
+        let (Some(data), _) = tt.probe(key) else {
+            panic!("expected Some");
+        };
+
+        assert_eq!(Some(Value::ONE), data.value);
+        assert_eq!(Some(Value::DRAW), data.eval);
+        assert_eq!(
+            Some(ChessMove::new(Square::A1, Square::H8, Some(Piece::Queen))),
+            data.mv
+        );
+        assert_eq!(Depth::new(6), data.depth);
+        assert_eq!(Bound::Exact, data.bound);
+        assert!(data.is_pv);
+
+        // Write an entry to the same key, but with bound+depth so that it isn't accepted.
+        unsafe {
+            writer.save::<PV>(
+                key,
+                Some(Value::new(-42)),
+                Bound::Lower,
+                Depth::ZERO,
+                None,
+                Some(Value::ONE),
+                tt.generation(),
+                Ply::ONE,
+            );
+        }
+
+        let unchanged = tt.probe(key).0.expect("expected Some");
+        assert_eq!(unchanged, data);
+
+        tt.new_search();
+        assert_eq!(tt.generation(), Entry::GENERATION_DELTA);
+
+        assert!(
+            matches!(tt.probe(key), (Some(_), _)),
+            "entries are preserved across generations"
+        );
+
+        // Write the same low-value entry. Now it should be accepted, as the previous is of the
+        // last generation. But because we don't provide a move, the old move should still be preserved.
+        unsafe {
+            writer.save::<PV>(
+                key,
+                Some(Value::new(-42)),
+                Bound::Lower,
+                Depth::ZERO,
+                None,
+                Some(Value::ONE),
+                tt.generation(),
+                Ply::ONE,
+            );
+        }
+
+        let new = tt.probe(key).0.expect("expected Some");
+        assert_eq!(Some(Value::new(-42)), new.value);
+        assert_eq!(Some(Value::ONE), new.eval);
+        assert_eq!(
+            Some(ChessMove::new(Square::A1, Square::H8, Some(Piece::Queen))),
+            new.mv
+        );
+        assert_eq!(Depth::ZERO, new.depth);
+        assert_eq!(Bound::Lower, new.bound);
+        assert!(new.is_pv);
     }
 }
