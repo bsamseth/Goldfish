@@ -139,7 +139,7 @@ fn evaluate(board: &Board) -> Value {
 
     score += evaluate_material(board);
     score += evaluate_piece_square_tables(board);
-    score += Value::new(1); // Add bonus for tempo.
+    score += Value::ONE; // Add bonus for tempo.
 
     score
 }
@@ -201,12 +201,9 @@ fn evaluate_piece_square_tables(board: &Board) -> Value {
         // Safety: `s` is always in the range 0..64.
         Square::new(s)
     }) {
-        let piece = board.piece_on(s);
-        if piece.is_none() {
+        let Some(piece) = board.piece_on(s) else {
             continue;
-        }
-
-        let piece = piece.unwrap();
+        };
         let color = board.color_on(s).unwrap();
 
         let table = match piece {
