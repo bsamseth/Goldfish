@@ -2,7 +2,19 @@ use derive_more::{Add, AddAssign, FromStr, Sub, SubAssign};
 
 /// A [`Depth`] represents a search depth in the engine.
 #[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Add, AddAssign, Sub, SubAssign, PartialOrd, Ord, FromStr,
+    Debug,
+    Clone,
+    Copy,
+    Default,
+    PartialEq,
+    Eq,
+    Add,
+    AddAssign,
+    Sub,
+    SubAssign,
+    PartialOrd,
+    Ord,
+    FromStr,
 )]
 pub struct Depth(Inner);
 
@@ -15,6 +27,9 @@ impl Depth {
     /// consider the possibility of overflow in the search code. Any search stopping due to
     /// reaching the maximum depth will be served just as well by stopping here.
     pub const MAX: Self = Self(127);
+
+    pub const ZERO: Self = Self(0);
+    pub const ONE: Self = Self(1);
 
     /// Create a new [`Depth`] from an inner `u8`.
     pub const fn new(inner: Inner) -> Self {

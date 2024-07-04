@@ -34,6 +34,9 @@ impl Ply {
     pub const fn as_inner(self) -> Inner {
         self.0
     }
+
+    pub const ZERO: Self = Self(0);
+    pub const ONE: Self = Self(1);
 }
 
 impl From<usize> for Ply {
