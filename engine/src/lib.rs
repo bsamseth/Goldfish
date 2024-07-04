@@ -35,8 +35,7 @@ pub struct Engine {
 impl Default for Engine {
     fn default() -> Self {
         let options = opts::Opts::default();
-        let mut transposition_table = tt::TranspositionTable::default();
-        transposition_table.resize(1024 * 1024 * options.hash_size_mb);
+        let transposition_table = tt::TranspositionTable::new(1024 * 1024 * options.hash_size_mb);
         Self {
             transposition_table,
             tablebase: None,
@@ -69,7 +68,11 @@ impl Engine {
 
         while let Ok(cmd) = interface.commands.recv() {
             match cmd {
-                uci::Command::Stop => {}
+                uci::Command::Stop => {
+                    // The fact that we receieve the stop means we are not searching, so we don't
+                    // need to do anything.
+                    tracing::debug!("received stop command");
+                }
                 uci::Command::Quit => break,
                 uci::Command::Uci => {
                     println!("id name Goldfish {}", env!("CARGO_PKG_VERSION"));
