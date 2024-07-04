@@ -171,11 +171,23 @@ impl TranspositionTable {
         self.generation
     }
 
-    pub fn probe(&mut self, key: Key) -> (Option<Data>, EntryWriter) {
+    pub fn probe(&self, key: Key) -> Option<Data> {
+        #[allow(clippy::cast_possible_truncation)]
+        let key16 = key as u16; // Use the low 16 bits as key within the cluster.
+        let cluster = self.cluster_for(key);
+
+        cluster
+            .entries
+            .iter()
+            .find(|e| e.key16 == key16)
+            .map(|e| e.read())
+    }
+
+    pub fn probe_mut(&mut self, key: Key) -> (Option<Data>, EntryWriter) {
         #[allow(clippy::cast_possible_truncation)]
         let key16 = key as u16; // Use the low 16 bits as key within the cluster.
         let generation = self.generation;
-        let cluster = self.cluster_for(key);
+        let cluster = self.cluster_for_mut(key);
 
         if let Some(entry) = cluster.entries.iter_mut().find(|e| e.key16 == key16) {
             let data = entry.read();
@@ -194,7 +206,15 @@ impl TranspositionTable {
         (None, EntryWriter(std::ptr::from_mut(entry)))
     }
 
-    fn cluster_for<'a, 'b: 'a>(&'b mut self, key: Key) -> &'a mut Cluster {
+    fn cluster_for<'a, 'b: 'a>(&'b self, key: Key) -> &'a Cluster {
+        let len = self.clusters.len() as u64;
+        let key = mul_hi64(key, len);
+        static_assertions::assert_eq_size!(usize, u64);
+        #[allow(clippy::cast_possible_truncation)]
+        &self.clusters[key as usize]
+    }
+
+    fn cluster_for_mut<'a, 'b: 'a>(&'b mut self, key: Key) -> &'a mut Cluster {
         let len = self.clusters.len() as u64;
         let key = mul_hi64(key, len);
         static_assertions::assert_eq_size!(usize, u64);
@@ -563,7 +583,7 @@ mod tests {
         let mut tt = TranspositionTable::new(64);
 
         let key: Key = 0x1234_5678_9abc_def0;
-        let (None, writer) = tt.probe(key) else {
+        let (None, writer) = tt.probe_mut(key) else {
             panic!("expected None");
         };
 
@@ -582,7 +602,7 @@ mod tests {
             );
         }
 
-        let (Some(data), _) = tt.probe(key) else {
+        let (Some(data), _) = tt.probe_mut(key) else {
             panic!("expected Some");
         };
 
@@ -610,14 +630,14 @@ mod tests {
             );
         }
 
-        let unchanged = tt.probe(key).0.expect("expected Some");
+        let unchanged = tt.probe_mut(key).0.expect("expected Some");
         assert_eq!(unchanged, data);
 
         tt.new_search();
         assert_eq!(tt.generation(), Entry::GENERATION_DELTA);
 
         assert!(
-            matches!(tt.probe(key), (Some(_), _)),
+            matches!(tt.probe_mut(key), (Some(_), _)),
             "entries are preserved across generations"
         );
 
@@ -636,7 +656,7 @@ mod tests {
             );
         }
 
-        let new = tt.probe(key).0.expect("expected Some");
+        let new = tt.probe_mut(key).0.expect("expected Some");
         assert_eq!(Some(Value::new(-42)), new.value);
         assert_eq!(Some(Value::ONE), new.eval);
         assert_eq!(
