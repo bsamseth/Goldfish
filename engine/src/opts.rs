@@ -46,7 +46,7 @@ pub struct Opts {
     #[uci(default = "2", kind = "spin", min = "0", max = "4")]
     pub iid_depth_reduction: Depth,
     /// Internal iterative deepening lower depth limit.
-    #[uci(default = "5", kind = "spin", min = "3")]
+    #[uci(default = "3", kind = "spin", min = "3")]
     pub iid_depth_lower_bound: Depth,
 
     // Move ordering options:
