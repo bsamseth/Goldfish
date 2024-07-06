@@ -29,7 +29,6 @@ impl Depth {
     pub const MAX: Self = Self(127);
 
     pub const ZERO: Self = Self(0);
-    pub const ONE: Self = Self(1);
 
     /// Create a new [`Depth`] from an inner `u8`.
     pub const fn new(inner: Inner) -> Self {
