@@ -69,7 +69,7 @@ impl Logger {
     }
 
     pub fn send_status(&mut self) {
-        if !self.silent && self.search_start_time.elapsed().as_secs() >= 1 {
+        if !self.silent && self.last_log_time.elapsed().as_secs() >= 1 {
             self.force_send_status();
         }
     }
