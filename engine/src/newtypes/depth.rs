@@ -28,6 +28,7 @@ impl Depth {
     /// reaching the maximum depth will be served just as well by stopping here.
     pub const MAX: Self = Self(127);
 
+    #[cfg(test)]
     pub const ZERO: Self = Self(0);
 
     /// Create a new [`Depth`] from an inner `u8`.
