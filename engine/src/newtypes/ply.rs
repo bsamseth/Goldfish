@@ -36,6 +36,7 @@ impl Ply {
     }
 
     pub const ZERO: Self = Self(0);
+    #[cfg(test)]
     pub const ONE: Self = Self(1);
 }
 
