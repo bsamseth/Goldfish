@@ -11,6 +11,12 @@ use crate::tt::Bound;
 
 impl Searcher<'_> {
     /// Negamax search with alpha-beta pruning.
+    ///
+    /// The generic parameter `PV` is `true` if this is an expected PV node, and `false` otherwise.
+    /// PV nodes are nodes where we expect to find the principal variation, and is searched with a
+    /// full window (not accounting for aspiration windows). Non-PV nodes are searched with a null
+    /// window, where `alpha + 1 = beta`.
+    ///
     pub fn negamax<const PV: PvNode>(
         &mut self,
         board: &Board,
@@ -24,8 +30,8 @@ impl Searcher<'_> {
         self.return_if_draw(board, ply)?;
 
         cuts::mate_distance_pruning(&mut alpha, &mut beta, ply)?;
-        let tt_move = self.get_bounds_and_move_from_tt(&mut alpha, &mut beta, ply, depth)?;
-        self.check_tablebase(board, &mut alpha, &mut beta, ply, depth)?;
+        let (tt_data, tt_writer) = self.check_tt::<PV>(beta, ply, depth)?;
+        self.check_tablebase::<PV>(board, &mut alpha, &mut beta, ply, depth, tt_writer)?;
 
         // Step 2: Quiescence search if at max depth.
         if depth == Depth::new(0) {
@@ -40,13 +46,21 @@ impl Searcher<'_> {
             depth += Depth::new(1); // Extend search if in check.
         } else {
             self.stack_state_mut(ply).eval = board.evaluate();
-            self.futility_pruning::<PV>(board, alpha, beta, &mut depth, ply)?;
-            self.null_move_pruning(board, &mut beta, depth, ply)?;
+            if !PV {
+                self.futility_pruning(board, alpha, beta, &mut depth, ply)?;
+                self.null_move_pruning(board, &mut beta, depth, ply)?;
+            }
         }
 
         // Step 5: Internal iterative deepening.
-        let tt_move =
-            self.internal_iterative_deepening::<PV>(board, tt_move, depth, alpha, beta, ply);
+        let tt_move = self.internal_iterative_deepening::<PV>(
+            board,
+            tt_data.and_then(|tt| tt.mv),
+            depth,
+            alpha,
+            beta,
+            ply,
+        );
 
         // Step 6: Move generation and ordering.
         let moves = MoveVec::from(MoveGen::new_legal(board))
@@ -108,14 +122,23 @@ impl Searcher<'_> {
 
         self.stack_state_mut(ply).update_killer(best_move);
         self.update_history_stats(best_move);
-        self.transposition_table.store(
-            self.stack_state(ply).zobrist,
-            best_move,
-            bound,
-            best_value,
-            depth,
-            ply,
-        );
+        // SAFETY: The tt writer was created in this search frame, so the entry is valid.
+        unsafe {
+            tt_writer.save::<PV>(
+                self.stack_state(ply).zobrist,
+                Some(best_value),
+                bound,
+                depth,
+                best_move,
+                if board.in_check() {
+                    None
+                } else {
+                    Some(self.stack_state(ply).eval)
+                },
+                self.transposition_table.generation(),
+                ply,
+            );
+        }
 
         Ok(best_value)
     }
