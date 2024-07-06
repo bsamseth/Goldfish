@@ -70,7 +70,7 @@ impl Searcher<'_> {
     /// is made. I.e. this should be true: `self.stack_state(ply).zobrist == board.get_hash()`.
     pub fn make_move(&mut self, board: &Board, mv: ChessMove, result: &mut Board, ply: Ply) {
         let current_halfmove = self.stack_state(ply).halfmove_clock;
-        let new_ss = self.stack_state_mut(ply + Ply::new(1));
+        let new_ss = self.stack_state_mut(ply.increment());
 
         if board.halfmove_reset(mv) {
             new_ss.halfmove_clock = 0;
@@ -94,7 +94,7 @@ impl Searcher<'_> {
         let current_ss = self.stack_state_mut(ply);
         current_ss.null_move = true;
         let new_hmc = current_ss.halfmove_clock + 1;
-        let new_ss = self.stack_state_mut(ply + Ply::new(1));
+        let new_ss = self.stack_state_mut(ply.increment());
         new_ss.halfmove_clock = new_hmc;
         new_ss.zobrist = board.get_hash();
 

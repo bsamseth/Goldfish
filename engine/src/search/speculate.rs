@@ -53,7 +53,7 @@ impl Searcher<'_> {
         ply: Ply,
     ) -> Result<(), Value> {
         if board.in_check()
-            || self.stack_state(ply - Ply::new(1)).null_move
+            || self.stack_state(ply.decrement()).null_move
             || Value::CHECKMATE_THRESHOLD <= *beta
             || self.stack_state(ply).eval < *beta
             || ((board.pieces(Piece::Queen)
@@ -76,8 +76,8 @@ impl Searcher<'_> {
             &board,
             new_depth,
             -*beta,
-            -*beta + Value::new(1),
-            ply + Ply::new(1),
+            (-*beta).increment(),
+            ply.increment(),
         ));
 
         self.undo_null_move(ply);

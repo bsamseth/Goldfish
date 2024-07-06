@@ -34,7 +34,7 @@ impl Searcher<'_> {
         self.check_tablebase::<PV>(board, &mut alpha, &mut beta, ply, depth, tt_writer)?;
 
         // Step 2: Quiescence search if at max depth.
-        if depth == Depth::new(0) {
+        if depth <= Depth::ZERO {
             return self.quiescence_search::<PV>(board, alpha, beta, ply);
         }
 

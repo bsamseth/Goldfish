@@ -62,6 +62,16 @@ impl Value {
         self.0
     }
 
+    // Increment this [`Value`] by one.
+    pub const fn increment(self) -> Self {
+        Self(self.0 + 1)
+    }
+
+    // Decrement this [`Value`] by one.
+    pub const fn decrement(self) -> Self {
+        Self(self.0 - 1)
+    }
+
     /// A win in `ply` halfmoves.
     pub const fn mate_in(ply: Ply) -> Self {
         Self(Self::CHECKMATE.0 - ply.as_inner() as Inner)
