@@ -144,6 +144,7 @@ impl Searcher<'_> {
         beta: Value,
         ply: Ply,
     ) -> Option<ChessMove> {
+        // TODO: Testing indicates this is a wash compared to not doing it. Consider dropping it.
         if PV && tt_move.is_none() && depth >= OPTS.iid_depth_lower_bound {
             let depth = depth - OPTS.iid_depth_reduction;
             let _ = self.negamax::<PV>(board, depth, alpha, beta, ply);
