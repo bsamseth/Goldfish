@@ -47,7 +47,7 @@ static_assertions::assert_eq_size!(Entry, [u8; 10]);
 ///
 /// This effectively just a mutable pointer to the [`Entry`], but restricted to only allow
 /// calling the [`Entry::save`] method.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct EntryWriter(*mut Entry);
 
 /// Data from the transposition table, absent bookkeeping information.
@@ -171,7 +171,7 @@ impl TranspositionTable {
         self.generation
     }
 
-    pub fn probe(&self, key: Key) -> Option<Data> {
+    pub fn probe(&self, key: Key, ply: Ply, halfmove_count: usize) -> Option<Data> {
         #[allow(clippy::cast_possible_truncation)]
         let key16 = key as u16; // Use the low 16 bits as key within the cluster.
         let cluster = self.cluster_for(key);
@@ -180,17 +180,26 @@ impl TranspositionTable {
             .entries
             .iter()
             .find(|e| e.key16 == key16)
-            .map(|e| e.read())
+            .map(|entry| Data::from_entry(entry, ply, halfmove_count))
     }
 
-    pub fn probe_mut(&mut self, key: Key) -> (Option<Data>, EntryWriter) {
+    pub fn probe_mut(
+        &mut self,
+        key: Key,
+        ply: Ply,
+        halfmove_count: usize,
+    ) -> (Option<Data>, EntryWriter) {
         #[allow(clippy::cast_possible_truncation)]
         let key16 = key as u16; // Use the low 16 bits as key within the cluster.
         let generation = self.generation;
         let cluster = self.cluster_for_mut(key);
 
-        if let Some(entry) = cluster.entries.iter_mut().find(|e| e.key16 == key16) {
-            let data = entry.read();
+        if let Some(entry) = cluster
+            .entries
+            .iter_mut()
+            .find(|e| e.is_occupied() && e.key16 == key16)
+        {
+            let data = Data::from_entry(entry, ply, halfmove_count);
             let writer = EntryWriter(std::ptr::from_mut(entry));
             return (Some(data), writer);
         }
@@ -306,10 +315,6 @@ impl Entry {
         // Safety: `age` is guaranteed to be in bounds due to the bitmask.
         age as u8
     }
-
-    fn read(&self) -> Data {
-        Data::from_entry(self, Ply::ZERO, 0)
-    }
 }
 
 impl EntryWriter {
@@ -319,7 +324,7 @@ impl EntryWriter {
     /// Calling this function is safe if the [`EntryWriter`] is only used within the same search,
     /// that it was created in.
     // TODO: Use a builder pattern to make this easier to read at call site.
-    unsafe fn save<const PV: crate::search::PvNode>(
+    pub unsafe fn save<const PV: crate::search::PvNode>(
         &self,
         key: Key,
         value: Option<Value>,
@@ -583,7 +588,7 @@ mod tests {
         let mut tt = TranspositionTable::new(64);
 
         let key: Key = 0x1234_5678_9abc_def0;
-        let (None, writer) = tt.probe_mut(key) else {
+        let (None, writer) = tt.probe_mut(key, Ply::ZERO, 0) else {
             panic!("expected None");
         };
 
@@ -602,10 +607,7 @@ mod tests {
             );
         }
 
-        let (Some(data), _) = tt.probe_mut(key) else {
-            panic!("expected Some");
-        };
-
+        let data = tt.probe(key, Ply::ZERO, 0).expect("expected Some");
         assert_eq!(Some(Value::ONE), data.value);
         assert_eq!(Some(Value::DRAW), data.eval);
         assert_eq!(
@@ -630,14 +632,14 @@ mod tests {
             );
         }
 
-        let unchanged = tt.probe_mut(key).0.expect("expected Some");
+        let unchanged = tt.probe(key, Ply::ZERO, 0).expect("expected Some");
         assert_eq!(unchanged, data);
 
         tt.new_search();
         assert_eq!(tt.generation(), Entry::GENERATION_DELTA);
 
         assert!(
-            matches!(tt.probe_mut(key), (Some(_), _)),
+            matches!(tt.probe_mut(key, Ply::ZERO, 0), (Some(_), _)),
             "entries are preserved across generations"
         );
 
@@ -656,7 +658,7 @@ mod tests {
             );
         }
 
-        let new = tt.probe_mut(key).0.expect("expected Some");
+        let new = tt.probe(key, Ply::ZERO, 0).expect("expected Some");
         assert_eq!(Some(Value::new(-42)), new.value);
         assert_eq!(Some(Value::ONE), new.eval);
         assert_eq!(
