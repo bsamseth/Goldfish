@@ -35,7 +35,7 @@ impl Searcher<'_> {
     /// intrusive one.
     ///
     /// The PV will contain at most `depth` moves, as any more than this would likely be speculative.
-    pub fn build_pv(&mut self, depth: Depth) -> Vec<ChessMove> {
+    pub fn build_pv(&self, depth: Depth) -> Vec<ChessMove> {
         let mut pv = Vec::new();
         let mut board = self.root_position;
 
@@ -46,8 +46,9 @@ impl Searcher<'_> {
         board = board.make_move_new(first_move);
         pv.push(first_move);
 
-        while let (true, tt::Data { mv: Some(mv), .. }, _) =
-            self.transposition_table.probe(board.get_hash())
+        while let Some(tt::Data { mv: Some(mv), .. }) =
+            self.transposition_table
+                .probe(board.get_hash(), Ply::ZERO, 0)
         {
             pv.push(mv);
             board = board.make_move_new(mv);

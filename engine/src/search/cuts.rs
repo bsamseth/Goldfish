@@ -5,7 +5,7 @@
 //!
 //! Speculative cutoffs are implemented in [`super::speculate`].
 
-use chess::{Board, ChessMove, MoveGen};
+use chess::{Board, MoveGen};
 
 use fathom::Wdl;
 
@@ -13,7 +13,7 @@ use super::{PvNode, Searcher, NON_PV_NODE};
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
 use crate::newtypes::{Depth, Ply, Value};
-use crate::tt::Bound;
+use crate::tt::{self, Bound, EntryWriter};
 
 impl Searcher<'_> {
     /// Principal Variation Search
@@ -86,51 +86,68 @@ impl Searcher<'_> {
         Ok(())
     }
 
-    /// Retrieve the best move from the transposition table.
+    /// Retrieve data from the transposition table if it exists for the position.
     ///
-    /// If the position is in the transposition table, and the stored value is usable at the
-    /// current depth, update the alpha and beta bounds and return the move.
+    /// For non-PV nodes, if the position is in the transposition table and the stored value is
+    /// usable at the current depth, we may return early.
     ///
     /// The bounds are updated in place. If the update leaves a zero-width window, the function
     /// signals that an early return is possible.
     #[inline]
-    pub fn get_bounds_and_move_from_tt(
-        &self,
-        alpha: &mut Value,
-        beta: &mut Value,
+    pub fn check_tt<const PV: PvNode>(
+        &mut self,
+        beta: Value,
         ply: Ply,
         depth: Depth,
-    ) -> Result<Option<ChessMove>, Value> {
-        if let Some((mv, bound, value)) =
+    ) -> Result<(Option<tt::Data>, tt::EntryWriter), Value> {
+        let ss = self.stack_state(ply);
+        let halfmove_clock = ss.halfmove_clock;
+        let (tt_data, tt_writer) =
             self.transposition_table
-                .get(self.stack_state(ply).zobrist, depth, ply)
-        {
-            if bound & Bound::Lower && *alpha < value {
-                *alpha = value;
-            }
-            if bound & Bound::Upper && value < *beta {
-                *beta = value;
-            }
+                .probe_mut(ss.zobrist, ply, halfmove_clock);
 
-            if alpha >= beta {
-                return Err(value);
-            }
+        let Some(tt_data) = tt_data else {
+            return Ok((None, tt_writer));
+        };
 
-            Ok(mv)
-        } else {
-            Ok(None)
+        if !PV && tt_data.value.is_some() {
+            let value = tt_data.value.unwrap();
+
+            // If we're not in a PV node, we check for an early cutoff.
+            // To do so, the depth of the stored entry must be greater than the depth we are to
+            // search. If the cutoff doesn't cause a fail-high, we also accept entries that are
+            // of equal depth.
+            let required_depth =
+                Depth::new(depth.as_inner().saturating_sub(u8::from(value <= beta)));
+            let required_bound = if value >= beta {
+                Bound::Lower
+            } else {
+                Bound::Upper
+            };
+
+            if tt_data.depth > required_depth
+                && tt_data.bound & required_bound
+                // Partial workaround for the graph history interaction problem
+                // For high rule50 counts don't produce transposition table cutoffs.
+                && halfmove_clock < 90
+            {
+                return Err(tt_data.value.unwrap());
+            }
         }
+
+        Ok((Some(tt_data), tt_writer))
     }
 
     /// Adjust alpha/beta if the position is in the tablebase.
     #[inline]
-    pub fn check_tablebase(
+    pub fn check_tablebase<const PV: PvNode>(
         &mut self,
         board: &Board,
         alpha: &mut Value,
         beta: &mut Value,
         ply: Ply,
         depth: Depth,
+        writer: EntryWriter,
     ) -> Result<(), Value> {
         if let Some(wdl) = self
             .tablebase
@@ -161,18 +178,20 @@ impl Searcher<'_> {
             // If the updated bounds leave a zero-width window, signal that an early return is
             // possible. Exact bounds always leave a zero-width window.
             if alpha >= beta {
-                self.transposition_table.store(
-                    self.stack_state(ply).zobrist,
-                    None,
-                    bound,
-                    value,
-                    // This could be stored with Depth::MAX, but that would potentially
-                    // saturate the tt with only tablebase entries, which is a waste of
-                    // a tt. Instead, give it a reasonable depth that should keep it around
-                    // for a while, but not forever. Five is a magic number, not tested extensively.
-                    depth + Depth::new(5),
-                    ply,
-                );
+                // SAFETY: The tt writer was produced in this search frame, so the entry is still
+                // valid at this point.
+                unsafe {
+                    writer.save::<PV>(
+                        self.stack_state(ply).zobrist,
+                        Some(value),
+                        bound,
+                        Depth::new(depth.as_inner().saturating_add(7) - 1),
+                        None,
+                        None,
+                        self.transposition_table.generation(),
+                        ply,
+                    );
+                }
                 return Err(value);
             }
         }
