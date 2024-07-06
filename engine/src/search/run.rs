@@ -25,7 +25,7 @@ impl Searcher<'_> {
         }
 
         let alpha = if let Some(mate_distance) = self.limits.mate {
-            Value::mate_in(mate_distance + Ply::new(1))
+            Value::mate_in(mate_distance + Ply::ONE)
         } else {
             -Value::INFINITE
         };

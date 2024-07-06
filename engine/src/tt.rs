@@ -164,7 +164,7 @@ impl TranspositionTable {
 
     pub fn new_search(&mut self) {
         // Increment the generation, keeping the lower bits unchanged.
-        self.generation += Entry::GENERATION_DELTA;
+        self.generation = self.generation.wrapping_add(Entry::GENERATION_DELTA);
     }
 
     pub fn generation(&self) -> u8 {
@@ -248,7 +248,7 @@ impl Data {
             eval: entry.evaluation.map(|v| v.into(ply, halfmove_count)),
             // Safety: The depth is guaranteed to be in bounds.
             #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-            depth: Depth::new((i16::from(entry.depth8) + DEPTH_ENTRY_OFFSET) as u8),
+            depth: Depth::new(i16::from(entry.depth8) + DEPTH_ENTRY_OFFSET),
             bound: Bound::from(entry.gen_and_bound8 & 0b11),
             is_pv: entry.gen_and_bound8 & 0b100 != 0,
         }
@@ -281,10 +281,10 @@ impl Entry {
         // Overwrite less valuable entries.
         if bound == Bound::Exact
             || key16 != self.key16
-            || (depth.as_inner() as i16) - DEPTH_ENTRY_OFFSET + pv_bonus > (self.depth8 as i16) - 4
+            || depth.as_inner() - DEPTH_ENTRY_OFFSET + pv_bonus > (self.depth8 as i16) - 4
             || self.relative_age(generation) > 0
         {
-            let d = depth.as_inner() as i16;
+            let d = depth.as_inner();
             debug_assert!(d > DEPTH_ENTRY_OFFSET);
             debug_assert!(d < 256 + DEPTH_ENTRY_OFFSET);
             #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]

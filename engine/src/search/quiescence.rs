@@ -48,7 +48,7 @@ impl Searcher<'_> {
                 &new_board,
                 -beta,
                 -alpha,
-                ply + Ply::new(1),
+                ply.increment(),
             ));
 
             if self.should_stop() {

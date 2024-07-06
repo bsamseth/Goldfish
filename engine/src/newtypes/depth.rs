@@ -18,22 +18,23 @@ use derive_more::{Add, AddAssign, FromStr, Sub, SubAssign};
 )]
 pub struct Depth(Inner);
 
-type Inner = u8;
+type Inner = i16;
 
 impl Depth {
     /// The maximum search depth considered by the engine from any given position.
-    ///
-    /// This could likely be almost [`u8::max`], but we choose a smaller value to avoid having to
-    /// consider the possibility of overflow in the search code. Any search stopping due to
-    /// reaching the maximum depth will be served just as well by stopping here.
     pub const MAX: Self = Self(127);
 
-    #[cfg(test)]
     pub const ZERO: Self = Self(0);
+    pub const ONE: Self = Self(1);
 
-    /// Create a new [`Depth`] from an inner `u8`.
+    /// Create a new [`Depth`] .
     pub const fn new(inner: Inner) -> Self {
         Self(inner)
+    }
+
+    /// Decrement this [`Depth`] by one.
+    pub const fn decrement(self) -> Self {
+        Self(self.0 - 1)
     }
 
     /// Convert this [`Depth`] to a `usize`.
@@ -42,7 +43,10 @@ impl Depth {
     /// The inner type of [`Depth`] is smaller than `usize`, so this conversion is trivial and a
     /// noop at runtime.
     pub const fn as_usize(self) -> usize {
-        self.0 as usize
+        debug_assert!(self.0 >= 0, "Depth cannot be negative");
+        #[allow(clippy::cast_sign_loss)]
+        let depth = self.0 as usize;
+        depth
     }
 
     /// Convert this [`Depth`] to its inner type.
@@ -54,10 +58,10 @@ impl Depth {
 impl From<usize> for Depth {
     /// Create a new [`Depth`] from a `usize`, saturating at the maximum depth.
     fn from(depth: usize) -> Self {
-        let clamped = depth.min(Self::MAX.as_usize());
+        let clamped = depth.min(Self::MAX.as_usize()).max(0);
 
         // This is safe because we just clamped the value to the maximum depth.
-        #[allow(clippy::cast_possible_truncation)]
+        #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
         Self::new(clamped as Inner)
     }
 }

@@ -35,13 +35,13 @@ impl Searcher<'_> {
         ply: Ply,
         mv_nr: usize,
     ) -> Value {
-        if depth > Depth::new(1) && mv_nr > 0 {
+        if depth > Depth::ONE && mv_nr > 0 {
             let value = -Value::from(self.negamax::<NON_PV_NODE>(
                 board,
-                depth - Depth::new(1),
-                -alpha - Value::new(1),
+                depth.decrement(),
+                (-alpha).decrement(),
                 -alpha,
-                ply + Ply::new(1),
+                ply.increment(),
             ));
 
             if value <= alpha {
@@ -49,13 +49,7 @@ impl Searcher<'_> {
             }
         }
 
-        -Value::from(self.negamax::<PV>(
-            board,
-            depth - Depth::new(1),
-            -beta,
-            -alpha,
-            ply + Ply::new(1),
-        ))
+        -Value::from(self.negamax::<PV>(board, depth.decrement(), -beta, -alpha, ply.increment()))
     }
 
     /// Early return the board evaluation if we are at a forced leaf node.
@@ -117,8 +111,7 @@ impl Searcher<'_> {
             // To do so, the depth of the stored entry must be greater than the depth we are to
             // search. If the cutoff doesn't cause a fail-high, we also accept entries that are
             // of equal depth.
-            let required_depth =
-                Depth::new(depth.as_inner().saturating_sub(u8::from(value <= beta)));
+            let required_depth = Depth::new(depth.as_inner() - i16::from(value <= beta));
             let required_bound = if value >= beta {
                 Bound::Lower
             } else {
@@ -163,8 +156,8 @@ impl Searcher<'_> {
                 // opponent might not play optimally), and a blessed loss is still worse than a
                 // normal draw (because we'd rather not be reliant on rule 50 to hold a
                 // draw).
-                Wdl::CursedWin => (Value::DRAW + Value::new(1), Bound::Exact),
-                Wdl::BlessedLoss => (Value::DRAW - Value::new(1), Bound::Exact),
+                Wdl::CursedWin => (Value::DRAW.increment(), Bound::Exact),
+                Wdl::BlessedLoss => (Value::DRAW.decrement(), Bound::Exact),
             };
 
             // Apply the tb bounds to alpha/beta:
@@ -256,7 +249,7 @@ pub fn return_if_no_moves(moves: &MoveGen, board: &Board, ply: Ply) -> Result<()
 #[inline]
 pub fn mate_distance_pruning(alpha: &mut Value, beta: &mut Value, ply: Ply) -> Result<(), Value> {
     let worst_mate = Value::mated_in(ply);
-    let best_mate = Value::mate_in(ply + Ply::new(1));
+    let best_mate = Value::mate_in(ply.increment());
     if *alpha < worst_mate {
         *alpha = worst_mate;
     }

@@ -21,6 +21,16 @@ impl Ply {
         Self(inner)
     }
 
+    /// Increment this [`Ply`] by one.
+    pub const fn increment(self) -> Self {
+        Self(self.0 + 1)
+    }
+
+    /// Decrease this [`Ply`] by one.
+    pub const fn decrement(self) -> Self {
+        Self(self.0 - 1)
+    }
+
     /// Convert this [`Ply`] to a `usize`.
     ///
     /// This is useful for indexing arrays, or in other (const) context where a `usize` is needed.
@@ -36,7 +46,6 @@ impl Ply {
     }
 
     pub const ZERO: Self = Self(0);
-    #[cfg(test)]
     pub const ONE: Self = Self(1);
 }
 
