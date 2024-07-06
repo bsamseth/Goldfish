@@ -17,7 +17,7 @@ use crate::opts::OPTS;
 use crate::{
     board::BoardExt,
     newtypes::{Depth, Ply, Value},
-    tt::Bound,
+    tt,
 };
 
 impl Searcher<'_> {
@@ -72,7 +72,7 @@ impl Searcher<'_> {
         // This is so that 1) it's the other side's turn in sibling nodes, and 2) this allows
         // recursive null moves.
         let new_depth = Depth::new(depth.as_inner().saturating_sub(3));
-        let mut value = -Value::from(self.negamax::<NON_PV_NODE>(
+        let value = -Value::from(self.negamax::<NON_PV_NODE>(
             &board,
             new_depth,
             -*beta,
@@ -82,21 +82,8 @@ impl Searcher<'_> {
 
         self.undo_null_move(ply);
 
-        if *beta <= value {
-            // Don't return unproven mates.
-            if Value::CHECKMATE_THRESHOLD <= value {
-                value = *beta;
-            }
-
-            self.transposition_table.store(
-                self.stack_state(ply).zobrist,
-                None,
-                Bound::Lower,
-                value,
-                new_depth + Depth::new(1),
-                ply,
-            );
-
+        // Don't return unproven wins.
+        if value >= *beta && !value.is_known_win() {
             return Err(value);
         }
 
@@ -112,7 +99,7 @@ impl Searcher<'_> {
     ///
     /// Source: <http://www.frayn.net/beowulf/theory.html/>
     #[inline]
-    pub fn futility_pruning<const PV: PvNode>(
+    pub fn futility_pruning(
         &mut self,
         board: &Board,
         alpha: Value,
@@ -135,7 +122,7 @@ impl Searcher<'_> {
             }
             1 if eval + OPTS.futility_margin <= alpha => {
                 return Err(Value::from(
-                    self.quiescence_search::<PV>(board, alpha, beta, ply),
+                    self.quiescence_search::<NON_PV_NODE>(board, alpha, beta, ply),
                 ));
             }
             _ => {}
@@ -157,15 +144,18 @@ impl Searcher<'_> {
         beta: Value,
         ply: Ply,
     ) -> Option<ChessMove> {
-        if tt_move.is_none() && depth >= OPTS.iid_depth_lower_bound {
+        if PV && tt_move.is_none() && depth >= OPTS.iid_depth_lower_bound {
             let depth = depth - OPTS.iid_depth_reduction;
             let _ = self.negamax::<PV>(board, depth, alpha, beta, ply);
-            if let Some((mv, _, _)) =
+            let ss = self.stack_state(ply);
+            if let Some(tt::Data { mv: Some(mv), .. }) =
                 self.transposition_table
-                    .get(self.stack_state(ply).zobrist, depth, ply)
+                    .probe(ss.zobrist, ply, ss.halfmove_clock)
             {
-                return mv;
+                tracing::warn!("IID found a move");
+                return Some(mv);
             }
+            tracing::warn!("IID failed to find a move");
         }
         tt_move
     }
