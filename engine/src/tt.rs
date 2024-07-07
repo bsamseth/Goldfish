@@ -162,15 +162,21 @@ impl TranspositionTable {
             .sum()
     }
 
+    /// Prepare the table for a new search by incrementing the generation.
+    ///
+    /// This does nothing to the existing entries, but ensures new entries can take precedence
+    /// over old ones during hash collisions.
     pub fn new_search(&mut self) {
-        // Increment the generation, keeping the lower bits unchanged.
+        // Increment the generation, keeping the lower bits unchanged, with intentional wrapping.
         self.generation = self.generation.wrapping_add(Entry::GENERATION_DELTA);
     }
 
+    /// Return the current generation of the table.
     pub fn generation(&self) -> u8 {
         self.generation
     }
 
+    /// Retrieve data for the given [`Key`], or [`None`] if the key is not found.
     pub fn probe(&self, key: Key, ply: Ply, halfmove_count: usize) -> Option<Data> {
         #[allow(clippy::cast_possible_truncation)]
         let key16 = key as u16; // Use the low 16 bits as key within the cluster.
@@ -183,6 +189,15 @@ impl TranspositionTable {
             .map(|entry| Data::from_entry(entry, ply, halfmove_count))
     }
 
+    /// Retrieve data for the given [`Key`], and an [`EntryWriter`] where the next entry may be written.
+    ///
+    /// Either the data is [`Some`] and the [`EntryWriter`] points to the returned entry, or the
+    /// data is [`None`] and the [`EntryWriter`] points to the least valuable entry in the cluster.
+    /// In either case, the user should use the writer to save updates/modifications to the
+    /// table.
+    ///
+    /// This provides an efficient query-modify pattern against the table, as that all usage of the
+    /// table will first probe for an entry, and then potentially modify it.
     pub fn probe_mut(
         &mut self,
         key: Key,
@@ -208,7 +223,7 @@ impl TranspositionTable {
         let entry = cluster
             .entries
             .iter_mut()
-            .min_by_key(|e| e.depth8 + e.relative_age(generation));
+            .min_by_key(|e| e.depth8.saturating_add(e.relative_age(generation)));
         // Safety: Each cluster has a non-zero number of entries, so the minimum is always present.
         let entry = unsafe { entry.unwrap_unchecked() };
 
@@ -241,6 +256,11 @@ fn mul_hi64(a: u64, b: u64) -> u64 {
 }
 
 impl Data {
+    /// Convert an [`Entry`] to a [`Data`].
+    ///
+    /// The [`Entry`] is a compacted form of the data used internally by the table,
+    /// while the [`Data`] is directly useable in search. It also serves as a separation between
+    /// the inner implementation of the table and the "public" interface.
     fn from_entry(entry: &Entry, ply: Ply, halfmove_count: usize) -> Self {
         Self {
             mv: entry.move16.map(From::from),
