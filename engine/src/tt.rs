@@ -179,7 +179,7 @@ impl TranspositionTable {
         cluster
             .entries
             .iter()
-            .find(|e| e.key16 == key16)
+            .find(|e| e.is_occupied() && e.key16 == key16)
             .map(|entry| Data::from_entry(entry, ply, halfmove_count))
     }
 
