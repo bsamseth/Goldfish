@@ -28,6 +28,7 @@ criterion = "0.5.1"
 # iai is broken for newer versions of valgrind. This revision on a fork
 # "fixes" the issue: https://github.com/bheisler/iai/issues/34#issuecomment-1572282895
 iai = { git = "https://github.com/sigaloid/iai", rev = "6c83e942" }
+rand = "0.8.5"
 
 [[bench]]
 name = "standard_search_suite_criterion"

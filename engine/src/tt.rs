@@ -274,6 +274,11 @@ impl TranspositionTable {
 }
 
 /// Return the higher 64 bits of the product of two 64-bit integers.
+///
+/// This has the property of being in the range `[0, b)`, where `b` is the second argument.
+/// As such it can be used to produce an index into an array of length `b` given a key `a`.
+/// This is provided that the keys `a` are uniformly distributed, otherwise most/all keys will
+/// map to the same index. Zobrist keys should be uniformly distributed in the whole 64-bit space.
 fn mul_hi64(a: u64, b: u64) -> u64 {
     let a = a as u128;
     let b = b as u128;
@@ -482,6 +487,8 @@ impl TtValue {
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::*;
 
     #[test]
@@ -677,5 +684,16 @@ mod tests {
         assert_eq!(Depth::ZERO, new.depth);
         assert_eq!(Bound::Lower, new.bound);
         assert!(new.is_pv);
+    }
+
+    #[test]
+    fn test_hi_mul() {
+        let mut rng = rand::thread_rng();
+        for _ in 0..10_000 {
+            let a = rng.gen_range(0..=u64::MAX);
+            let b = rng.gen_range(0..=u64::MAX);
+            let r = mul_hi64(a, b);
+            assert!(r < b);
+        }
     }
 }
