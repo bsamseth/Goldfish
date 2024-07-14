@@ -8,6 +8,7 @@ use crate::evaluate::Evaluate;
 use crate::movelist::MoveVec;
 use crate::newtypes::{Depth, Ply, Value};
 use crate::tt::Bound;
+use crate::tt::EntryWriterOpts;
 
 impl Searcher<'_> {
     /// Negamax search with alpha-beta pruning.
@@ -31,7 +32,7 @@ impl Searcher<'_> {
 
         cuts::mate_distance_pruning(&mut alpha, &mut beta, ply)?;
         let (tt_data, tt_writer) = self.check_tt::<PV>(beta, ply, depth)?;
-        self.check_tablebase::<PV>(board, &mut alpha, &mut beta, ply, depth, tt_writer)?;
+        self.check_tablebase::<PV>(board, &mut alpha, &mut beta, ply, depth, &tt_writer)?;
 
         // Step 2: Quiescence search if at max depth.
         if depth <= Depth::ZERO {
@@ -124,20 +125,18 @@ impl Searcher<'_> {
         self.update_history_stats(best_move);
         // SAFETY: The tt writer was created in this search frame, so the entry is valid.
         unsafe {
-            tt_writer.save::<PV>(
-                self.stack_state(ply).zobrist,
-                Some(best_value),
+            tt_writer.save::<PV>(&EntryWriterOpts {
+                value: Some(best_value),
                 bound,
                 depth,
-                best_move,
-                if board.in_check() {
+                mv: best_move,
+                eval: if board.in_check() {
                     None
                 } else {
                     Some(self.stack_state(ply).eval)
                 },
-                self.transposition_table.generation(),
                 ply,
-            );
+            });
         }
 
         Ok(best_value)

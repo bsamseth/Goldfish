@@ -46,9 +46,23 @@ static_assertions::assert_eq_size!(Entry, [u8; 10]);
 /// A writer for an entry in the transposition table.
 ///
 /// This effectively just a mutable pointer to the [`Entry`], but restricted to only allow
-/// calling the [`Entry::save`] method.
-#[derive(Debug, Clone, Copy)]
-pub struct EntryWriter(*mut Entry);
+/// calling a well defined `save` method.
+#[derive(Debug)]
+pub struct EntryWriter {
+    entry: *mut Entry,
+    key: Key,
+    generation: u8,
+}
+
+#[derive(Debug, Default)]
+pub struct EntryWriterOpts {
+    pub bound: Bound,
+    pub depth: Depth,
+    pub ply: Ply,
+    pub mv: Option<ChessMove>,
+    pub value: Option<Value>,
+    pub eval: Option<Value>,
+}
 
 /// Data from the transposition table, absent bookkeeping information.
 ///
@@ -83,9 +97,10 @@ struct Move16(std::num::NonZeroU16);
 /// not be exact. For the purposes of a transposition table, we need to keep track of
 /// whether the value is an upper bound, a lower bound, or an exact value, so that we
 /// can take the correct action when we encounter the position again.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Bound {
+    #[default]
     Lower = 1,
     Upper = 2,
     Exact = Self::Lower as u8 | Self::Upper as u8,
@@ -215,7 +230,11 @@ impl TranspositionTable {
             .find(|e| e.is_occupied() && e.key16 == key16)
         {
             let data = Data::from_entry(entry, ply, halfmove_count);
-            let writer = EntryWriter(std::ptr::from_mut(entry));
+            let writer = EntryWriter {
+                entry: std::ptr::from_mut(entry),
+                key,
+                generation,
+            };
             return (Some(data), writer);
         }
 
@@ -227,7 +246,14 @@ impl TranspositionTable {
         // Safety: Each cluster has a non-zero number of entries, so the minimum is always present.
         let entry = unsafe { entry.unwrap_unchecked() };
 
-        (None, EntryWriter(std::ptr::from_mut(entry)))
+        (
+            None,
+            EntryWriter {
+                entry: std::ptr::from_mut(entry),
+                key,
+                generation,
+            },
+        )
     }
 
     fn cluster_for<'a, 'b: 'a>(&'b self, key: Key) -> &'a Cluster {
@@ -276,48 +302,6 @@ impl Data {
 }
 
 impl Entry {
-    fn save<const PV: crate::search::PvNode>(
-        &mut self,
-        key: Key,
-        value: Option<Value>,
-        bound: Bound,
-        depth: Depth,
-        mv: Option<ChessMove>,
-        eval: Option<Value>,
-        generation: u8,
-        ply: Ply,
-    ) {
-        #[allow(clippy::cast_possible_truncation)]
-        let key16 = key as u16;
-
-        // Preserve existing move if no move is provided.
-        if mv.is_some() || key16 != self.key16 {
-            self.move16 = mv.map(Into::into);
-        }
-
-        let pv_bonus: i16 = if PV { 2 } else { 0 };
-        let pv_bit: u8 = if PV { 0b100 } else { 0 };
-
-        // Overwrite less valuable entries.
-        if bound == Bound::Exact
-            || key16 != self.key16
-            || depth.as_inner() - DEPTH_ENTRY_OFFSET + pv_bonus > (self.depth8 as i16) - 4
-            || self.relative_age(generation) > 0
-        {
-            let d = depth.as_inner();
-            debug_assert!(d > DEPTH_ENTRY_OFFSET);
-            debug_assert!(d < 256 + DEPTH_ENTRY_OFFSET);
-            #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-            let d = (d - DEPTH_ENTRY_OFFSET) as u8;
-
-            self.key16 = key16;
-            self.depth8 = d;
-            self.gen_and_bound8 = generation | pv_bit | bound as u8;
-            self.value = value.map(|v| TtValue::from(v, ply));
-            self.evaluation = eval.map(|v| TtValue::from(v, ply));
-        }
-    }
-
     fn is_occupied(&self) -> bool {
         self.depth8 != 0
     }
@@ -341,25 +325,43 @@ impl EntryWriter {
     /// Save an entry to the transposition table.
     ///
     /// # Safety
-    /// Calling this function is safe if the [`EntryWriter`] is only used within the same search,
-    /// that it was created in.
-    // TODO: Use a builder pattern to make this easier to read at call site.
-    pub unsafe fn save<const PV: crate::search::PvNode>(
-        &self,
-        key: Key,
-        value: Option<Value>,
-        bound: Bound,
-        depth: Depth,
-        mv: Option<ChessMove>,
-        eval: Option<Value>,
-        generation: u8,
-        ply: Ply,
-    ) {
+    /// Calling this function is safe if it is only used within the same search that the entry it
+    /// refers to was created in.
+    pub unsafe fn save<const PV: crate::search::PvNode>(&self, opts: &EntryWriterOpts) {
         // Safety: The contained pointer will be valid as the table is only invalidated between
         // searches. Within a search, the pointer is valid, and [`EntryWriter`]s are only created
         // by probing, which is done during search.
-        unsafe { self.0.as_mut().unwrap_unchecked() }
-            .save::<PV>(key, value, bound, depth, mv, eval, generation, ply);
+        let entry = unsafe { self.entry.as_mut().unwrap_unchecked() };
+
+        #[allow(clippy::cast_possible_truncation)]
+        let key16 = self.key as u16;
+
+        // Preserve existing move if no move is provided.
+        if opts.mv.is_some() || key16 != entry.key16 {
+            entry.move16 = opts.mv.map(Into::into);
+        }
+
+        let pv_bonus: i16 = if PV { 2 } else { 0 };
+        let pv_bit: u8 = if PV { 0b100 } else { 0 };
+
+        // Overwrite less valuable entries.
+        if opts.bound == Bound::Exact
+            || key16 != entry.key16
+            || opts.depth.as_inner() - DEPTH_ENTRY_OFFSET + pv_bonus > (entry.depth8 as i16) - 4
+            || entry.relative_age(self.generation) > 0
+        {
+            let d = opts.depth.as_inner();
+            debug_assert!(d > DEPTH_ENTRY_OFFSET);
+            debug_assert!(d < 256 + DEPTH_ENTRY_OFFSET);
+            #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+            let d = (d - DEPTH_ENTRY_OFFSET) as u8;
+
+            entry.key16 = key16;
+            entry.depth8 = d;
+            entry.gen_and_bound8 = self.generation | pv_bit | opts.bound as u8;
+            entry.value = opts.value.map(|v| TtValue::from(v, opts.ply));
+            entry.evaluation = opts.eval.map(|v| TtValue::from(v, opts.ply));
+        }
     }
 }
 
@@ -612,19 +614,17 @@ mod tests {
             panic!("expected None");
         };
 
-        // SAFETY: The table hasn't been dropped or resized since the writer was created, so the
-        // pointer is still valid. Same goes for the next few unsafe blocks.
+        //// SAFETY: The table hasn't been dropped or resized since the writer was created, so the
+        //// pointer is still valid. Same goes for the next few unsafe blocks.
         unsafe {
-            writer.save::<PV>(
-                key,
-                Some(Value::ONE),
-                Bound::Exact,
-                Depth::new(6),
-                Some(ChessMove::new(Square::A1, Square::H8, Some(Piece::Queen))),
-                Some(Value::DRAW),
-                tt.generation(),
-                Ply::ONE,
-            );
+            writer.save::<PV>(&EntryWriterOpts {
+                bound: Bound::Exact,
+                depth: Depth::new(6),
+                ply: Ply::ONE,
+                mv: Some(ChessMove::new(Square::A1, Square::H8, Some(Piece::Queen))),
+                value: Some(Value::ONE),
+                eval: Some(Value::DRAW),
+            });
         }
 
         let data = tt.probe(key, Ply::ZERO, 0).expect("expected Some");
@@ -640,16 +640,11 @@ mod tests {
 
         // Write an entry to the same key, but with bound+depth so that it isn't accepted.
         unsafe {
-            writer.save::<PV>(
-                key,
-                Some(Value::new(-42)),
-                Bound::Lower,
-                Depth::ZERO,
-                None,
-                Some(Value::ONE),
-                tt.generation(),
-                Ply::ONE,
-            );
+            writer.save::<PV>(&EntryWriterOpts {
+                value: Some(Value::new(-42)),
+                eval: Some(Value::ONE),
+                ..Default::default() // Defaults to lower bound, depth 0, ply 0, no move
+            });
         }
 
         let unchanged = tt.probe(key, Ply::ZERO, 0).expect("expected Some");
@@ -657,25 +652,19 @@ mod tests {
 
         tt.new_search();
         assert_eq!(tt.generation(), Entry::GENERATION_DELTA);
-
-        assert!(
-            matches!(tt.probe_mut(key, Ply::ZERO, 0), (Some(_), _)),
-            "entries are preserved across generations"
-        );
+        let (Some(_), writer) = tt.probe_mut(key, Ply::ZERO, 0) else {
+            panic!("entries should be preserved across generations");
+        };
 
         // Write the same low-value entry. Now it should be accepted, as the previous is of the
         // last generation. But because we don't provide a move, the old move should still be preserved.
+        // Need to fetch a new writer though, as the old one is no longer valid.
         unsafe {
-            writer.save::<PV>(
-                key,
-                Some(Value::new(-42)),
-                Bound::Lower,
-                Depth::ZERO,
-                None,
-                Some(Value::ONE),
-                tt.generation(),
-                Ply::ONE,
-            );
+            writer.save::<PV>(&EntryWriterOpts {
+                value: Some(Value::new(-42)),
+                eval: Some(Value::ONE),
+                ..Default::default()
+            });
         }
 
         let new = tt.probe(key, Ply::ZERO, 0).expect("expected Some");

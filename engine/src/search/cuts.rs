@@ -140,7 +140,7 @@ impl Searcher<'_> {
         beta: &mut Value,
         ply: Ply,
         depth: Depth,
-        writer: EntryWriter,
+        writer: &EntryWriter,
     ) -> Result<(), Value> {
         if let Some(wdl) = self
             .tablebase
@@ -174,16 +174,13 @@ impl Searcher<'_> {
                 // SAFETY: The tt writer was produced in this search frame, so the entry is still
                 // valid at this point.
                 unsafe {
-                    writer.save::<PV>(
-                        self.stack_state(ply).zobrist,
-                        Some(value),
+                    writer.save::<PV>(&tt::EntryWriterOpts {
                         bound,
-                        Depth::new(depth.as_inner().saturating_add(7) - 1),
-                        None,
-                        None,
-                        self.transposition_table.generation(),
+                        depth: Depth::new(depth.as_inner().saturating_add(7) - 1),
+                        value: Some(value),
                         ply,
-                    );
+                        ..Default::default()
+                    });
                 }
                 return Err(value);
             }
