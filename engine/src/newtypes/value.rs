@@ -111,6 +111,11 @@ impl Value {
         self.0 <= -Self::CHECKMATE_THRESHOLD.0
     }
 
+    /// Return `true` if this [`Value`] is a known win/loss score.
+    pub const fn is_known_result(self) -> bool {
+        self.is_known_win() || self.is_known_loss()
+    }
+
     /// Return `true` if this [`Value`] is a known win score.
     pub const fn is_known_win(self) -> bool {
         self.0 >= Self::KNOWN_WIN_THRESHOLD.0

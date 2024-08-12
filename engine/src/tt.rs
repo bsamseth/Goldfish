@@ -304,6 +304,19 @@ impl Data {
             is_pv: entry.gen_and_bound8 & 0b100 != 0,
         }
     }
+
+    /// If `value` is bounded by the current [`Data`], return the bounded value.
+    pub fn bounded(&self, value: Value) -> Option<Value> {
+        let required_bound = if self.value? > value {
+            Bound::Lower
+        } else {
+            Bound::Upper
+        };
+        if self.bound & required_bound {
+            return self.value;
+        }
+        None
+    }
 }
 
 impl Entry {
@@ -439,6 +452,9 @@ impl TtValue {
                     .expect("different to i16::MAX"),
             )
         } else if value.is_known_loss() {
+            if value.as_inner() - ply.as_inner() as i16 == i16::MAX {
+                tracing::error!("Value overflow in TtValue::from {value:?} {ply:?}");
+            }
             Self(
                 NonMaxI16::new(value.as_inner() - ply.as_inner() as i16)
                     .expect("different to i16::MAX"),

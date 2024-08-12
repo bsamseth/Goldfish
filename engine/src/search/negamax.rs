@@ -46,7 +46,7 @@ impl Searcher<'_> {
         if board.in_check() {
             depth += Depth::new(1); // Extend search if in check.
         } else {
-            self.stack_state_mut(ply).eval = board.evaluate();
+            self.stack_state_mut(ply).eval = Some(board.evaluate());
             if !PV {
                 self.futility_pruning(board, alpha, beta, &mut depth, ply)?;
                 self.null_move_pruning(board, &mut beta, depth, ply)?;
@@ -130,11 +130,7 @@ impl Searcher<'_> {
                 bound,
                 depth,
                 mv: best_move,
-                eval: if board.in_check() {
-                    None
-                } else {
-                    Some(self.stack_state(ply).eval)
-                },
+                eval: self.stack_state(ply).eval,
                 ply,
             });
         }

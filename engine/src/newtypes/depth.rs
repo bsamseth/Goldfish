@@ -27,6 +27,10 @@ impl Depth {
     pub const ZERO: Self = Self(0);
     pub const ONE: Self = Self(1);
 
+    /// Depth used to indicate that no searching was done at all. As such, it evaluates to less
+    /// than any other search depth.
+    pub const UNSEARCHED: Self = Self(-1);
+
     /// Create a new [`Depth`] .
     pub const fn new(inner: Inner) -> Self {
         Self(inner)

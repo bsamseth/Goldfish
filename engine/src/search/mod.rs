@@ -62,7 +62,7 @@ impl<'a> Searcher<'a> {
         }
 
         let mut stack_states = [StackState::default(); Ply::MAX.as_usize() + 1];
-        stack_states[0].eval = root_position.evaluate();
+        stack_states[0].eval = Some(root_position.evaluate());
         stack_states[0].zobrist = root_position.get_hash();
         stack_states[0].halfmove_clock = halfmove_clock;
 
