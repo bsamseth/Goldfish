@@ -35,7 +35,7 @@ impl Searcher<'_> {
         ply: Ply,
         mv_nr: usize,
     ) -> Value {
-        if depth > Depth::ONE && mv_nr > 0 {
+        if PV && depth > Depth::ONE && mv_nr > 0 {
             let value = -Value::from(self.negamax::<NON_PV_NODE>(
                 board,
                 depth.decrement(),
