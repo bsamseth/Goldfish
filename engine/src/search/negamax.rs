@@ -1,14 +1,14 @@
 use chess::{Board, MoveGen};
 
-use super::cuts;
-use super::PvNode;
-use super::Searcher;
-use crate::board::BoardExt;
-use crate::evaluate::Evaluate;
-use crate::movelist::MoveVec;
-use crate::newtypes::{Depth, Ply, Value};
-use crate::tt::Bound;
-use crate::tt::EntryWriterOpts;
+use super::{cuts, PvNode, Searcher};
+use crate::{
+    board::BoardExt,
+    chessmove::ChessMoveExt,
+    evaluate::Evaluate,
+    movelist::MoveVec,
+    newtypes::{Depth, Ply, Value},
+    tt::{Bound, EntryWriterOpts},
+};
 
 impl Searcher<'_> {
     /// Negamax search with alpha-beta pruning.
@@ -67,15 +67,8 @@ impl Searcher<'_> {
         let moves = MoveVec::from(MoveGen::new_legal(board))
             .mvv_lva_rated(board)
             .with_history_stats(&self.history_stats)
-            .sort_with_preference(
-                [
-                    tt_move,
-                    self.stack_state(ply).killers[0],
-                    self.stack_state(ply).killers[1],
-                ]
-                .iter()
-                .filter_map(|x| *x),
-            );
+            .add_killers(self.stack_state(ply).killers.iter().filter_map(|x| *x))
+            .sort_with_preference(tt_move);
 
         // Step 7: Recursively search all possible moves.
         let mut best_value = -Value::INFINITE;
@@ -121,7 +114,9 @@ impl Searcher<'_> {
             Bound::Upper
         };
 
-        self.stack_state_mut(ply).update_killer(best_move);
+        if best_value >= beta && best_move.is_some_and(|mv| mv.captures(board).is_none()) {
+            self.stack_state_mut(ply).update_killer(best_move);
+        }
         self.update_history_stats(best_move);
         // SAFETY: The tt writer was created in this search frame, so the entry is valid.
         unsafe {
