@@ -2,11 +2,7 @@
 
 cutechess-cli \
 	-engine \
-	conf='Goldfish v2.0.0-rc6' \
-	-engine \
-	conf='Goldfish v2.0.0-rc3' \
-	-engine \
-	conf='Goldfish v2.0.0-rc5' \
+	conf='Goldfish v2.0.0-rc7' \
 	-engine \
 	conf='Goldfish v1.13.0' \
 	-each \
@@ -16,8 +12,8 @@ cutechess-cli \
 	option.SyzygyPath=/home/bendik/goldfish/syzygy \
 	book=/home/bendik/goldfish/openingbooks/gm2001.bin \
 	bookdepth=6 \
-	-games 2 \
-	-rounds 40 \
-	-pgnout /home/bendik/goldfish/stats/match-history.pgn min fi \
+	-games 4 \
+	-rounds 80 \
+	-pgnout /home/bendik/goldfish/stats/match-history.pgn min "fi" \
 	-concurrency 10 \
 	-tournament gauntlet
