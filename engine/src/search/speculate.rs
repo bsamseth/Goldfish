@@ -54,7 +54,7 @@ impl Searcher<'_> {
     ) -> Result<(), Value> {
         if board.in_check()
             || self.stack_state(ply.decrement()).null_move
-            || Value::CHECKMATE_THRESHOLD <= *beta
+            || beta.is_known_result()
             || self.stack_state(ply).eval.is_some_and(|eval| eval < *beta)
             || ((board.pieces(Piece::Queen)
                 | board.pieces(Piece::Rook)
