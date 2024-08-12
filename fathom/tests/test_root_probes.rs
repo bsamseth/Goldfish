@@ -8,7 +8,7 @@ fn tb() -> &'static Tablebase {
     static mut TB: OnceLock<&Tablebase> = OnceLock::new();
     unsafe {
         TB.get_or_init(|| {
-            Tablebase::load(concat!(env!("CARGO_MANIFEST_DIR"), "/../../syzygy"))
+            Tablebase::load(concat!(env!("CARGO_MANIFEST_DIR"), "/../syzygy"))
                 .unwrap()
                 .as_mut()
                 .unwrap()
