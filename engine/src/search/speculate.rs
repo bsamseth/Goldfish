@@ -68,10 +68,7 @@ impl Searcher<'_> {
 
         let board = self.make_null_move(board, ply);
 
-        // New depth = depth - 3.
-        // This is so that 1) it's the other side's turn in sibling nodes, and 2) this allows
-        // recursive null moves.
-        let new_depth = Depth::new(depth.as_inner().saturating_sub(3));
+        let new_depth = Depth::new(depth.as_inner().saturating_sub(5));
         let value = -Value::from(self.negamax::<NON_PV_NODE>(
             &board,
             new_depth,
