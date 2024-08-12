@@ -81,27 +81,36 @@ impl MoveVec {
         self
     }
 
-    /// Sorts the moves with the given preferences first, then by value.
+    /// Add a bonus for killer moves.
     ///
-    /// The preferences, if valid moves, are placed first in the given order. Then the
-    /// rest of the moves are sorted by value.
-    pub fn sort_with_preference(
-        mut self,
-        preferences: impl IntoIterator<Item = ChessMove>,
-    ) -> Self {
-        // Place preferences first in the given order, then sort the rest by value.
-        let mut swaps = 0;
-        for (i, mv) in preferences.into_iter().enumerate() {
-            if i < self.len() {
-                if let Some(index) = self.iter().position(|m| m.mv == mv) {
-                    swaps += 1;
-                    self.swap(i, index);
+    /// These are quiet moves that caused a beta cutoff in sibling nodes. Consider these right
+    /// after winning captures. This is done by treating them as if they capture a pawn worth 99
+    /// centipawns.
+    pub fn add_killers(mut self, killers: impl IntoIterator<Item = ChessMove>) -> Self {
+        for killer in killers {
+            for entry in self.iter_mut() {
+                if entry.mv == killer {
+                    entry.value += Value::new(piece_value(Piece::Pawn) - 1);
                 }
             }
         }
+        self
+    }
 
-        let swaps = swaps.min(self.len());
-        let (_, rest) = self.split_at_mut(swaps);
+    /// Sorts the moves with the given preference first, then by value.
+    ///
+    /// The preference, if a valid move, is placed first.
+    /// Then the rest of the moves are sorted by value.
+    pub fn sort_with_preference(mut self, best_move: Option<ChessMove>) -> Self {
+        let mut sort_from = 0;
+        if let Some(mv) = best_move {
+            if let Some(index) = self.iter().position(|m| m.mv == mv) {
+                self.swap(0, index);
+                sort_from = 1;
+            }
+        }
+
+        let (_, rest) = self.split_at_mut(sort_from);
         rest.sort_by_key(|m| -m.value);
 
         self

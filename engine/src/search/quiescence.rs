@@ -78,7 +78,8 @@ impl Searcher<'_> {
         let moves = MoveVec::from(moves)
             .mvv_lva_rated(board)
             .with_history_stats(&self.history_stats)
-            .sorted();
+            .add_killers(self.stack_state(ply).killers.iter().filter_map(|x| *x))
+            .sort_with_preference(tt_data.and_then(|data| data.mv));
 
         let mut new_board = *board;
         let mut best_move = None;
