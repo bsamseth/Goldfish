@@ -55,7 +55,7 @@ impl Searcher<'_> {
         if board.in_check()
             || self.stack_state(ply.decrement()).null_move
             || Value::CHECKMATE_THRESHOLD <= *beta
-            || self.stack_state(ply).eval < *beta
+            || self.stack_state(ply).eval.is_some_and(|eval| eval < *beta)
             || ((board.pieces(Piece::Queen)
                 | board.pieces(Piece::Rook)
                 | board.pieces(Piece::Bishop)
@@ -111,7 +111,10 @@ impl Searcher<'_> {
             return Ok(());
         }
 
-        let eval = self.stack_state(ply).eval;
+        let eval = self
+            .stack_state(ply)
+            .eval
+            .expect("Evaluation should be available");
 
         match depth.as_inner() {
             3 if eval + OPTS.razor_margin <= alpha => {

@@ -5,7 +5,7 @@
 //!
 //! Speculative cutoffs are implemented in [`super::speculate`].
 
-use chess::{Board, MoveGen};
+use chess::Board;
 
 use fathom::Wdl;
 
@@ -189,49 +189,35 @@ impl Searcher<'_> {
     }
 }
 
-/// Get a lower bound score of the position.
+/// Get a lower bound score and evaluaiton of the position, if not in check.
 ///
-/// If the side to move isn't in check, a lower bound evaluation of the position is the
-/// evaluation of the position itself. This is because if there are no better captures
-/// available, we could just choose to not capture anything ("stand pat" from poker, meaning to
-/// not draw any new cards).
+/// If the side to move is in check, no evaluaiton is produced and the lower bound is negative [`Value::INFINITE`].
 ///
-/// Should this lower bound be better than beta, this will signal that an early return is
-/// possible.
-///
-/// `alpha` is updated in place if the lower bound is better than the current alpha.
+/// If the side to move isn't in check, a lower bound evaluation of the position is the evaluation
+/// of the position itself. This is because if there are no better captures available, we could
+/// just choose to not capture anything ("stand pat" from poker, meaning to not draw any new
+/// cards). Assumes we are not in zugzwang, which, com'on, when does that ever happen?!.
 #[inline]
-pub fn standing_pat(board: &Board, alpha: &mut Value, beta: Value) -> Result<Value, Value> {
-    let mut best_value = -Value::INFINITE;
-    if !board.in_check() {
-        best_value = board.evaluate();
+//pub fn standing_pat(board: &Board, tt_data: &tt::Data) -> (Value, Option<Value>) {
+pub fn lower_bound_eval(board: &Board, tt_data: Option<&tt::Data>) -> (Value, Option<Value>) {
+    if board.in_check() {
+        return (-Value::INFINITE, None);
+    }
 
-        if best_value > *alpha {
-            *alpha = best_value;
+    let eval = tt_data
+        .as_ref()
+        .and_then(|tt_data| tt_data.eval)
+        .unwrap_or_else(|| board.evaluate());
+    let mut best_value = eval;
 
-            if best_value >= beta {
-                return Err(best_value);
-            }
+    // Use tt entries to improve the evaluation.
+    if let Some(bounded_eval) = tt_data.as_ref().and_then(|t| t.bounded(best_value)) {
+        if !bounded_eval.is_known_result() {
+            best_value = bounded_eval;
         }
     }
-    Ok(best_value)
-}
 
-/// Early return if there are no legal moves in the position.
-///
-/// If the side to move is in check, then the score is negative [`Value::CHECKMATE`].
-/// Otherwise, the score is [`Value::DRAW`].
-///
-/// If there are moves to play, this is a no-op.
-#[inline]
-pub fn return_if_no_moves(moves: &MoveGen, board: &Board, ply: Ply) -> Result<(), Value> {
-    if moves.len() == 0 {
-        if board.in_check() {
-            return Err(Value::mated_in(ply));
-        }
-        return Err(Value::DRAW);
-    }
-    Ok(())
+    (best_value, Some(eval))
 }
 
 /// Mate distance pruning
