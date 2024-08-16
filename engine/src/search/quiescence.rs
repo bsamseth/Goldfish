@@ -1,9 +1,9 @@
-use chess::{Board, MoveGen};
+use chess::Board;
 
 use super::{cuts, speculate, PvNode, Searcher};
 use crate::{
     board::BoardExt,
-    movelist::MoveVec,
+    movepicker::{self, MovePicker},
     newtypes::{Depth, Ply, Value},
     tt,
 };
@@ -66,24 +66,19 @@ impl Searcher<'_> {
 
         cuts::full_delta_pruning(board, best_value, alpha)?;
 
-        let mut moves = MoveGen::new_legal(board);
-        if board.in_check() && moves.len() == 0 {
-            return Ok(Value::mated_in(ply));
-        } else if !board.in_check() {
-            // If we're not in check, we only search captures.
-            // In check we should also consider evasions.
-            let targets = board.color_combined(!board.side_to_move());
-            moves.set_iterator_mask(*targets);
-        }
-        let moves = MoveVec::from(moves)
-            .mvv_lva_rated(board)
-            .with_history_stats(&self.history_stats)
-            .add_killers(self.stack_state(ply).killers.iter().filter_map(|x| *x))
-            .sort_with_preference(tt_data.and_then(|data| data.mv));
-
+        let moves = MovePicker::new(
+            if board.in_check() {
+                movepicker::ALL_MOVES
+            } else {
+                movepicker::CAPTURES_ONLY
+            },
+            *board,
+            tt_data.and_then(|data| data.mv),
+            self.stack_state(ply).killers,
+        );
         let mut new_board = *board;
         let mut best_move = None;
-        for mv in moves.iter().map(|entry| entry.mv) {
+        for mv in moves {
             if speculate::delta_pruning(board, mv, best_value, alpha) {
                 continue;
             }
@@ -116,7 +111,7 @@ impl Searcher<'_> {
             }
         }
 
-        if board.in_check() && moves.is_empty() {
+        if board.in_check() && best_move.is_none() {
             return Ok(Value::mated_in(ply));
         }
 
