@@ -1,11 +1,11 @@
-use chess::{Board, MoveGen};
+use chess::Board;
 
 use super::{cuts, PvNode, Searcher};
 use crate::{
     board::BoardExt,
     chessmove::ChessMoveExt,
     evaluate::Evaluate,
-    movelist::MoveVec,
+    movepicker::{self, MovePicker},
     newtypes::{Depth, Ply, Value},
     tt::{Bound, EntryWriterOpts},
 };
@@ -64,17 +64,18 @@ impl Searcher<'_> {
         );
 
         // Step 6: Move generation and ordering.
-        let moves = MoveVec::from(MoveGen::new_legal(board))
-            .mvv_lva_rated(board)
-            .with_history_stats(&self.history_stats)
-            .add_killers(self.stack_state(ply).killers.iter().filter_map(|x| *x))
-            .sort_with_preference(tt_move);
+        let moves = MovePicker::new(
+            movepicker::ALL_MOVES,
+            *board,
+            tt_move,
+            self.stack_state(ply).killers,
+        );
 
         // Step 7: Recursively search all possible moves.
         let mut best_value = -Value::INFINITE;
         let mut best_move = None;
         let mut new_board = *board;
-        for (mv_nr, mv) in moves.iter().map(|entry| entry.mv).enumerate() {
+        for (mv_nr, mv) in moves.enumerate() {
             self.make_move(board, mv, &mut new_board, ply);
 
             let value = self.pv_search::<PV>(&new_board, depth, alpha, beta, ply, mv_nr);
@@ -99,7 +100,7 @@ impl Searcher<'_> {
         }
 
         // Step 8: Store and return result.
-        let bound = if moves.len() == 0 {
+        let bound = if best_move.is_none() {
             best_value = if board.in_check() {
                 Value::mated_in(ply)
             } else {
