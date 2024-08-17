@@ -56,12 +56,6 @@ pub struct Opts {
     /// most frequent move square.
     #[uci(default = "10", kind = "spin", min = "0")]
     pub max_history_stats_impact: usize,
-
-    // Evaluation options:
-    //
-    /// Bonus for having a bishop pair, in centipawns.
-    #[uci(default = "10", kind = "spin", min = "0", max = "200")]
-    pub bishop_pair_bonus: i32,
 }
 
 mod singleton {
