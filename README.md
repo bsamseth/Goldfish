@@ -29,15 +29,15 @@ decisions made by the former me.
 
 I then made a new version based on
 [fluxroot/pulse](https://github.com/fluxroot/pulse). Thanks a lot to the
-original author for his great work. Starting with this project meant a stable
-starting point, with all the rules sorted out, basic search in place and a test
-suite to make sure it all works as expected.
+original author for his great work. From there, Goldfish was substantially
+revamped and improved in most aspects, leaving little evidence of it's starting
+point. [Version 1.13.0](https://github.com/bsamseth/Goldfish/releases/tag/v1.13.0) 
+is the final version of the C++ version of Goldfish.
 
-From there, Goldfish was substantially revamped and improved in most aspects, leaving little evidence of it's starting
-point. [Version 1.13.0](https://github.com/bsamseth/Goldfish/releases/tag/v1.13.0) was the final version of the C++ version of Goldfish.
-
-In late 2023 I wanted to get better at Rust, and started a complete rewrite. Once this reaches ELO parity with the C++
-version, the Rust 2.0.0 version will be released.
+In late 2023 I wanted to get better at Rust, and started a complete rewrite. By
+mid 2024, the new 2.0 version exceeded version 1.13 in playing strength. The
+two version share in their overall search logic, but the Rust version is at
+this point more sophisticated.
 
 ## Why Goldfish?
 
@@ -47,12 +47,16 @@ and so it seemed only fitting for my somewhat limited program to be named this.
 
 ## Road map
 
+I mostly enjoy improving the search algorithm more so than the evaluation function.
+Because of this, the evaluation function is currently _very_ simple. In fact, it is exactly the 
+[Simplified Evaluation function](https://www.chessprogramming.org/Simplified_Evaluation_Function) 
+from the Chess Programming Wiki. Just a material count and piece square tables. Nothing more. For now at least.
+
 The current plan for the project is to improve the strength. The following is a
 non-exhaustive list of possibilities for future additions, including all features that have
 been added so far. The list is inspired in large part by [this writeup](http://www.frayn.net/beowulf/theory.html).
 
 -   [X] Making the engine playable on [lichess.org](lichess.org)
--   [X] Complete refactoring of base types
 -   [X] Null move pruning
 -   [X] Transposition table
 -   [X] Syzygy endgame tablebases
@@ -60,21 +64,19 @@ been added so far. The list is inspired in large part by [this writeup](http://w
 -   [X] Killer move heuristic
 -   [X] Principal variation search
 -   [X] Internal iterative deepening
--   [X] Aspiration window search (repealed by PR #27, needs tuning before reapplying)
 -   [X] Futility pruning
 -   [X] Razoring
--   [ ] Delta pruning in quiescence search.
+-   [X] History heuristic
+-   [X] Delta pruning in quiescence search.
     +   [X] Prune when _no_ move can improve enough
-    +   [ ] Prune captures that are insufficient to improve
--   [ ] Staged move generation
--   [ ] Better search algorithms, such as MTD-bi (?)
--   [ ] More sophisticated static evaluation
-    +   [ ] Extra considerations for passed pawns
-    +   [X] Piece square tables
-    +   [ ] King safety
-    +   [ ] Center control
-    +   [ ] Rooks on the 7th rank
-    +   [ ] Bishops on main diagonals
+    +   [X] Prune captures that are insufficient to improve
+-   [ ] Tapered evaluation
+-   [ ] Aspiration window search
+-   [ ] Late move reductions
+-   [ ] Static exchange evaluation for move ordering
+-   [ ] More quiet move ordering heuristics
+-   [ ] ProbCut
+-   etc.
 
 Each significant change will result in a new version of the engine (see
 [releases](https://github.com/bsamseth/Goldfish/releases)). In the following
