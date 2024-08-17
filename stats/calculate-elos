@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 
 filename="match-history.pgn"
-anchorvalue=2000
-anchorname="Goldfish v1.0"
+anchorvalue=1983
+anchorname="Goldfish v1.13.0"
 if [ $# -ge 1 ]; then
 	filename="$1"
 fi
@@ -11,7 +11,7 @@ if [ $# -ge 3 ]; then
 	anchorname=$3
 fi
 
-ordo -p $filename -a $anchorvalue -A "$anchorname" -W -D -j headtoheadresults >outputsummary
+ordo -p "$filename" -a "$anchorvalue" -A "$anchorname" -W -D -j headtoheadresults >outputsummary
 
 cat headtoheadresults outputsummary
 
