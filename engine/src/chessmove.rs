@@ -1,4 +1,4 @@
-use chess::{Board, ChessMove, Color, Piece};
+use chess::{Board, ChessMove, Piece, Square};
 
 /// Extension trait for [`ChessMove`] to add some utility methods.
 #[allow(clippy::module_name_repetitions)]
@@ -13,19 +13,13 @@ impl ChessMoveExt for ChessMove {
         }
 
         // En passant?
-        if let Some(ep) = board.en_passant() {
-            // The ep stored in board is the pawn that may be captured. We want to test if this
-            // move takes it, so we shift the ep down/up a rank.
-            let ep = if board.side_to_move() == Color::White {
-                ep.up()
-            } else {
-                ep.down()
-            };
-            // SAFETY: En-passant squares are on the 4th or 5th rank, so they have an up/down.
-            let ep = unsafe { ep.unwrap_unchecked() };
-            if self.get_dest() == ep && board.piece_on(self.get_source()) == Some(Piece::Pawn) {
-                return Some(Piece::Pawn);
-            }
+        if board.piece_on(self.get_source()) == Some(Piece::Pawn)
+            && self.get_dest().get_file() != self.get_source().get_file()
+        {
+            return board.piece_on(Square::make_square(
+                self.get_source().get_rank(),
+                self.get_dest().get_file(),
+            ));
         }
 
         None
