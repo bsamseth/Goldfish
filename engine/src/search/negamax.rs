@@ -48,7 +48,8 @@ impl Searcher<'_> {
         } else {
             self.stack_state_mut(ply).eval = Some(board.evaluate());
             if !PV {
-                self.futility_pruning(board, alpha, beta, &mut depth, ply)?;
+                self.razor_pruning(board, alpha, depth, ply)?;
+                self.futility_pruning(board, beta, depth, ply)?;
                 self.null_move_pruning(board, &mut beta, depth, ply)?;
             }
         }
