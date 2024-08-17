@@ -25,7 +25,7 @@ pub struct Opts {
     pub tc_default_moves_to_go: usize,
     #[uci(default = "95", kind = "spin", min = "1", max = "100")]
     pub tc_time_buffer_percentage: usize,
-    #[uci(default = "25", kind = "spin", min = "0")]
+    #[uci(default = "25", kind = "spin", min = "0", max = "1000")]
     pub tc_min_search_time_ms: usize,
 
     // Search speculation options:
@@ -34,25 +34,25 @@ pub struct Opts {
     #[uci(default = "5", kind = "spin", min = "1", max = "5")]
     pub futility_margin_max_depth: Depth,
     /// Futility margin base in centipawns.
-    #[uci(default = "250", kind = "spin", min = "100")]
+    #[uci(default = "250", kind = "spin", min = "100", max = "1000")]
     pub futility_margin_base: Value,
     /// Futility margin per-depth in centipawns.
-    #[uci(default = "300", kind = "spin", min = "50")]
+    #[uci(default = "300", kind = "spin", min = "50", max = "1000")]
     pub futility_margin_per_depth: Value,
     /// Razor margin base in centipawns.
-    #[uci(default = "450", kind = "spin", min = "100")]
+    #[uci(default = "450", kind = "spin", min = "100", max = "1000")]
     pub razor_margin_base: Value,
     /// Razor margin per-depth in centipawns.
-    #[uci(default = "300", kind = "spin", min = "50")]
+    #[uci(default = "300", kind = "spin", min = "50", max = "1000")]
     pub razor_margin_per_depth: Value,
     /// Delta pruning margin in centipawns.
-    #[uci(default = "250", kind = "spin", min = "0")]
+    #[uci(default = "250", kind = "spin", min = "0", max = "1000")]
     pub delta_margin: Value,
     /// Internal iterative deepening depth reduction.
     #[uci(default = "2", kind = "spin", min = "1", max = "5")]
     pub iid_depth_reduction: Depth,
     /// Internal iterative deepening lower depth limit.
-    #[uci(default = "5", kind = "spin", min = "5")]
+    #[uci(default = "5", kind = "spin", min = "5", max = "10")]
     pub iid_depth_lower_bound: Depth,
 
     // Move ordering options:
@@ -60,7 +60,7 @@ pub struct Opts {
     /// How many centipawns bonus to give to moves that are the most frequent in history stats.
     /// Other moves will be given a bonus scaled linearly on how frequent they are compared to the
     /// most frequent move square.
-    #[uci(default = "10", kind = "spin", min = "0")]
+    #[uci(default = "10", kind = "spin", min = "0", max = "100")]
     pub max_history_stats_impact: usize,
 }
 
