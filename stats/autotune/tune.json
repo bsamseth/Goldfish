@@ -7,13 +7,11 @@
 		}
 	},
 	"parameter_ranges": {
-		"iid_depth_reduction": "Integer(6, 2)",
-		"delta_margin": "Integer(240, 50)",
-		"futility_margin": "Integer(270, 50)",
-		"extended_futility_margin": "Integer(450, 50)",
-		"razor_margin": "Integer(600, 50)",
-		"max_history_stats_impact": "Integer(7, 1)",
-		"bishop_pair_bonus": "Integer(5, 1)"
+		"delta_margin": "Integer(250, 50)",
+		"futility_margin_base": "Integer(250, 50)",
+		"futility_margin_per_depth": "Integer(300, 50)",
+		"razor_margin_base": "Integer(450, 50)",
+		"razor_margin_per_depth": "Integer(300, 50)"
 	},
 	"opening_file": "SaintLouis2023.pgn",
 	"log_csv_path": "tuner_log.csv",
