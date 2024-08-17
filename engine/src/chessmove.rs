@@ -1,4 +1,4 @@
-use chess::{Board, ChessMove, Piece, Square};
+use chess::{Board, ChessMove, Piece};
 
 /// Extension trait for [`ChessMove`] to add some utility methods.
 #[allow(clippy::module_name_repetitions)]
@@ -12,14 +12,12 @@ impl ChessMoveExt for ChessMove {
             return Some(piece);
         }
 
-        // En passant?
+        // En passant? Because there now is no piece on dest, if the moving piece is a pawn and it
+        // changes file, it must be an en passant capture.
         if board.piece_on(self.get_source()) == Some(Piece::Pawn)
             && self.get_dest().get_file() != self.get_source().get_file()
         {
-            return board.piece_on(Square::make_square(
-                self.get_source().get_rank(),
-                self.get_dest().get_file(),
-            ));
+            return Some(Piece::Pawn);
         }
 
         None
