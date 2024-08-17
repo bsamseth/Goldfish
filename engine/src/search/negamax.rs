@@ -5,7 +5,7 @@ use crate::{
     board::BoardExt,
     chessmove::ChessMoveExt,
     evaluate::Evaluate,
-    movepicker::{self, MovePicker},
+    movepicker::movepicker,
     newtypes::{Depth, Ply, Value},
     tt::{Bound, EntryWriterOpts},
 };
@@ -64,11 +64,12 @@ impl Searcher<'_> {
         );
 
         // Step 6: Move generation and ordering.
-        let moves = MovePicker::new(
-            movepicker::ALL_MOVES,
-            *board,
+        let moves = movepicker(
+            board,
             tt_move,
-            self.stack_state(ply).killers,
+            &self.stack_state(ply).killers,
+            &self.history_stats,
+            false,
         );
 
         // Step 7: Recursively search all possible moves.
