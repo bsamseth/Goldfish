@@ -9,7 +9,7 @@ mod stackstate;
 
 use std::sync::{atomic::AtomicBool, Arc};
 
-use chess::{Board, ChessMove};
+use chess::{Board, ChessMove, MoveGen};
 
 use super::limits::Limits;
 use super::logger::Logger;
@@ -18,7 +18,6 @@ use super::newtypes::Ply;
 use super::tt::TranspositionTable;
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
-use crate::movepicker;
 use fathom::Tablebase;
 use stackstate::StackState;
 use uci::Position;
@@ -67,7 +66,7 @@ impl<'a> Searcher<'a> {
         stack_states[0].zobrist = root_position.get_hash();
         stack_states[0].halfmove_clock = halfmove_clock;
 
-        let root_moves = movepicker::root_moves(&board);
+        let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
         let logger = Logger::new().silent(go_options.iter().any(|o| *o == uci::GoOption::Silent));
         let limits = Limits::from(go_options).with_time_control(&root_position);
 
@@ -77,7 +76,7 @@ impl<'a> Searcher<'a> {
             limits,
             logger,
             stop_signal,
-            root_moves,
+            root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
             transposition_table,
             tablebase,
             history_stats: [[0; 64]; 64],

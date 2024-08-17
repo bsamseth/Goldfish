@@ -3,7 +3,7 @@ use chess::Board;
 use super::{cuts, speculate, PvNode, Searcher};
 use crate::{
     board::BoardExt,
-    movepicker::movepicker,
+    movepicker::{self, MovePicker},
     newtypes::{Depth, Ply, Value},
     tt,
 };
@@ -66,14 +66,16 @@ impl Searcher<'_> {
 
         cuts::full_delta_pruning(board, best_value, alpha)?;
 
-        let moves = movepicker(
-            board,
+        let moves = MovePicker::new(
+            if board.in_check() {
+                movepicker::ALL_MOVES
+            } else {
+                movepicker::CAPTURES_ONLY
+            },
+            *board,
             tt_data.and_then(|data| data.mv),
-            &self.stack_state(ply).killers,
-            &self.history_stats,
-            !board.in_check(),
+            self.stack_state(ply).killers,
         );
-
         let mut new_board = *board;
         let mut best_move = None;
         for mv in moves {

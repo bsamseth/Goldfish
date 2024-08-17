@@ -169,14 +169,10 @@ impl Searcher<'_> {
 /// Returns true if the move should be skipped.
 ///
 /// # Panics
-/// This assumes that if the position is not in check, then the move is a capture or a promotion. This should be
+/// This assumes that if the position is not in check, then the move is a capture. This should be
 /// the case during quiescence search.
 #[inline]
 pub fn delta_pruning(board: &Board, mv: ChessMove, static_eval: Value, alpha: Value) -> bool {
-    debug_assert!(
-        board.in_check() || mv.get_promotion().is_some() || mv.captures(board).is_some(),
-        "Non-capture, non-promotion move in delta pruning {mv} {board}",
-    );
     !board.in_check()
         && mv.get_promotion().is_none()
         && static_eval
