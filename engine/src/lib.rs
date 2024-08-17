@@ -5,7 +5,6 @@ mod evaluate;
 mod limits;
 mod logger;
 mod movelist;
-mod movepicker;
 mod newtypes;
 mod opts;
 mod search;
