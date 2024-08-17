@@ -89,19 +89,48 @@ impl Searcher<'_> {
 
     /// Futility pruning
     ///
-    /// This combines futilit pruning, extended futility pruning and razoring into one go.
-    /// The same idea goes for all three: If the static evaluation is sufficiently below alpha, we
-    /// can reduce the depth by 1 and continue. In the case of futility pruning, we skip straight
-    /// to quiescence search.
+    /// If the static evaluation is sufficiently above beta, just end the search here.
     ///
     /// Source: <http://www.frayn.net/beowulf/theory.html/>
     #[inline]
     pub fn futility_pruning(
         &mut self,
         board: &Board,
-        alpha: Value,
         beta: Value,
-        depth: &mut Depth,
+        depth: Depth,
+        ply: Ply,
+    ) -> Result<(), Value> {
+        if board.in_check() || depth > OPTS.futility_margin_max_depth {
+            return Ok(());
+        }
+
+        let eval = self
+            .stack_state(ply)
+            .eval
+            .expect("Evaluation should be available");
+
+        let futility_margin = Value::new(
+            OPTS.futility_margin_base.as_inner()
+                + OPTS.futility_margin_per_depth.as_inner() * (depth.as_inner().saturating_sub(1)),
+        );
+
+        if eval - futility_margin >= beta {
+            return Err(beta);
+        }
+
+        Ok(())
+    }
+    /// Razor pruning
+    ///
+    /// If the static evaluation is sufficiently below alpha, just end the search here.
+    ///
+    /// Source: <http://www.frayn.net/beowulf/theory.html/>
+    #[inline]
+    pub fn razor_pruning(
+        &mut self,
+        board: &Board,
+        alpha: Value,
+        depth: Depth,
         ply: Ply,
     ) -> Result<(), Value> {
         if board.in_check() {
@@ -113,20 +142,24 @@ impl Searcher<'_> {
             .eval
             .expect("Evaluation should be available");
 
-        match depth.as_inner() {
-            3 if eval + OPTS.razor_margin <= alpha => {
-                *depth = Depth::new(2);
+        let depth_factor = depth.as_inner();
+        let razor_margin = Value::new(
+            OPTS.razor_margin_base.as_inner()
+                + OPTS.razor_margin_per_depth.as_inner() * depth_factor * depth_factor,
+        );
+
+        if eval + razor_margin < alpha {
+            let value = Value::from(self.quiescence_search::<NON_PV_NODE>(
+                board,
+                alpha.decrement(),
+                alpha,
+                ply,
+            ));
+            if value < alpha && !value.is_known_win() {
+                return Err(value);
             }
-            2 if eval + OPTS.extended_futility_margin <= alpha => {
-                *depth = Depth::new(1);
-            }
-            1 if eval + OPTS.futility_margin <= alpha => {
-                return Err(Value::from(
-                    self.quiescence_search::<NON_PV_NODE>(board, alpha, beta, ply),
-                ));
-            }
-            _ => {}
         }
+
         Ok(())
     }
 

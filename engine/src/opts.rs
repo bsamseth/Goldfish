@@ -30,15 +30,21 @@ pub struct Opts {
 
     // Search speculation options:
     //
-    /// Razor margin in centipawns.
-    #[uci(default = "600", kind = "spin", min = "0")]
-    pub razor_margin: Value,
-    /// Extended futility margin in centipawns.
-    #[uci(default = "500", kind = "spin", min = "0")]
-    pub extended_futility_margin: Value,
-    /// Futility margin in centipawns.
-    #[uci(default = "300", kind = "spin", min = "0")]
-    pub futility_margin: Value,
+    /// Futility margin max depth.
+    #[uci(default = "5", kind = "spin", min = "1", max = "5")]
+    pub futility_margin_max_depth: Depth,
+    /// Futility margin base in centipawns.
+    #[uci(default = "250", kind = "spin", min = "100")]
+    pub futility_margin_base: Value,
+    /// Futility margin per-depth in centipawns.
+    #[uci(default = "300", kind = "spin", min = "50")]
+    pub futility_margin_per_depth: Value,
+    /// Razor margin base in centipawns.
+    #[uci(default = "450", kind = "spin", min = "100")]
+    pub razor_margin_base: Value,
+    /// Razor margin per-depth in centipawns.
+    #[uci(default = "300", kind = "spin", min = "50")]
+    pub razor_margin_per_depth: Value,
     /// Delta pruning margin in centipawns.
     #[uci(default = "250", kind = "spin", min = "0")]
     pub delta_margin: Value,
