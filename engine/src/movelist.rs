@@ -22,6 +22,15 @@ impl MoveEntry {
 }
 
 impl MoveVec {
+    /// Use the Most Valuable Victim / Least Valuable Attacker heuristic to score moves.
+    ///
+    /// Critically, this implementaiton gives _any_ capture a positive score, at least 100
+    /// centipawns in the case of `QxP`. This is done by ensuring that any captured piece is worth 10
+    /// times more than the attacking piece. In the `QxP` example, the queen is worth 900 centipawns
+    /// and the pawn is worth 100 centipawns, so the move is scored +100 centipawns.
+    ///
+    /// TODO: See if this can be swapped out for a Static Exchange Evaluation, provided an
+    /// efficient implementation can be found using what's available from [`Board`].
     pub fn mvv_lva_rated(mut self, board: &Board) -> Self {
         for entry in self.iter_mut() {
             let mut value = 0i16;
@@ -48,7 +57,7 @@ impl MoveVec {
 
     /// Use move history statistics to adjust the move ordering.
     ///
-    /// Each time a node is searched, a counter is incremented for that from-to square pair.
+    /// Each time a move is found to be best at a node, a counter is incremented for that from-to square pair.
     /// Order moves that tend to be best furhter up the list.
     ///
     /// Source: <http://www.frayn.net/beowulf/theory.html#history>
@@ -84,8 +93,7 @@ impl MoveVec {
     /// Add a bonus for killer moves.
     ///
     /// These are quiet moves that caused a beta cutoff in sibling nodes. Consider these right
-    /// after winning captures. This is done by treating them as if they capture a pawn worth 99
-    /// centipawns.
+    /// after captures. This is done by treating them as if they capture a pawn worth 99 centipawns.
     pub fn add_killers(mut self, killers: impl IntoIterator<Item = ChessMove>) -> Self {
         for killer in killers {
             for entry in self.iter_mut() {
