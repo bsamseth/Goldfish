@@ -2,6 +2,14 @@
 
 set -e
 
-for link in $(cat links.txt); do
-	wget $link
-done
+while IFS= read -r link
+do
+	echo -n "Downloading $link"
+	if ! test -f "$(basename "$link")"; then
+		wget "$link"
+	fi
+	echo " -> OK"
+done < links.txt
+
+
+md5sum -c 5-man-checksums.md5 
