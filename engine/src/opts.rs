@@ -19,6 +19,8 @@ pub struct Opts {
     pub hash_size_mb: usize,
     #[uci(name = "SyzygyPath", kind = "string")]
     pub syzygy_path: Option<PathBuf>,
+    #[uci(name = "Threads", kind = "spin", min = "1", max = "1", default = "1")]
+    pub threads: usize,
 
     // Time control options:
     #[uci(default = "40", kind = "spin", min = "1", max = "100")]
