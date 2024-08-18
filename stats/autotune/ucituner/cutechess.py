@@ -14,7 +14,8 @@ class Tuner:
         self.config = config
         with open(self.config.log_csv_path, "a") as f:
             writer = csv.writer(f)
-            # writer.writerow(list(self.config.parameter_ranges.keys()))
+            if f.tell() == 0:
+                writer.writerow(list(self.config.parameter_ranges.keys()))
             writer.writerow([v.start for v in self.config.parameter_ranges.values()])
 
     def update(self):
@@ -66,7 +67,7 @@ class Tuner:
             print(line)
         result.stdout.close()
 
-        if result.returncode != 0:
+        if result.returncode:
             print(
                 f"WARNING: cutechess-cli exited with non zero code: {result.returncode}"
             )
