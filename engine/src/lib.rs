@@ -130,8 +130,10 @@ impl Engine {
         }
 
         if do_agg {
-            println!("info string total nodes: {total_nodes}");
-            println!("info string total time: {total_time} ms");
+            println!(
+                "info string {total_nodes} nodes {} nps {total_time} ms",
+                (total_nodes as u128 * 1000) / total_time
+            );
         }
     }
 
