@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
-
 use uci::UciOptions;
 
 use crate::newtypes::{Depth, Value};

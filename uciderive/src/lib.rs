@@ -178,13 +178,14 @@ fn impl_set_option(fields: &Fields<UciOptionAttrubute>) -> proc_macro2::TokenStr
         };
         quote! {
             #name => {
+                use ::anyhow::Context;
                 self.#ident = #assign;
             }
         }
     });
 
     quote! {
-        fn set_option(&mut self, name: &str, value: &str) -> Result<()> {
+        fn set_option(&mut self, name: &str, value: &str) -> ::anyhow::Result<()> {
             match name.to_lowercase().as_str() {
                 #(#field_setter)*
                 _ => return Err(anyhow::anyhow!("unknown UCI option: {name}")),

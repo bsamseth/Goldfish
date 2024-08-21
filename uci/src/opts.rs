@@ -11,12 +11,13 @@ pub use uciderive::UciOptions;
 ///
 /// ```rust
 /// use uci::UciOptions;
+///
 /// #[derive(Debug, UciOptions)]
 /// struct MyOptions {
-///    #[uci(name = "Hash", kind = "Spin", default = "16", min = "1", max = "128")]
+///    #[uci(name = "Hash", kind = "spin", default = "16", min = "1", max = "128")]
 ///    pub hash_size_mb: usize,
-///    #[uci(name = "SyzygyPath", kind = "String")]
-///    pub syzygy_path: Option<PathBuf>,
+///    #[uci(name = "SyzygyPath", kind = "string")]
+///    pub syzygy_path: Option<std::path::PathBuf>,
 /// }
 /// ```
 pub trait UciOptions: Default {

@@ -9,12 +9,14 @@ listen to a mpsc receiver and match over the commands.
 
 This shows the outline of a main program loop for a UCI chess engine.
 ```
+use uci::UciOptions;
+
 #[derive(Debug, UciOptions)]
 struct MyOptions {
-    #[uci(name = "Hash", kind = "Spin", default = "16", min = "1", max = "128")]
+    #[uci(name = "Hash", kind = "spin", default = "16", min = "1", max = "128")]
     pub hash_size_mb: usize,
-    #[uci(name = "SyzygyPath", kind = "String")]
-    pub syzygy_path: Option<PathBuf>,
+    #[uci(name = "SyzygyPath", kind = "string")]
+    pub syzygy_path: Option<std::path::PathBuf>,
 }
 
 let interface = uci::Interface::default();
@@ -30,7 +32,7 @@ while let Ok(cmd) = interface.commands.recv() {
             options.print_options();
             println!("uciok");
         }
-        uci::Command::SetOption(uci::Option { name, value }) => {
+        uci::Command::SetOption(uci::EngineOption { name, value }) => {
             if let Err(e) = options.set_option(&name, &value) {
                 eprintln!("{e}");
                 continue;
