@@ -1,4 +1,5 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
+[![Build and test](https://github.com/bsamseth/Goldfish/actions/workflows/cargo-build-test.yml/badge.svg)](https://github.com/bsamseth/Goldfish/actions/workflows/cargo-build-test.yml)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/bsamseth/Goldfish/blob/main/LICENCE)
 [![Play link](https://img.shields.io/badge/Play%20Goldfish-lichess-green.svg)](https://lichess.org/@/Goldfish-Engine)
 
