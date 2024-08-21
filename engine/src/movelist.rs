@@ -1,4 +1,4 @@
-use chess::{Board, ChessMove, MoveGen, Piece};
+use chess::{BitBoard, Board, ChessMove, Color, MoveGen, Piece};
 
 use crate::chessmove::ChessMoveExt;
 use crate::{newtypes::Value, opts::OPTS};
@@ -123,6 +123,97 @@ impl MoveVec {
 
         self
     }
+
+    pub fn see(board: &Board, capture: ChessMove) -> Value {
+        debug_assert!(capture.captures(board).is_some());
+
+        let initial_capture = capture
+            .captures(board)
+            .expect("should only call see on captures");
+        let target_square = capture.get_dest();
+        let initial_colour = board.side_to_move();
+        let mut blockers = board.combined() ^ BitBoard::from_square(capture.get_source());
+        let white_pieces = board.color_combined(Color::White);
+        let black_pieces = board.color_combined(Color::Black);
+
+        let mut attackers =
+            chess::get_king_moves(target_square) & blockers & board.pieces(Piece::King)
+                | chess::get_knight_moves(target_square) & blockers & board.pieces(Piece::Knight)
+                | chess::get_rook_moves(target_square, blockers)
+                    & blockers
+                    & (board.pieces(Piece::Rook) | board.pieces(Piece::Queen))
+                | chess::get_bishop_moves(target_square, blockers)
+                    & blockers
+                    & (board.pieces(Piece::Bishop) | board.pieces(Piece::Queen))
+                | chess::get_pawn_attacks(target_square, Color::Black, *white_pieces)
+                | chess::get_pawn_attacks(target_square, Color::White, *black_pieces);
+
+        let mut target_piece = board.piece_on(capture.get_source()).unwrap();
+        let mut colour = !initial_colour;
+        let mut gains = vec![piece_value(initial_capture)];
+
+        'exchange: loop {
+            for attacker_piece in [
+                Piece::Pawn,
+                Piece::Knight,
+                Piece::Bishop,
+                Piece::Rook,
+                Piece::Queen,
+                Piece::King,
+            ] {
+                let our_attacker =
+                    attackers & board.color_combined(colour) & board.pieces(attacker_piece);
+
+                if our_attacker == chess::EMPTY {
+                    continue;
+                }
+
+                let attacker_square = our_attacker.to_square();
+                let victim_value = piece_value(target_piece);
+                gains.push(victim_value);
+
+                if target_piece == Piece::King {
+                    break;
+                }
+
+                blockers ^= BitBoard::from_square(attacker_square);
+                attackers ^= BitBoard::from_square(attacker_square);
+
+                target_piece = attacker_piece;
+
+                if matches!(attacker_piece, Piece::Rook | Piece::Queen) {
+                    attackers |= chess::get_rook_moves(target_square, blockers)
+                        & blockers
+                        & (board.pieces(Piece::Rook) | board.pieces(Piece::Queen));
+                }
+
+                if matches!(attacker_piece, Piece::Pawn | Piece::Bishop | Piece::Queen) {
+                    attackers |= chess::get_bishop_moves(target_square, blockers)
+                        & blockers
+                        & (board.pieces(Piece::Bishop) | board.pieces(Piece::Queen));
+                }
+
+                colour = !colour;
+
+                continue 'exchange;
+            }
+
+            while gains.len() > 1 {
+                let forced = gains.len() == 2;
+
+                let their_gain = gains.pop().unwrap();
+                let our_gain = gains.last_mut().unwrap();
+
+                *our_gain -= their_gain;
+
+                if !forced && *our_gain < 0 {
+                    *our_gain = 0;
+                }
+            }
+
+            return Value::new(gains.pop().unwrap());
+        }
+    }
 }
 
 /// Piece values for use with MVV/LVA only.
@@ -155,4 +246,58 @@ impl std::ops::DerefMut for MoveVec {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    macro_rules! test_see {
+        ($name:ident, $fen:expr, $capture:expr, $expected:expr) => {
+            #[test]
+            fn $name() {
+                let board: Board = $fen.parse().unwrap();
+                let capture: ChessMove = $capture.parse().unwrap();
+                let expected = Value::new($expected);
+
+                assert_eq!(expected, MoveVec::see(&board, capture));
+            }
+        };
+    }
+
+    test_see!(
+        test_see_pawn_takes_protected_pawn,
+        "4R3/2r3p1/5bk1/1p1r3p/p2PR1P1/P1BK4/1P6/8 b - - 0 1",
+        "h5g4",
+        0
+    );
+    test_see!(
+        test_see_two_pawn_takes_doubly_protocted_pawn,
+        "4R3/2r3p1/5bk1/1p1r1p1p/p2PR1P1/P1BK1P2/1P6/8 b - - 0 1",
+        "h5g4",
+        0
+    );
+
+    //#[test]
+    //fn test_see_enough_attackers_but_wrong_order() {
+    //    let board: Board = "k2r2q1/2n2b2/2p5/3n4/2K1P3/3QNB2/3R4/8 w - - 0 1"
+    //        .parse()
+    //        .unwrap();
+    //    let capture: ChessMove = "e4d5".parse().unwrap();
+    //
+    //    //assert_eq!(Value::INFINITE, MoveVec::see(&board, capture));
+    //
+    //    for capture in MoveGen::new_legal(&board) {
+    //        if capture.captures(&board).is_none() {
+    //            continue;
+    //        }
+    //
+    //        println!(
+    //            "{} SEE: {}",
+    //            capture,
+    //            MoveVec::see(&board, capture).as_inner()
+    //        );
+    //    }
+    //    panic!();
+    //}
 }
