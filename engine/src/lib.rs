@@ -108,13 +108,14 @@ impl Engine {
                             .join(" ")
                     );
                     self.transposition_table.new_search();
-                    let (bm, logger) = Searcher::best_move(
+                    let (bm, logger) = Searcher::new(
                         &position,
                         &go_options,
                         interface.stop.clone(),
                         &mut self.transposition_table,
                         self.tablebase,
-                    );
+                    )
+                    .best_move();
 
                     println!("bestmove {bm}");
 
