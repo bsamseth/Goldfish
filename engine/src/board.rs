@@ -23,7 +23,9 @@ pub trait BoardExt {
 
 impl BoardExt for Board {
     fn halfmove_reset(&self, mv: ChessMove) -> bool {
-        self.piece_on(mv.get_source()).unwrap() == Piece::Pawn
+        self.piece_on(mv.get_source())
+            .unwrap_or_else(|| panic!("error at {self} for {mv}"))
+            == Piece::Pawn
             || self.piece_on(mv.get_dest()).is_some()
     }
 

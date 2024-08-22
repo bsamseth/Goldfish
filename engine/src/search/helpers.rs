@@ -117,31 +117,31 @@ impl Searcher<'_> {
         // Check for repetition.
         // Check positions from the last halfmove clock reset, and return true if we've seen the
         // same position twice before. Positions are treated as equal by their Zobrist keys.
-        let ply = ply.as_usize();
-        self.ss[ply.saturating_sub(self.ss[ply].halfmove_clock)..ply]
+        let ply = (self.root_position_ply + ply).as_usize();
+        let position_count = self.ss[ply.saturating_sub(self.ss[ply].halfmove_clock)..ply]
             .iter()
             .filter({
                 let latest_zobrist = self.ss[ply].zobrist;
                 move |s| s.zobrist == latest_zobrist
             })
-            .count()
-            >= 2
+            .count();
+        position_count >= 2
     }
 
     /// Return a reference to the stack state for the given ply.
     pub fn stack_state(&self, ply: Ply) -> &StackState {
-        &self.ss[ply.as_usize()]
+        &self.ss[(self.root_position_ply + ply).as_usize()]
     }
     /// Return a mutable reference to the stack state for the given ply.
     pub fn stack_state_mut(&mut self, ply: Ply) -> &mut StackState {
-        &mut self.ss[ply.as_usize()]
+        &mut self.ss[(self.root_position_ply + ply).as_usize()]
     }
 
     /// Remove moves from the root move list that don't preserve the WDL value (if available).
     ///
     /// A tablebase must be initialized, and the root position must be in the tablebase.
     pub fn filter_root_moves_using_tb(&mut self) {
-        let hmc = self.stack_state(Ply::new(0)).halfmove_clock;
+        let hmc = self.stack_state(Ply::ZERO).halfmove_clock;
 
         if let Some((wdl, filter)) = self
             .tablebase
@@ -172,5 +172,66 @@ impl From<Result<Value, Value>> for Value {
         match result {
             Ok(value) | Err(value) => value,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use uci::Position;
+
+    use crate::tt::TranspositionTable;
+
+    use super::*;
+
+    #[test]
+    fn test_is_draw_by_50_move_rule() {
+        let board = Board::default();
+        let position = Position {
+            start_pos: board,
+            moves: vec![],
+            starting_halfmove_clock: 0,
+        };
+        let mut tt = TranspositionTable::default();
+        let mut searcher = Searcher::new(&position, &[], Arc::default(), &mut tt, None);
+
+        searcher.stack_state_mut(Ply::ZERO).halfmove_clock = 100;
+        searcher.stack_state_mut(Ply::ONE).halfmove_clock = 99;
+        assert!(searcher.is_draw(&board, Ply::ZERO));
+        assert!(!searcher.is_draw(&board, Ply::ONE));
+    }
+
+    #[test]
+    fn test_is_draw_by_insufficient_material() {
+        for fen in [
+            "k7/8/8/8/8/8/8/KB6 w - - 0 1",
+            "8/8/nk6/8/8/8/8/K7 b - - 0 1",
+        ] {
+            let board: Board = fen.parse().unwrap();
+            assert!(board.has_insufficient_material());
+            let position = Position {
+                start_pos: board,
+                moves: vec![],
+                starting_halfmove_clock: 0,
+            };
+            let mut tt = TranspositionTable::default();
+            let searcher = Searcher::new(&position, &[], Arc::default(), &mut tt, None);
+            assert!(searcher.is_draw(&board, Ply::ZERO));
+        }
+    }
+
+    #[test]
+    fn test_is_draw_by_repetition() {
+        let position: Position = "fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves g1f3 b8c6 f3g1 c6b8 g1f3 b8c6 f3g1".parse().unwrap();
+        let mut tt = TranspositionTable::default();
+        let mut searcher = Searcher::new(&position, &[], Arc::default(), &mut tt, None);
+        assert!(!searcher.is_draw(&position.start_pos, Ply::ZERO));
+
+        let board = searcher.root_position;
+        let mut new_board = board;
+        searcher.make_move(&board, "c6b8".parse().unwrap(), &mut new_board, Ply::ZERO);
+
+        assert!(searcher.is_draw(&board, Ply::ONE));
     }
 }
