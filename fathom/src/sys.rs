@@ -151,7 +151,7 @@ pub const fn tb_get_promotes(res: u32) -> u32 {
 extern "C" {
     pub static TB_LARGEST: u32;
 
-    pub fn tb_init(filename: *const i8) -> bool;
+    pub fn tb_init(filename: *const std::ffi::c_char) -> bool;
 
     fn tb_probe_wdl_impl(
         white: u64,
