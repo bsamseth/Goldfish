@@ -5,7 +5,7 @@
 //!
 //! Speculative cutoffs are implemented in [`super::speculate`].
 
-use chess::Board;
+use chess::{Board, Piece};
 
 use fathom::Wdl;
 
@@ -256,8 +256,10 @@ pub fn mate_distance_pruning(alpha: &mut Value, beta: &mut Value, ply: Ply) -> R
 #[inline]
 pub fn full_delta_pruning(board: &Board, static_eval: Value, alpha: Value) -> Result<(), Value> {
     if !board.in_check()
-        && static_eval + crate::evaluate::QUEEN_VALUE + crate::evaluate::QUEEN_VALUE
-            - crate::evaluate::PAWN_VALUE
+        && static_eval
+            + crate::evaluate::piece_value(Piece::Queen)
+            + crate::evaluate::piece_value(Piece::Queen)
+            - crate::evaluate::piece_value(Piece::Pawn)
             <= alpha
     {
         return Err(alpha);
