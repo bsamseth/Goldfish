@@ -2,11 +2,13 @@
 
 cutechess-cli \
 	-engine \
-	conf='Goldfish v2.0.0-rc8' \
+	conf='Goldfish v2.1.0' \
 	-engine \
-	conf='Goldfish v2.0.0-rc7' \
+	conf='Goldfish v2.0.0' \
 	-engine \
-	conf='Goldfish v1.13.0' \
+	conf='Stockfish 14.1 (S7)' \
+	-engine \
+	conf='Stockfish 14.1 (S8)' \
 	-each \
 	tc=40/60 \
 	proto=uci \
@@ -17,6 +19,6 @@ cutechess-cli \
 	-games 2 \
 	-rounds 500 \
 	-pgnout /home/bendik/goldfish/stats/match-history.pgn min "fi" \
-	-concurrency 10 \
+	-concurrency 4 \
 	-ratinginterval 5 \
 	-tournament gauntlet \
