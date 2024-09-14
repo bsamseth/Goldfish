@@ -1,2 +1,10 @@
 [build]
 rustflags = ["-C", "target-cpu=native"]
+
+[target.'cfg(target_arch = "x86_64")']
+rustflags = [
+	"-C",
+	"target-cpu=native",
+	"-C",
+	"target-feature=+bmi1,+bmi2,+avx2",
+]
