@@ -132,21 +132,25 @@ impl MoveVec {
             .expect("should only call see on captures");
         let target_square = capture.get_dest();
         let initial_colour = board.side_to_move();
-        let mut blockers = board.combined() ^ BitBoard::from_square(capture.get_source());
-        let white_pieces = board.color_combined(Color::White);
-        let black_pieces = board.color_combined(Color::Black);
+        let mut occupied = board.combined() ^ BitBoard::from_square(capture.get_source());
 
-        let mut attackers =
-            chess::get_king_moves(target_square) & blockers & board.pieces(Piece::King)
-                | chess::get_knight_moves(target_square) & blockers & board.pieces(Piece::Knight)
-                | chess::get_rook_moves(target_square, blockers)
-                    & blockers
-                    & (board.pieces(Piece::Rook) | board.pieces(Piece::Queen))
-                | chess::get_bishop_moves(target_square, blockers)
-                    & blockers
-                    & (board.pieces(Piece::Bishop) | board.pieces(Piece::Queen))
-                | chess::get_pawn_attacks(target_square, Color::Black, *white_pieces)
-                | chess::get_pawn_attacks(target_square, Color::White, *black_pieces);
+        let mut attackers = (chess::get_king_moves(target_square)
+            & (occupied & board.pieces(Piece::King)))
+            | (chess::get_knight_moves(target_square) & (occupied & board.pieces(Piece::Knight)))
+            | (chess::get_rook_moves(target_square, occupied)
+                & (occupied & (board.pieces(Piece::Rook) | board.pieces(Piece::Queen))))
+            | chess::get_bishop_moves(target_square, occupied)
+                & (occupied & (board.pieces(Piece::Bishop) | board.pieces(Piece::Queen)))
+            | chess::get_pawn_attacks(
+                target_square,
+                Color::Black,
+                board.color_combined(Color::White) & occupied,
+            )
+            | chess::get_pawn_attacks(
+                target_square,
+                Color::White,
+                board.color_combined(Color::Black) & occupied,
+            );
 
         let mut target_piece = board.piece_on(capture.get_source()).unwrap();
         let mut colour = !initial_colour;
@@ -176,21 +180,19 @@ impl MoveVec {
                     break;
                 }
 
-                blockers ^= BitBoard::from_square(attacker_square);
+                occupied ^= BitBoard::from_square(attacker_square);
                 attackers ^= BitBoard::from_square(attacker_square);
 
                 target_piece = attacker_piece;
 
                 if matches!(attacker_piece, Piece::Rook | Piece::Queen) {
-                    attackers |= chess::get_rook_moves(target_square, blockers)
-                        & blockers
-                        & (board.pieces(Piece::Rook) | board.pieces(Piece::Queen));
+                    attackers |= chess::get_rook_moves(target_square, occupied)
+                        & (occupied & (board.pieces(Piece::Rook) | board.pieces(Piece::Queen)));
                 }
 
                 if matches!(attacker_piece, Piece::Pawn | Piece::Bishop | Piece::Queen) {
-                    attackers |= chess::get_bishop_moves(target_square, blockers)
-                        & blockers
-                        & (board.pieces(Piece::Bishop) | board.pieces(Piece::Queen));
+                    attackers |= chess::get_bishop_moves(target_square, occupied)
+                        & (occupied & (board.pieces(Piece::Bishop) | board.pieces(Piece::Queen)));
                 }
 
                 colour = !colour;
@@ -278,26 +280,24 @@ mod tests {
         0
     );
 
-    //#[test]
-    //fn test_see_enough_attackers_but_wrong_order() {
-    //    let board: Board = "k2r2q1/2n2b2/2p5/3n4/2K1P3/3QNB2/3R4/8 w - - 0 1"
-    //        .parse()
-    //        .unwrap();
-    //    let capture: ChessMove = "e4d5".parse().unwrap();
-    //
-    //    //assert_eq!(Value::INFINITE, MoveVec::see(&board, capture));
-    //
-    //    for capture in MoveGen::new_legal(&board) {
-    //        if capture.captures(&board).is_none() {
-    //            continue;
-    //        }
-    //
-    //        println!(
-    //            "{} SEE: {}",
-    //            capture,
-    //            MoveVec::see(&board, capture).as_inner()
-    //        );
-    //    }
-    //    panic!();
-    //}
+    test_see!(
+        test_see_pawn_takes_overprotected_knight,
+        "k2r2q1/2n2b2/2p5/3n4/2K1P3/3QNB2/3R4/8 w - - 0 1",
+        "e4d5",
+        piece_value(Piece::Knight) - piece_value(Piece::Pawn)
+    );
+
+    test_see!(
+        test_see_knight_takes_protected_knight,
+        "k2r2q1/2n2b2/2p5/3n4/2K1P3/3QNB2/3R4/8 w - - 0 1",
+        "e3d5",
+        0
+    );
+
+    test_see!(
+        test_see_queeen_takes_underprotected_knight,
+        "k2r2q1/2n2b2/2p5/3n4/2K1P3/3QNB2/3R4/8 w - - 0 1",
+        "d3d5",
+        piece_value(Piece::Knight) + piece_value(Piece::Pawn) - piece_value(Piece::Queen)
+    );
 }
