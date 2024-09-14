@@ -179,18 +179,6 @@ impl From<fathom::Wdl> for Value {
     }
 }
 
-/// A utility trait for operations involving [`Value`]s.
-#[allow(clippy::module_name_repetitions)]
-pub trait ValueExt {
-    fn scaled_by(self, factor: Value) -> Self;
-}
-
-impl ValueExt for i32 {
-    fn scaled_by(self, factor: Value) -> Self {
-        self * i32::from(factor.0)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
