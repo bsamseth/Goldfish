@@ -126,8 +126,11 @@ Detailed head-to-head statistics can be found [here](stats/head-to-head-history.
 
 ## Installation
 
-Each release comes with pre-compiled executables for Linux and Windows. Just download these and run them in your GUI of
-choice.
+Some releases have pre-compiled executables for Linux and Windows. If
+available, download these and run them in your GUI of choice. Note that the
+pre-compiled binaries won't necessarily be optimized for your CPU, and you
+might get abou 5% better performance by compiling the engine yourself, see
+below.
 
 ## Build
 
@@ -135,7 +138,7 @@ Requires a recent Rust toolchain, with no particular MSRV. Get the latest stable
 
 ``` bash
 cd src
-cargo build --profile release-lto --package engine
+cargo build --profile release-lto --bin goldfish
 ```
 
-This resulting executable will be in `src/target/release-lto/goldfish[.exe]`.
+This resulting executable will be in `target/release-lto/goldfish[.exe]`.
