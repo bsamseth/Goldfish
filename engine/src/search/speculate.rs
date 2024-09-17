@@ -186,10 +186,8 @@ impl Searcher<'_> {
                 self.transposition_table
                     .probe(ss.zobrist, ply, ss.halfmove_clock)
             {
-                tracing::warn!("IID found a move");
                 return Some(mv);
             }
-            tracing::warn!("IID failed to find a move");
         }
         tt_move
     }
