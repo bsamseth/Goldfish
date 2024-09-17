@@ -18,7 +18,6 @@ use super::newtypes::Ply;
 use super::tt::TranspositionTable;
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
-use crate::newtypes::Depth;
 use fathom::Tablebase;
 use stackstate::StackState;
 use uci::Position;
@@ -27,7 +26,7 @@ use uci::Position;
 pub struct Searcher<'a> {
     root_position: Board,
     root_position_ply: Ply,
-    ss: [StackState; Ply::MAX.as_usize() + 1],
+    ss: Vec<StackState>,
     limits: Limits,
     logger: Logger,
     stop_signal: Arc<AtomicBool>,
@@ -54,26 +53,30 @@ impl<'a> Searcher<'a> {
         let mut halfmove_clock = position.starting_halfmove_clock;
         let mut root_position_ply = Ply::ZERO;
 
-        let mut stack_states = [StackState::default(); Ply::MAX.as_usize() + 1];
-        stack_states[0].eval = Some(root_position.evaluate());
-        stack_states[0].zobrist = root_position.get_hash();
-        stack_states[0].halfmove_clock = halfmove_clock;
+        let mut stack_states =
+            vec![StackState::default(); Ply::MAX.as_usize() + position.moves.len() + 1];
+        stack_states[0] = StackState {
+            eval: Some(root_position.evaluate()),
+            zobrist: root_position.get_hash(),
+            halfmove_clock,
+            ..Default::default()
+        };
 
-        for (i, mv) in position.moves.iter().enumerate() {
+        for mv in &position.moves {
             if root_position.halfmove_reset(*mv) {
                 halfmove_clock = 0;
             } else {
                 halfmove_clock += 1;
             }
             root_position = root_position.make_move_new(*mv);
-            stack_states[i + 1].eval = Some(root_position.evaluate());
-            stack_states[i + 1].zobrist = root_position.get_hash();
-            stack_states[i + 1].halfmove_clock = halfmove_clock;
+            root_position_ply = root_position_ply.increment();
 
-            // Remember pre-root moves, but leave enough stack states for a max search depth.
-            if position.moves.len() - i < Depth::MAX.as_usize() {
-                root_position_ply = root_position_ply.increment();
-            }
+            stack_states[root_position_ply.as_usize()] = StackState {
+                eval: Some(root_position.evaluate()),
+                zobrist: root_position.get_hash(),
+                halfmove_clock,
+                ..Default::default()
+            };
         }
 
         let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
