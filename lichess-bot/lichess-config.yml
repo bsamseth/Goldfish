@@ -21,7 +21,7 @@ fake_think_time: false # artificially slow down the bot to pretend like it's thi
 
 challenge: # incoming challenges
   concurrency: 2 # number of games to play simultaneously
-  sort_by: "best" # possible values: "best", "first"
+  sort_by: "first" # possible values: "best", "first"
   accept_bot: true # accepts challenges coming from other bots
   variants: # chess variants to accept (http://lichess.org/variant)
     - standard
@@ -35,3 +35,11 @@ challenge: # incoming challenges
   modes: # game modes to accept
     - casual # unrated games
     - rated # rated games - must comment if the engine doesn't try to win
+matchmaking:  # outgoing challenges
+  allow_matchmaking: true
+  challenge_variant: "random"
+  challenge_mode: "rated"
+  challenge_filter: "fine"
+  opponent_rating_difference: 200
+  opponent_allow_tos_violation: false
+  allow_during_games: true
