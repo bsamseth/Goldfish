@@ -1,6 +1,6 @@
 [submodule "external/lichess-bot"]
 	path = external/lichess-bot
-	url = https://github.com/careless25/lichess-bot
+	url = https://github.com/lichess-bot-devs/lichess-bot 
 [submodule "goldfish/fathom/external/fathom"]
 	path = goldfish/fathom/external/fathom
 	url = https://github.com/jdart1/Fathom
