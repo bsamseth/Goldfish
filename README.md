@@ -4,6 +4,10 @@
 [![Play link](https://img.shields.io/badge/Play%20Goldfish-lichess-green.svg)](https://lichess.org/@/Goldfish-Engine)
 
 
+<p align="center">
+  <img src="https://github.com/bsamseth/goldfish/blob/main/logo.jpg?raw=true" alt="Logo, a goldfish playing chess."/>
+</p>
+
 
 # Goldfish
 > Stockfish's very distant and not so bright cousin
