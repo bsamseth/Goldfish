@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["engine", "fathom", "uci", "uciderive"]
+members = ["engine", "fathom", "goldchess", "goldchess-gen", "uci", "uciderive"]
 resolver = "2"
 
 [profile.release-lto]
