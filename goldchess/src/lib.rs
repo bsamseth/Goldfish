@@ -7,6 +7,7 @@
 //! This is a library useful for writing chess engines in Rust. Its primary reason to exist is to
 //! support the [Goldfish](https://github.com/bsamseth/goldfish) chess engine, but very well might be useful for other projects as well.
 mod bitboard;
+mod castlerights;
 mod color;
 mod error;
 mod file;
@@ -16,6 +17,7 @@ mod rank;
 mod square;
 
 pub use bitboard::Bitboard;
+pub use castlerights::CastleRights;
 pub use color::Color;
 pub use error::{Error, Result};
 pub use file::File;
