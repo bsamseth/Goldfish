@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::{Bitboard, Error, Result};
 
+/// Represent a file (column) on a chess board.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct File(pub u8);
 

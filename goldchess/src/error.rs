@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+/// For when things don't go as planned.
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Invalid square index: {0}")]
@@ -14,4 +15,5 @@ pub enum Error {
     InvalidRankChar(char),
 }
 
+/// A specialized [`Result`] type for this crate, used by all fallible functions.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
