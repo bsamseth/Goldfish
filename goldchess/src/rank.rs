@@ -12,7 +12,7 @@ impl Rank {
     /// # Safety
     /// The input must be a valid rank index, i.e. 0 <= rank < 8.
     #[must_use]
-    pub unsafe fn new_unchecked(rank: u8) -> Self {
+    pub const unsafe fn new_unchecked(rank: u8) -> Self {
         Self(rank)
     }
 
@@ -20,7 +20,7 @@ impl Rank {
     ///
     /// # Errors
     /// Returns an error if the input is not a valid rank index.
-    pub fn new(rank: u8) -> Result<Self, Error> {
+    pub const fn new(rank: u8) -> Result<Self, Error> {
         if rank < 8 {
             Ok(Self(rank))
         } else {
@@ -30,7 +30,7 @@ impl Rank {
 
     /// Get the rank above this one, if it exists.
     #[must_use]
-    pub fn up(self) -> Option<Self> {
+    pub const fn up(self) -> Option<Self> {
         if self.0 == 7 {
             None
         } else {
@@ -40,7 +40,7 @@ impl Rank {
 
     /// Get the rank below this one, if it exists.
     #[must_use]
-    pub fn down(self) -> Option<Self> {
+    pub const fn down(self) -> Option<Self> {
         if self.0 == 0 {
             None
         } else {

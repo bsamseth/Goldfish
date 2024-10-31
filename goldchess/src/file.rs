@@ -12,7 +12,7 @@ impl File {
     /// # Safety
     /// The input must be a valid file index, i.e. 0 <= file < 8.
     #[must_use]
-    pub unsafe fn new_unchecked(file: u8) -> Self {
+    pub const unsafe fn new_unchecked(file: u8) -> Self {
         Self(file)
     }
 
@@ -20,7 +20,7 @@ impl File {
     ///
     /// # Errors
     /// Returns an error if the input is not a valid file index.
-    pub fn new(file: u8) -> Result<Self, Error> {
+    pub const fn new(file: u8) -> Result<Self, Error> {
         if file < 8 {
             Ok(Self(file))
         } else {
@@ -30,7 +30,7 @@ impl File {
 
     /// Get the file to the left of this one, if it exists.
     #[must_use]
-    pub fn left(self) -> Option<Self> {
+    pub const fn left(self) -> Option<Self> {
         if self.0 == 0 {
             None
         } else {
@@ -40,7 +40,7 @@ impl File {
 
     /// Get the file to the right of this one, if it exists.
     #[must_use]
-    pub fn right(self) -> Option<Self> {
+    pub const fn right(self) -> Option<Self> {
         if self.0 == 7 {
             None
         } else {

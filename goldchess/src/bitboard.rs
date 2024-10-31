@@ -14,17 +14,17 @@ impl Bitboard {
     }
 
     #[must_use]
-    pub fn count_ones(self) -> u32 {
+    pub const fn count_ones(self) -> u32 {
         self.0.count_ones()
     }
 
     #[must_use]
-    pub fn is_empty(self) -> bool {
+    pub const fn is_empty(self) -> bool {
         self.0 == 0
     }
 
     #[must_use]
-    pub fn trailing_zeros(self) -> u32 {
+    pub const fn trailing_zeros(self) -> u32 {
         self.0.trailing_zeros()
     }
 
