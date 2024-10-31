@@ -1,10 +1,13 @@
 use std::str::FromStr;
 
-use crate::{file::File, rank::Rank, Error, Result};
+use crate::{Bitboard, Error, File, Rank, Result};
 
 /// A square on the chessboard.
 ///
 /// Squares are indexed from 0 to 63, where `A1=0`, `B1=1`, ..., `H8=63`.
+///
+/// You can get [`File`] and [`Rank`] from a square, and combining squares with the `|` operator
+/// yields a [`Bitboard`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Square(pub u8);
 
@@ -206,6 +209,20 @@ impl From<Square> for Rank {
 impl From<Square> for File {
     fn from(sq: Square) -> File {
         sq.file()
+    }
+}
+
+impl std::ops::BitOr for Square {
+    type Output = Bitboard;
+
+    fn bitor(self, rhs: Square) -> Self::Output {
+        Bitboard::from(self) | Bitboard::from(rhs)
+    }
+}
+
+impl From<Square> for Bitboard {
+    fn from(sq: Square) -> Bitboard {
+        Bitboard(1 << sq.0)
     }
 }
 

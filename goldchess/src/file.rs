@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{Error, Result};
+use crate::{Bitboard, Error, Result};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct File(pub u8);
@@ -69,6 +69,22 @@ impl TryFrom<u8> for File {
 
     fn try_from(file: u8) -> Result<Self> {
         File::new(file)
+    }
+}
+
+impl From<File> for Bitboard {
+    fn from(file: File) -> Bitboard {
+        match file {
+            File::A => Bitboard::FILE_A,
+            File::B => Bitboard::FILE_B,
+            File::C => Bitboard::FILE_C,
+            File::D => Bitboard::FILE_D,
+            File::E => Bitboard::FILE_E,
+            File::F => Bitboard::FILE_F,
+            File::G => Bitboard::FILE_G,
+            File::H => Bitboard::FILE_H,
+            _ => unreachable!(),
+        }
     }
 }
 

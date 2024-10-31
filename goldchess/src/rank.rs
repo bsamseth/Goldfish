@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{Error, Result};
+use crate::{Bitboard, Error, Result};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Rank(pub u8);
@@ -70,6 +70,12 @@ impl TryFrom<u8> for Rank {
 
     fn try_from(rank: u8) -> Result<Self> {
         Rank::new(rank)
+    }
+}
+
+impl From<Rank> for Bitboard {
+    fn from(rank: Rank) -> Bitboard {
+        Bitboard(0xffu64 << (8 * rank.0))
     }
 }
 
