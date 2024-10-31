@@ -1,11 +1,18 @@
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![Build and test](https://github.com/bsamseth/Goldfish/actions/workflows/cargo-build-test.yml/badge.svg)](https://github.com/bsamseth/Goldfish/actions/workflows/cargo-build-test.yml)
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/bsamseth/Goldfish/blob/main/LICENCE)
-[![Play link](https://img.shields.io/badge/Play%20Goldfish-lichess-green.svg)](https://lichess.org/@/Goldfish-Engine)
-
-
 <p align="center">
-  <img src="https://github.com/bsamseth/goldfish/blob/main/logo.jpg?raw=true" alt="Logo, a goldfish playing chess."/>
+  <a href=http://www.repostatus.org/#active>
+    <img src=http://www.repostatus.org/badges/latest/active.svg alt="Project Status: Active – The project has reached a stable, usable state and is being actively developed."/>
+  </a>
+  <a href=https://github.com/bsamseth/Goldfish/actions/workflows/cargo-build-test.yml>
+    <img src=https://github.com/bsamseth/Goldfish/actions/workflows/cargo-build-test.yml/badge.svg alt="Build and test"/>
+  </a>
+  <a href=https://github.com/bsamseth/Goldfish/blob/main/LICENCE>
+    <img src=https://img.shields.io/github/license/mashape/apistatus.svg alt="License"/>
+  </a>
+    <a href=https://lichess.org/@/Goldfish-Engine>
+    <img src=https://img.shields.io/badge/Play%20Goldfish-lichess-green.svg alt="Play link"/>
+  </a>
+  <br>
+  <img src="https://github.com/bsamseth/goldfish/blob/main/logo.jpg?raw=true" width=60% alt="Logo, a goldfish playing chess."/>
 </p>
 
 
