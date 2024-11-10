@@ -36,6 +36,13 @@ impl Square {
         }
     }
 
+    /// Create a new square from a [`Rank`] and [`File`].
+    #[must_use]
+    pub const fn make_square(rank: Rank, file: File) -> Self {
+        // SAFETY: rank and file are valid, so the square is valid.
+        unsafe { Self::new_unchecked(rank.0 * 8 + file.0 + 1) }
+    }
+
     #[must_use]
     pub const fn file(self) -> File {
         // SAFETY: The modulo operation ensures that the result is always in 0..8.
@@ -46,6 +53,11 @@ impl Square {
     pub const fn rank(self) -> Rank {
         // SAFETY: self is a valid square index, so (self.0 - 1) / 8 is a valid rank index.
         unsafe { Rank::new_unchecked((self.0.get() - 1) / 8) }
+    }
+
+    /// Get the square index as a `usize`.
+    pub const fn as_index(self) -> usize {
+        self.0.get() as usize - 1
     }
 }
 
@@ -181,11 +193,12 @@ impl Square {
         Self::G8,
         Self::H8,
     ];
+    pub const NUM_SQUARES: usize = Self::ALL_SQUARES.len();
 }
 
 impl std::fmt::Display for Square {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}{}", (b'A' + self.file().0) as char, self.rank().0 + 1)
+        write!(f, "{}{}", (b'a' + self.file().0) as char, self.rank().0 + 1)
     }
 }
 
@@ -235,7 +248,6 @@ impl FromStr for Square {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let file = File::from_str(&s[0..1])?;
         let rank = Rank::from_str(&s[1..2])?;
-        // SAFETY: file and rank are valid, so the square is valid.
-        Ok(unsafe { Self::new_unchecked(rank.0 * 8 + file.0 + 1) })
+        Ok(Square::make_square(rank, file))
     }
 }

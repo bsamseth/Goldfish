@@ -13,6 +13,8 @@ pub enum Error {
     InvalidRank(u8),
     #[error("Invalid rank notation: {0}")]
     InvalidRankChar(char),
+    #[error("Invalid FEN notation: {0}")]
+    InvalidFen(String),
 }
 
 /// A specialized [`Result`] type for this crate, used by all fallible functions.

@@ -13,6 +13,7 @@ mod error;
 mod file;
 mod generated_tables;
 mod piece;
+mod position;
 mod rank;
 mod square;
 
@@ -22,5 +23,6 @@ pub use color::Color;
 pub use error::{Error, Result};
 pub use file::File;
 pub use piece::Piece;
+pub use position::Position;
 pub use rank::Rank;
 pub use square::Square;

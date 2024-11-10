@@ -58,6 +58,16 @@ impl File {
     pub const F: File = File(5);
     pub const G: File = File(6);
     pub const H: File = File(7);
+    pub const ALL: [File; 8] = [
+        File::A,
+        File::B,
+        File::C,
+        File::D,
+        File::E,
+        File::F,
+        File::G,
+        File::H,
+    ];
 }
 
 impl From<File> for u8 {

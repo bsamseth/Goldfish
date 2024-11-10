@@ -58,6 +58,16 @@ impl Rank {
     pub const R6: Rank = Rank(5);
     pub const R7: Rank = Rank(6);
     pub const R8: Rank = Rank(7);
+    pub const ALL: [Rank; 8] = [
+        Rank::R1,
+        Rank::R2,
+        Rank::R3,
+        Rank::R4,
+        Rank::R5,
+        Rank::R6,
+        Rank::R7,
+        Rank::R8,
+    ];
 }
 
 impl From<Rank> for u8 {
