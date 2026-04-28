@@ -72,6 +72,7 @@ impl Searcher<'_> {
 
     /// Early return with [`Value::DRAW`] if the position is a draw.
     /// TODO: check for upcomming draw by repetition and increase alpha if alpha<draw
+    /// TODO: Check for draw by insufficient material
     #[inline]
     pub fn return_if_draw(&self, board: &Board, ply: Ply) -> Result<(), Value> {
         if self.is_draw(board, ply) {
