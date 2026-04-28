@@ -56,6 +56,7 @@ impl Square {
     }
 
     /// Get the square index as a `usize`.
+    #[must_use]
     pub const fn as_index(self) -> usize {
         self.0.get() as usize - 1
     }

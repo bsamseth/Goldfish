@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::{Bitboard, CastleRights, Color, Error, File, Piece, Rank, Square};
 
+/// Representation of a chess position (a.k.a. the struct you care about).
 #[derive(Debug, Clone)]
 pub struct Position {
     pieces: [Bitboard; Piece::NUM_PIECES],
@@ -17,14 +18,14 @@ impl Position {
     pub fn piece_on(&self, sq: Square) -> Option<Piece> {
         Piece::ALL
             .into_iter()
-            .find(|&piece| self.pieces[piece.as_index()] & sq != Bitboard::EMPTY)
+            .find(|piece| self.pieces[piece.as_index()] & sq != Bitboard::EMPTY)
     }
 
     #[must_use]
     pub fn color_on(&self, sq: Square) -> Option<Color> {
         Color::ALL
             .into_iter()
-            .find(|&color| self.color_combined[color.as_index()] & sq != Bitboard::EMPTY)
+            .find(|color| self.color_combined[color.as_index()] & sq != Bitboard::EMPTY)
     }
 
     pub const STARTING_POSITION_FEN: &str =

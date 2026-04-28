@@ -183,9 +183,9 @@ const fn init_table() -> (Psqt, Psqt) {
     while p < 6 {
         let mut sq = 0;
         while sq < 64 {
-            mg_psqt[0][p][sq] = MG_VALUE[p] + MG_TABLES[p][sq ^ 56];
+            mg_psqt[0][p][sq] = MG_VALUE[p] + MG_TABLES[p][sq ^ 0o70];
             mg_psqt[1][p][sq] = MG_VALUE[p] + MG_TABLES[p][sq];
-            eg_psqt[0][p][sq] = EG_VALUE[p] + EG_TABLES[p][sq ^ 56];
+            eg_psqt[0][p][sq] = EG_VALUE[p] + EG_TABLES[p][sq ^ 0o70];
             eg_psqt[1][p][sq] = EG_VALUE[p] + EG_TABLES[p][sq];
             sq += 1;
         }
