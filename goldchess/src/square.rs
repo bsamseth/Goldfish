@@ -20,7 +20,8 @@ impl Square {
     /// The input must be a valid square index, i.e. 1 <= sq <= 64.
     #[must_use]
     pub const unsafe fn new_unchecked(sq: u8) -> Self {
-        Self(NonZeroU8::new_unchecked(sq))
+        // SAFETY: The caller has ensured that the square is valid and non-zero.
+        Self(unsafe { NonZeroU8::new_unchecked(sq) })
     }
 
     /// Create a new square from a `u8`.

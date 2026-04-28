@@ -66,9 +66,12 @@ pub unsafe fn tb_probe_wdl(
     ep: u32,
     turn: u8,
 ) -> u32 {
-    tb_probe_wdl_impl(
-        white, black, kings, queens, rooks, bishops, knights, pawns, ep, turn,
-    )
+    // SAFETY: Caller has ensured the pre-conditions hold.
+    unsafe {
+        tb_probe_wdl_impl(
+            white, black, kings, queens, rooks, bishops, knights, pawns, ep, turn,
+        )
+    }
 }
 
 /// Probe the Distance-To-Zero (DTZ) table.
@@ -129,9 +132,12 @@ pub unsafe fn tb_probe_root(
     turn: u8,
     results: *mut u32,
 ) -> u32 {
-    tb_probe_root_impl(
-        white, black, kings, queens, rooks, bishops, knights, pawns, rule50, ep, turn, results,
-    )
+    // SAFETY: Caller has ensured the pre-conditions hold.
+    unsafe {
+        tb_probe_root_impl(
+            white, black, kings, queens, rooks, bishops, knights, pawns, rule50, ep, turn, results,
+        )
+    }
 }
 
 // Extractors from a `TB_RESULT` value.
@@ -148,7 +154,7 @@ pub const fn tb_get_promotes(res: u32) -> u32 {
     (res & TB_RESULT_PROMOTES_MASK) >> TB_RESULT_PROMOTES_SHIFT
 }
 
-extern "C" {
+unsafe extern "C" {
     pub static TB_LARGEST: u32;
 
     pub fn tb_init(filename: *const std::ffi::c_char) -> bool;

@@ -1,7 +1,7 @@
 [package]
 name = "uci"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = """\
 Universal Chess Interface (UCI)
 """
@@ -12,6 +12,6 @@ authors = ["Bendik Samseth <b.samseth@gmail.com>"]
 [dependencies]
 anyhow = "1.0.86"
 chess = "3.2.0"
-thiserror = "1.0.53"
+thiserror = "2.0.18"
 tracing = "0.1.40"
 uciderive = { path = "../uciderive" }

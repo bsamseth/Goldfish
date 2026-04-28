@@ -503,7 +503,7 @@ impl TtValue {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
+    use rand::prelude::*;
 
     use super::*;
 
@@ -704,10 +704,10 @@ mod tests {
 
     #[test]
     fn test_hi_mul() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..10_000 {
-            let a = rng.gen_range(0..=u64::MAX);
-            let b = rng.gen_range(0..=u64::MAX);
+            let a = rng.random_range(0..=u64::MAX);
+            let b = rng.random_range(0..=u64::MAX);
             let r = mul_hi64(a, b);
             assert!(r < b);
         }

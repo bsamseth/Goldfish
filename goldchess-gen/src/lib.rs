@@ -9,7 +9,7 @@
 
 use std::fmt::Display;
 
-use rand::Rng;
+use rand::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Bitboard(pub u64);
@@ -344,10 +344,10 @@ pub fn pawn_attacks(at: Square, color: Color) -> Bitboard {
     #[allow(clippy::cast_sign_loss)] // 0..64 fits in u8.
     let forward = forward as u8;
 
-    if (at.0 % 8) != 0 {
+    if !at.0.is_multiple_of(8) {
         bb |= Bitboard::from(unsafe { Square::new(forward - 1) });
     }
-    if (at.0 % 8) != 7 {
+    if !(at.0 + 1).is_multiple_of(8) {
         bb |= Bitboard::from(unsafe { Square::new(forward + 1) });
     }
 
@@ -508,8 +508,8 @@ pub fn occupancy_for_mask_and_index(mut mask: Bitboard, index: usize) -> Bitboar
 }
 
 fn random_candidate() -> u64 {
-    let mut rng = rand::thread_rng();
-    rng.gen::<u64>() & rng.gen::<u64>() & rng.gen::<u64>()
+    let mut rng = rand::rng();
+    rng.random::<u64>() & rng.random::<u64>() & rng.random::<u64>()
 }
 
 #[must_use]
