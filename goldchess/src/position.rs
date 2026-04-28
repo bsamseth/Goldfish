@@ -123,7 +123,11 @@ impl FromStr for Position {
             castle_rights[Color::Black.as_index()] = CastleRights::QueenSide;
         }
 
-        let ep_square = Square::from_str(ep).ok();
+        let ep_square = if ep == "-" {
+            None
+        } else {
+            Some(Square::from_str(ep).map_err(|_| invalid_fen())?)
+        };
 
         let halfmove_clock = halfmove.parse::<u8>().map_err(|_| invalid_fen())?;
 
