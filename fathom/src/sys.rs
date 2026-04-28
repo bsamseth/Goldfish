@@ -92,20 +92,21 @@ pub unsafe fn tb_probe_wdl(
 ///   in size. If alternative results are not desired then set results=NULL.
 ///
 /// # Return
-/// - A [`TB_RESULT`] value comprising:
-///   1) The WDL value ([`TB_GET_WDL`])
-///   2) The suggested move ([`TB_GET_FROM`], [`TB_GET_TO`], [`TB_GET_PROMOTES`], [`TB_GET_EP`])
-///   3) The DTZ value ([`TB_GET_DTZ`])
-///   The suggested move is guaranteed to preserved the WDL value.
+/// A [`TB_RESULT`] value comprising:
+/// 1) The WDL value ([`TB_GET_WDL`])
+/// 2) The suggested move ([`TB_GET_FROM`], [`TB_GET_TO`], [`TB_GET_PROMOTES`], [`TB_GET_EP`])
+/// 3) The DTZ value ([`TB_GET_DTZ`])
 ///
-///   Otherwise:
-///   1) [`TB_RESULT_STALEMATE`] is returned if the position is in stalemate.
-///   2) [`TB_RESULT_CHECKMATE`] is returned if the position is in checkmate.
-///   3) [`TB_RESULT_FAILED`] is returned if the probe failed.
+/// The suggested move is guaranteed to preserved the WDL value.
 ///
-///   If results!=NULL, then a [`TB_RESULT`] for each legal move will be generated
-///   and stored in the results array.  The results array will be terminated
-///   by [`TB_RESULT_FAILED`].
+/// Otherwise:
+/// 1) [`TB_RESULT_STALEMATE`] is returned if the position is in stalemate.
+/// 2) [`TB_RESULT_CHECKMATE`] is returned if the position is in checkmate.
+/// 3) [`TB_RESULT_FAILED`] is returned if the probe failed.
+///
+/// If results!=NULL, then a [`TB_RESULT`] for each legal move will be generated
+/// and stored in the results array.  The results array will be terminated
+/// by [`TB_RESULT_FAILED`].
 ///
 /// # Notes
 /// - Engines can use this function to probe at the root.  This function should not be used during search.

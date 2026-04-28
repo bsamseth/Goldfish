@@ -2,6 +2,7 @@
 pub enum Error {
     InvalidPath,
     FailedToInitialize,
+    AlreadyInitialized,
     NoFilesFound,
 }
 

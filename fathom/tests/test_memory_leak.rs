@@ -23,14 +23,14 @@
 //! [bug-poc]: https://github.com/malu/fathom-syzygy/commit/1a35239920424ed321ccea8906ccbacb36f7b77f
 
 #[test]
-#[ignore]
+#[ignore = "takes a while to run"]
 fn test_memory_leaks() {
-    for _ in 0..100_000 {
-        let tb = unsafe {
-            fathom::Tablebase::load(concat!(env!("CARGO_MANIFEST_DIR"), "/../../syzygy"))
-        };
-        let tb = tb.unwrap();
-        std::hint::black_box(tb);
+    for i in 0..100_000 {
+        let ownership =
+            fathom::Tablebase::acquire().expect("should be able to aquire ownership during test");
+        let table =
+            fathom::Tablebase::load(ownership, concat!(env!("CARGO_MANIFEST_DIR"), "/../syzygy"))
+                .expect("should be able to load table base in memory leak test");
+        std::hint::black_box(table);
     }
-    std::thread::sleep(std::time::Duration::from_secs(20));
 }

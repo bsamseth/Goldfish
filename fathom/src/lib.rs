@@ -3,51 +3,99 @@ mod probe;
 mod sys;
 mod wdl;
 
-use std::ptr::addr_of_mut;
+use std::marker::PhantomData;
+use std::sync::Mutex;
 use std::{ffi::CString, path::Path};
 
 pub use error::Error;
 pub use wdl::Wdl;
 
+// The undelying C library doesn't support more than one loaded tablebase, so we model this
+// by enforcing that only one entity may control the tablebase at any one time.
+#[derive(Debug)]
+pub struct TablebaseOwnership(PhantomData<()>);
+
+static TB_OWNER: Mutex<Option<TablebaseOwnership>> =
+    Mutex::new(Some(TablebaseOwnership(PhantomData)));
+
+impl Drop for TablebaseOwnership {
+    fn drop(&mut self) {
+        *TB_OWNER.lock().unwrap() = Some(TablebaseOwnership(PhantomData));
+    }
+}
+
+/// An initialized fathom tablebase instance.
 #[derive(Debug)]
 pub struct Tablebase {
     max_pieces: u32,
+    _ownership: TablebaseOwnership,
 }
 
-// The undelying C library doesn't support more than one instance, so we emulate this
-// by having one singleton instance, and no public way of making new ones.
-static mut TB: Tablebase = Tablebase { max_pieces: 0 };
-
 impl Tablebase {
+    /// Attempt to aquire the tablebase.
+    ///
+    /// Returns [`None`] if someone else already owns it.
+    ///
+    /// # Panics
+    /// Panics if the tablebase ownership system has been poisoned.
+    pub fn acquire() -> Option<TablebaseOwnership> {
+        TB_OWNER.lock().unwrap().take()
+    }
+
+    /// Give back the tablebase for someone else to use.
+    ///
+    /// This is equivalent to dropping the ownership, and just exists for symmetry in the API, and
+    /// for those who prefer being explicit about their intent.
+    pub fn release(ownership: TablebaseOwnership) {
+        drop(ownership);
+    }
+
     /// Load a Syzygy tablebase from the given path.
     ///
+    /// Calling this requires obtaining [`TablebaseOwnership`] first, which is done with [`Tablebase::acquire`].
+    /// If sucessful, the resulting [`Tablebase`] embeds the ownership token, and the tablebase is
+    /// only made available to others once dropped.
+    ///
     /// # Errors
-    /// Returns an error if the path is invalid, the tablebase failed to initialize, or no files were
-    /// found at the given path.
+    /// Returns an error if the path is invalid, the tablebase failed to initialize, no files were
+    /// found at the given path, or if has already been initialized.
+    ///
+    /// In all cases the tablebase ownership is also returned, so that you may try again without
+    /// losing your ownership.
     ///
     /// # Safety
     /// This function is not thread-safe. No other thread should call it at the same time.
     /// Furthermore, calling this may invalidate any other references to the tablebase, or
     /// corrupt probes that are in progress.
     ///
-    /// This should only ever be called when not searching.
-    pub unsafe fn load<P: AsRef<Path>>(path: P) -> Result<*mut Self, Error> {
+    /// The presence of the [`TablebaseOwnership`] parameter enforces these safety requirements,
+    /// so therefore the function is not marked as unsafe.
+    pub fn load<P: AsRef<Path>>(
+        ownership: TablebaseOwnership,
+        path: P,
+    ) -> Result<Self, (Error, TablebaseOwnership)> {
         let pathref = path.as_ref();
-        let pathstr = pathref.to_str().ok_or(Error::InvalidPath)?;
-        let c_string = CString::new(pathstr).map_err(|_| Error::InvalidPath)?;
+        let Some(pathstr) = pathref.to_str() else {
+            return Err((Error::InvalidPath, ownership));
+        };
+        let Ok(c_string) = CString::new(pathstr) else {
+            return Err((Error::InvalidPath, ownership));
+        };
 
         let success = unsafe { sys::tb_init(c_string.as_ptr()) };
 
         if !success {
-            return Err(Error::FailedToInitialize);
+            return Err((Error::FailedToInitialize, ownership));
         }
 
         let max_pieces = unsafe { sys::TB_LARGEST };
-        unsafe { TB.max_pieces = max_pieces };
         if max_pieces == 0 {
-            return Err(Error::NoFilesFound);
+            return Err((Error::NoFilesFound, ownership));
         }
 
-        Ok(addr_of_mut!(TB))
+        Ok(Tablebase {
+            max_pieces,
+            _ownership: ownership,
+        })
     }
 }

@@ -1,20 +1,13 @@
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 
 use chess::{Board, ChessMove, MoveGen};
 
 use fathom::{Tablebase, Wdl};
 
-fn tb() -> &'static Tablebase {
-    static mut TB: OnceLock<&Tablebase> = OnceLock::new();
-    unsafe {
-        TB.get_or_init(|| {
-            Tablebase::load(concat!(env!("CARGO_MANIFEST_DIR"), "/../syzygy"))
-                .unwrap()
-                .as_mut()
-                .unwrap()
-        })
-    }
-}
+static TB: LazyLock<Tablebase> = LazyLock::new(|| {
+    let ownership = Tablebase::acquire().expect("should be able to aquire during test");
+    Tablebase::load(ownership, concat!(env!("CARGO_MANIFEST_DIR"), "/../syzygy")).unwrap()
+});
 
 fn test(
     fen: &str,
@@ -32,7 +25,7 @@ fn test(
             .collect()
     };
 
-    let (wdl, filter) = tb().probe_dtz(&board, halfmove_clock).unwrap();
+    let (wdl, filter) = TB.probe_dtz(&board, halfmove_clock).unwrap();
     assert_eq!(wdl, expected_wdl);
 
     let moves = MoveGen::new_legal(&board)
