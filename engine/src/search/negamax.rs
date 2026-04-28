@@ -7,6 +7,7 @@ use crate::{
     evaluate::Evaluate,
     movelist::MoveVec,
     newtypes::{Depth, Ply, Value},
+    opts::OPTS,
     tt::{Bound, EntryWriterOpts},
 };
 
@@ -78,7 +79,13 @@ impl Searcher<'_> {
         for (mv_nr, mv) in moves.iter().map(|entry| entry.mv).enumerate() {
             self.make_move(board, mv, &mut new_board, ply);
 
-            let value = self.pv_search::<PV>(&new_board, depth, alpha, beta, ply, mv_nr);
+            let mut new_depth = depth;
+
+            if mv_nr > OPTS.lmr_move_threshold && !new_board.in_check() {
+                new_depth = new_depth.decrement();
+            }
+
+            let value = self.pv_search::<PV>(&new_board, new_depth, alpha, beta, ply, mv_nr);
 
             if self.should_stop() {
                 // If we're stopping, we don't trust the value, because it was likely cut off.
