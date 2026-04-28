@@ -1,8 +1,8 @@
 //! Function and utilities to generate move tables.
 //!
 //! The structures and definitions here are only what makes implementing the generation easier. This
-//! Deliberately does not depend on the rest of [`goldchess`], which defined the same things (and more)
-//! in a more complete manner. This is because [`goldchess`] will not depend on this code, only on a
+//! Deliberately does not depend on the rest of `goldchess`, which defined the same things (and more)
+//! in a more complete manner. This is because `goldchess` will not depend on this code, only on a
 //! static file with the generated tables. This way magics can be generated once as opposed to on
 //! every build.
 #![allow(clippy::missing_panics_doc)]
