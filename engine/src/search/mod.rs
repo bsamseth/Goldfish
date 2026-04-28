@@ -7,7 +7,7 @@ mod run;
 mod speculate;
 mod stackstate;
 
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::{Arc, atomic::AtomicBool};
 
 use chess::{Board, ChessMove, MoveGen};
 
@@ -47,7 +47,7 @@ impl<'a> Searcher<'a> {
         go_options: &[uci::GoOption],
         stop_signal: Arc<AtomicBool>,
         transposition_table: &'a mut TranspositionTable,
-        tablebase: Option<&'static Tablebase>,
+        tablebase: Option<&'a Tablebase>,
     ) -> Self {
         let mut root_position = position.start_pos;
         let mut halfmove_clock = position.starting_halfmove_clock;

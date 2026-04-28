@@ -10,7 +10,6 @@ mod opts;
 mod search;
 mod tt;
 
-use anyhow::Context;
 use search::Searcher;
 use uci::UciOptions;
 
@@ -28,7 +27,7 @@ use uci::UciOptions;
 #[derive(Debug)]
 pub struct Engine {
     transposition_table: tt::TranspositionTable,
-    tablebase: Option<&'static fathom::Tablebase>,
+    tablebase: Option<fathom::Tablebase>,
     options: opts::Opts,
 }
 
@@ -90,7 +89,6 @@ impl Engine {
                     }
                     if let Err(e) = self.synchronize_options(&name) {
                         tracing::warn!("{e}");
-                        continue;
                     }
                 }
                 uci::Command::IsReady => println!("readyok"),
@@ -113,7 +111,7 @@ impl Engine {
                         &go_options,
                         interface.stop.clone(),
                         &mut self.transposition_table,
-                        self.tablebase,
+                        self.tablebase.as_ref(),
                     )
                     .best_move();
 
@@ -153,17 +151,13 @@ impl Engine {
                     .expect("should be set at this point");
                 tracing::info!("loading tablebase from path: {path:?}");
                 self.tablebase = Some({
-                    // Safety: There's no ongoing search, and only one option can be set any given
-                    // time. This means nobody else is potentially loading/probing, so this is safe.
-                    let loaded = unsafe { fathom::Tablebase::load(path) }?;
-                    // Safety: The tablebase is loaded, so it's safe to dereference because no
-                    // other thread can change the pointer.
-                    let loaded_ref = unsafe { loaded.as_ref() };
-                    loaded_ref.context("derefrencing tablebase pointer after load")?
+                    let ownership = fathom::Tablebase::acquire()
+                        .expect("Nothing else should doing tablebase stuff at this point in time");
+                    fathom::Tablebase::load(ownership, path).map_err(|(err, _ownership)| err)?
                 });
             }
             _ => {}
-        };
+        }
         Ok(())
     }
 }
