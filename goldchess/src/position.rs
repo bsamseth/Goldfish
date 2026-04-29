@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use crate::{Bitboard, CastleRights, Color, Error, File, Piece, Rank, Square};
+use regex::Regex;
 
 /// Representation of a chess position (a.k.a. the struct you care about).
 #[derive(Debug, Clone)]
@@ -41,9 +42,26 @@ impl Default for Position {
 impl FromStr for Position {
     type Err = Error;
 
+    #[expect(clippy::too_many_lines)]
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let mut board = [None; Square::NUM_SQUARES];
         let invalid_fen = || Error::InvalidFen(value.to_string());
+        if !Regex::new(
+            r"(?x)  # Verbose regex mode.
+            ^
+            ([pnbrqkPNBRQK1-8]{1,8}/){7}[pnbrqkPNBRQK1-8]{1,8}\  # Piece positions.
+            [wb]\                # Side to move.
+            (K?Q?k?q?|-)\        # Castle rights.
+            ([a-h][36]|-)\       # En-passant square.
+            \d+\                 # Half-move clock.
+            \d+                  # Full-move clock.
+            $",
+        )
+        .unwrap()
+        .is_match(value)
+        {
+            return Err(invalid_fen());
+        }
 
         let tokens: Vec<&str> = value.split(' ').collect();
         if tokens.len() < 4 {
@@ -223,7 +241,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_from_str() {
+    fn from_valid_fens_roundtrip() {
         for fen in [
             "2n1k3/8/8/8/8/8/8/2N1K3 w - - 0 1",
             "5B2/6P1/1p6/8/1N6/kP6/2K5/8 w - - 0 1",
@@ -244,6 +262,21 @@ mod tests {
             let pos = Position::from_str(fen).unwrap();
             assert_eq!(pos.to_string(), fen);
             println!("{pos}");
+        }
+    }
+    #[test]
+    fn reject_bad_fens() {
+        for fen in [
+            "2n1k3/8/8/8/8/8/8/2N1K3 w - z2 0 1",
+            "5B2/6P1/1p6/8/1N6/kP6/2K5/8 w KQpq - 0 1",
+            "6R1/P2k4/r7/5N1P/r7/p7/7K/8 z - - 0 1",
+            "7K/8/k1P5/7p/8/8/9/8 w - - 0 1",
+            "7l/8/8/8/8/8/8/7K w - - 0 1",
+            "8/5k2/3p4/1pPPp2p/pP2Pp1P/P4P1K/8/8/8 b - b6 99 1",
+        ] {
+            if let Ok(p) = Position::from_str(fen) {
+                panic!("Bad FEN string was accepted: {fen}\nParsed into this position: {p}");
+            }
         }
     }
 }
