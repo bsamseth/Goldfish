@@ -1,6 +1,6 @@
 use chess::{Board, MoveGen};
 
-use super::{cuts, speculate, PvNode, Searcher};
+use super::{PvNode, Searcher, cuts, speculate};
 use crate::{
     board::BoardExt,
     movelist::MoveVec,
@@ -32,14 +32,12 @@ impl Searcher<'_> {
         );
 
         // At non-PV nodes we check for an early TT cutoff
-        if !PV {
-            if let Some(ref tt_data) = tt_data {
-                if tt_data.depth >= Depth::ZERO {
-                    if let Some(bounded_value) = tt_data.bounded(alpha) {
-                        return Ok(bounded_value);
-                    }
-                }
-            }
+        if !PV
+            && let Some(ref tt_data) = tt_data
+            && tt_data.depth >= Depth::ZERO
+            && let Some(bounded_value) = tt_data.bounded(alpha)
+        {
+            return Ok(bounded_value);
         }
 
         let (mut best_value, eval) = cuts::lower_bound_eval(board, tt_data.as_ref());

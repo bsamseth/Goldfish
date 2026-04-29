@@ -9,7 +9,7 @@ use chess::{Board, Piece};
 
 use fathom::Wdl;
 
-use super::{PvNode, Searcher, NON_PV_NODE};
+use super::{NON_PV_NODE, PvNode, Searcher};
 use crate::board::BoardExt;
 use crate::evaluate::Evaluate;
 use crate::newtypes::{Depth, Ply, Value};
@@ -104,9 +104,7 @@ impl Searcher<'_> {
             return Ok((None, tt_writer));
         };
 
-        if !PV && tt_data.value.is_some() {
-            let value = tt_data.value.unwrap();
-
+        if !PV && let Some(value) = tt_data.value {
             // If we're not in a PV node, we check for an early cutoff.
             // To do so, the depth of the stored entry must be greater than the depth we are to
             // search. If the cutoff doesn't cause a fail-high, we also accept entries that are
@@ -211,10 +209,10 @@ pub fn lower_bound_eval(board: &Board, tt_data: Option<&tt::Data>) -> (Value, Op
     let mut best_value = eval;
 
     // Use tt entries to improve the evaluation.
-    if let Some(bounded_eval) = tt_data.as_ref().and_then(|t| t.bounded(best_value)) {
-        if !bounded_eval.is_known_result() {
-            best_value = bounded_eval;
-        }
+    if let Some(bounded_eval) = tt_data.as_ref().and_then(|t| t.bounded(best_value))
+        && !bounded_eval.is_known_result()
+    {
+        best_value = bounded_eval;
     }
 
     (best_value, Some(eval))

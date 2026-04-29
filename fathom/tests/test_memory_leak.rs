@@ -25,7 +25,7 @@
 #[test]
 #[ignore = "takes a while to run"]
 fn test_memory_leaks() {
-    for i in 0..100_000 {
+    for _ in 0..100_000 {
         let ownership =
             fathom::Tablebase::acquire().expect("should be able to aquire ownership during test");
         let table =

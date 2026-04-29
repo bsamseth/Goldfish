@@ -1,8 +1,8 @@
-#![allow(clippy::missing_errors_doc, clippy::missing_panics_doc, dead_code)]
+#![expect(clippy::needless_continue)]
 use darling::ast::Fields;
-use darling::{ast, util, FromDeriveInput, FromField, FromMeta};
+use darling::{FromDeriveInput, FromField, FromMeta, ast, util};
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::DeriveInput;
 use syn::{Ident, Type};
 
@@ -27,10 +27,10 @@ enum UciOptionType {
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(uci), supports(struct_named))]
 struct UciOptionsInput {
-    ident: Ident,
     data: ast::Data<util::Ignored, UciOptionAttrubute>,
 }
 
+#[expect(clippy::missing_panics_doc)]
 #[proc_macro_derive(UciOptions, attributes(uci))]
 pub fn derive_uci_options(input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input);

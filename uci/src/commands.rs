@@ -50,7 +50,7 @@ impl From<&str> for Command {
     fn from(s: &str) -> Self {
         match s.parse::<Command>() {
             Ok(command) => command,
-            Err(e) => Command::Unknown(e.to_string()),
+            Err(e) => Command::Unknown(e),
         }
     }
 }

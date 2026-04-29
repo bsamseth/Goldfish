@@ -44,10 +44,10 @@ impl Searcher<'_> {
 
             // If we're in mate search mode, and we've found a mate, we can stop if the mate is
             // within the distance we're looking for.
-            if let Some(mate) = self.limits.mate {
-                if self.root_moves[0].value >= Value::mate_in(mate) {
-                    break;
-                }
+            if let Some(mate) = self.limits.mate
+                && self.root_moves[0].value >= Value::mate_in(mate)
+            {
+                break;
             }
         }
         self.logger.force_send_status();

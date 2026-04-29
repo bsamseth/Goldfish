@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use crate::{Engine, InputSource};
 
 /// Send a standard set of UCI commands to the engine to bench it.
@@ -11,8 +13,8 @@ pub fn run(engine: &mut Engine, depth: usize) {
 
     for case in &BENCH_CASES {
         commands.push_str("ucinewgame\n");
-        commands.push_str(&format!("position fen {case}\n"));
-        commands.push_str(&format!("go depth {depth}\n"));
+        writeln!(commands, "position fen {case}").unwrap();
+        writeln!(commands, "go depth {depth}").unwrap();
     }
     commands.push_str("quit\n");
     engine.repl(InputSource::Reader(commands));

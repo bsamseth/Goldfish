@@ -80,7 +80,7 @@ impl<'a> Searcher<'a> {
         }
 
         let root_moves: MoveVec = MoveGen::new_legal(&root_position).into();
-        let logger = Logger::new().silent(go_options.iter().any(|o| *o == uci::GoOption::Silent));
+        let logger = Logger::new().silent(go_options.contains(&uci::GoOption::Silent));
         let limits = Limits::from(go_options).with_time_control(&root_position);
 
         Self {

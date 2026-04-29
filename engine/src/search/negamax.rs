@@ -1,6 +1,6 @@
 use chess::{Board, MoveGen};
 
-use super::{cuts, PvNode, Searcher};
+use super::{PvNode, Searcher, cuts};
 use crate::{
     board::BoardExt,
     chessmove::ChessMoveExt,
@@ -100,7 +100,7 @@ impl Searcher<'_> {
         }
 
         // Step 8: Store and return result.
-        let bound = if moves.len() == 0 {
+        let bound = if moves.is_empty() {
             best_value = if board.in_check() {
                 Value::mated_in(ply)
             } else {

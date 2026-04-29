@@ -148,16 +148,16 @@ impl std::fmt::Display for Bitboard {
 
 impl IntoIterator for Bitboard {
     type Item = Square;
-    type IntoIter = _Iterator;
+    type IntoIter = BitboardIterator;
 
     fn into_iter(self) -> Self::IntoIter {
-        _Iterator(self)
+        BitboardIterator(self)
     }
 }
 
-pub struct _Iterator(Bitboard);
+pub struct BitboardIterator(Bitboard);
 
-impl Iterator for _Iterator {
+impl Iterator for BitboardIterator {
     type Item = Square;
 
     fn next(&mut self) -> Option<Self::Item> {

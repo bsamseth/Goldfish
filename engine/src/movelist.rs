@@ -111,11 +111,11 @@ impl MoveVec {
     /// Then the rest of the moves are sorted by value.
     pub fn sort_with_preference(mut self, best_move: Option<ChessMove>) -> Self {
         let mut sort_from = 0;
-        if let Some(mv) = best_move {
-            if let Some(index) = self.iter().position(|m| m.mv == mv) {
-                self.swap(0, index);
-                sort_from = 1;
-            }
+        if let Some(mv) = best_move
+            && let Some(index) = self.iter().position(|m| m.mv == mv)
+        {
+            self.swap(0, index);
+            sort_from = 1;
         }
 
         let (_, rest) = self.split_at_mut(sort_from);
