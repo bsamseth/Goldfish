@@ -1,10 +1,11 @@
 use quote::{format_ident, quote};
 
 use goldchess_gen::{
-    attacks_from, find_magic, king_moves, knight_moves, number_of_relevant_occupancy_bits,
-    occupancy_for_mask_and_index, occupancy_mask, pawn_attacks, pawn_quiets, Color, Square, BISHOP,
-    ROOK,
+    BISHOP, Color, ROOK, Square, attacks_from, find_magic, king_moves, knight_moves,
+    number_of_relevant_occupancy_bits, occupancy_for_mask_and_index, occupancy_mask, pawn_attacks,
+    pawn_quiets,
 };
+use rand::SeedableRng;
 
 macro_rules! gen_moves {
     ($name:ident, $func:ident) => {
@@ -43,9 +44,9 @@ macro_rules! gen_moves {
     };
 }
 macro_rules! gen_slider_moves {
-    ($name:ident, $magics:expr) => {
+    ($name:ident, $magics:expr, $rng:expr) => {
         for sq in Square::ALL_SQUARES {
-            let magic_number = find_magic::<$name>(sq);
+            let magic_number = find_magic::<$name>(sq, $rng);
             let relevant_bits = number_of_relevant_occupancy_bits::<$name>(sq);
             let shift = 64 - relevant_bits;
 
@@ -132,10 +133,11 @@ fn main() {
         }
     });
 
+    let mut rng = rand::rngs::Xoshiro128PlusPlus::seed_from_u64(1);
     let mut bishop_magics = vec![];
-    gen_slider_moves!(BISHOP, bishop_magics);
+    gen_slider_moves!(BISHOP, bishop_magics, &mut rng);
     let mut rook_magics = vec![];
-    gen_slider_moves!(ROOK, rook_magics);
+    gen_slider_moves!(ROOK, rook_magics, &mut rng);
 
     pretty_print(&quote! { const BISHOP_MAGICS: [Magic; 64] = [ #(#bishop_magics),* ]; });
     pretty_print(&quote! { const ROOK_MAGICS: [Magic; 64] = [ #(#rook_magics),* ]; });

@@ -507,13 +507,12 @@ pub fn occupancy_for_mask_and_index(mut mask: Bitboard, index: usize) -> Bitboar
     bb
 }
 
-fn random_candidate() -> u64 {
-    let mut rng = rand::rng();
+fn random_candidate(rng: &mut impl rand::Rng) -> u64 {
     rng.random::<u64>() & rng.random::<u64>() & rng.random::<u64>()
 }
 
 #[must_use]
-pub fn find_magic<const S: SliderType>(at: Square) -> u64 {
+pub fn find_magic<const S: SliderType>(at: Square, rng: &mut impl rand::Rng) -> u64 {
     let relevant_bits = number_of_relevant_occupancy_bits::<S>(at);
     let occ_mask = occupancy_mask::<S>(at);
     let occupancy_count = 1 << relevant_bits;
@@ -527,7 +526,7 @@ pub fn find_magic<const S: SliderType>(at: Square) -> u64 {
 
     let mut used = vec![Bitboard::EMPTY; occupancy_count];
     'outer: loop {
-        let magic_number = random_candidate();
+        let magic_number = random_candidate(rng);
         if (occ_mask.0.wrapping_mul(magic_number) & 0xFF00_0000_0000_0000).count_ones() < 6 {
             continue;
         }
