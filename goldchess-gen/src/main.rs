@@ -70,7 +70,7 @@ macro_rules! gen_slider_moves {
             let len = moves.len();
 
             pretty_print(&quote! {
-                const #moves_name: [u64; #len] = [ #(#moves),* ];
+                static #moves_name: [u64; #len] = [ #(#moves),* ];
             });
 
             let mask_raw = mask.0;

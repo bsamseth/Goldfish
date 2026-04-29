@@ -33,7 +33,7 @@ pub struct Searcher<'a> {
     root_moves: MoveVec,
     transposition_table: &'a mut TranspositionTable,
     tablebase: Option<&'a Tablebase>,
-    history_stats: [[usize; 64]; 64],
+    history_stats: Box<[[usize; 64]; 64]>,
 }
 
 pub type PvNode = bool;
@@ -93,7 +93,8 @@ impl<'a> Searcher<'a> {
             root_moves: root_moves.mvv_lva_rated(&root_position).sorted(),
             transposition_table,
             tablebase,
-            history_stats: [[0; 64]; 64],
+            // SAFETY: Zeroed is a valid state for the [[usize;64]; 64] array.
+            history_stats: unsafe { Box::new_zeroed().assume_init() },
         }
     }
 
