@@ -2,7 +2,7 @@ use std::{num::NonZeroU8, str::FromStr};
 
 use crate::{Bitboard, Error, File, Rank, Result};
 
-/// A square on the chessboard.
+/// A square on the chess board.
 ///
 /// Squares are indexed from 1 to 64, where `A1=1`, `B1=2`, ..., `H8=64`. Yes, that's right,
 /// one-based indexing. This enables the niche optimization, where [`Option<Square>`] is still

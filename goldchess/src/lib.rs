@@ -8,6 +8,7 @@
 //! support the [Goldfish](https://github.com/bsamseth/goldfish) chess engine, but very well might be useful for other projects as well.
 mod bitboard;
 mod castlerights;
+mod chessmove;
 mod color;
 mod error;
 mod file;
@@ -19,6 +20,7 @@ mod square;
 
 pub use bitboard::Bitboard;
 pub use castlerights::CastleRights;
+pub use chessmove::ChessMove;
 pub use color::Color;
 pub use error::{Error, Result};
 pub use file::File;
