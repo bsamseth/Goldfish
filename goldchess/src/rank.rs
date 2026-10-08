@@ -38,6 +38,10 @@ impl Rank {
         }
     }
 
+    pub const fn wrapping_up(self) -> Self {
+        unsafe { core::mem::transmute((self.0 + 1) & 7) }
+    }
+
     /// Get the rank below this one, if it exists.
     #[must_use]
     pub const fn down(self) -> Option<Self> {

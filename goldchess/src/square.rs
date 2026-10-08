@@ -1,6 +1,6 @@
 use std::{num::NonZeroU8, str::FromStr};
 
-use crate::{Bitboard, Error, File, Rank, Result};
+use crate::{Bitboard, Color, Error, File, Rank, Result};
 
 /// A square on the chess board.
 ///
@@ -60,6 +60,20 @@ impl Square {
     #[must_use]
     pub const fn as_index(self) -> usize {
         self.0.get() as usize - 1
+    }
+
+    pub fn up(&self, color: Color) -> Square {
+        match color {
+            Color::White => (),
+            Color::Black => (),
+        }
+    }
+
+    pub fn uforward(&self, color: Color) -> Square {
+        match color {
+            Color::White => self.uup(),
+            Color::Black => self.udown(),
+        }
     }
 }
 

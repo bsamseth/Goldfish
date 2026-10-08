@@ -1,7 +1,8 @@
 use std::str::FromStr;
 
-use crate::{Bitboard, CastleRights, Color, Error, File, Piece, Rank, Square};
 use regex::Regex;
+
+use crate::{Bitboard, CastleRights, ChessMove, Color, Error, File, Piece, Rank, Square};
 
 /// Representation of a chess position (a.k.a. the struct you care about).
 #[derive(Debug, Clone)]
@@ -10,11 +11,17 @@ pub struct Position {
     color_combined: [Bitboard; Color::NUM_COLORS],
     side_to_move: Color,
     castle_rights: [CastleRights; Color::NUM_COLORS],
+    pinned: Bitboard,   // TODO: Initialize these when parsing FEN.
+    checkers: Bitboard, // TODO: Initialize these when parsing FEN.
+    hash: u64,          // TODO: Initialize these when parsing FEN.
     en_passant: Option<Square>,
     halfmove_clock: u8,
 }
 
 impl Position {
+    pub const STARTING_POSITION_FEN: &str =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
     #[must_use]
     pub fn piece_on(&self, sq: Square) -> Option<Piece> {
         Piece::ALL
@@ -29,8 +36,56 @@ impl Position {
             .find(|color| self.color_combined[color.as_index()] & sq != Bitboard::EMPTY)
     }
 
-    pub const STARTING_POSITION_FEN: &str =
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    /// Make a move from the current position.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the move is not legal.
+    pub fn make_move(&mut self, mv: ChessMove) {
+        let moving_piece = self
+            .piece_on(mv.source())
+            .expect("a move must move a piece");
+        let source_bb = Bitboard::from(mv.source());
+        let destination_bb = Bitboard::from(mv.destination());
+
+        if let Some(captured) = self.piece_on(mv.destination()) {
+            self.xor(captured, destination_bb, !self.side_to_move); // Remove.
+        }
+        self.xor(moving_piece, source_bb, self.side_to_move); // Remove.
+        self.xor(moving_piece, destination_bb, self.side_to_move); // Add.
+
+        // TODO: Update castle rights.
+
+        // Update checkers
+
+        // // Finally, determine check/pin status.
+        // let attackers = self.color_combined(self.side_to_move)
+        //     & ((get_bishop_rays(ksq)
+        //         & (result.pieces(Piece::Bishop) | result.pieces(Piece::Queen)))
+        //         | (get_rook_rays(ksq)
+        //             & (result.pieces(Piece::Rook) | result.pieces(Piece::Queen))));
+        //
+        // for sq in attackers {
+        //     let between = between(sq, ksq) & result.combined();
+        //     if between == EMPTY {
+        //         result.checkers ^= BitBoard::from_square(sq);
+        //     } else if between.popcnt() == 1 {
+        //         result.pinned ^= between;
+        //     }
+        // }
+
+        self.side_to_move = !self.side_to_move;
+    }
+}
+
+// Private helpers.
+impl Position {
+    fn xor(&mut self, moved: Piece, bb: Bitboard, color: Color) {
+        self.pieces[moved.as_index()] ^= bb;
+        self.color_combined[color.as_index()] ^= bb;
+        // TODO: update hash
+        _ = color;
+    }
 }
 
 impl Default for Position {

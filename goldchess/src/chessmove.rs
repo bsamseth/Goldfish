@@ -1,5 +1,4 @@
-use crate::Piece;
-use crate::Square;
+use crate::{Bitboard, Color, Piece, Square};
 
 /// Representation of a chess move.
 #[derive(Debug, Clone, Copy)]
@@ -12,11 +11,11 @@ pub struct ChessMove {
 impl ChessMove {
     /// Create a new move.
     #[inline]
-    pub fn new(source: Square, dest: Square, promotion: Option<Piece>) -> ChessMove {
+    pub fn new(source: Square, destination: Square, promotion: Option<Piece>) -> ChessMove {
         ChessMove {
-            source: source,
-            destination: dest,
-            promotion: promotion,
+            source,
+            destination,
+            promotion,
         }
     }
 
@@ -36,5 +35,25 @@ impl ChessMove {
     #[inline]
     pub fn get_promotion(&self) -> Option<Piece> {
         self.promotion
+    }
+}
+
+impl ChessMove {
+    /// Return all the possible destination squares for a king move from `sq`.
+    ///
+    /// This does not consider whether or not the implied move(s) would be legal in a particular
+    /// game scenario. It also does not consider if the desitnation square has a friendly piece on it.
+    pub fn king_moves_from(sq: Square) -> Bitboard {
+        Bitboard(crate::generated_tables::KING_MOVES[sq.as_index()])
+    }
+    /// Return all the possible destination squares for a knight move from `sq`.
+    ///
+    /// This does not consider whether or not the implied move(s) would be legal in a particular
+    /// game scenario. It also does not consider if the desitnation square has a friendly piece on it.
+    pub fn knight_moves_from(sq: Square) -> Bitboard {
+        Bitboard(crate::generated_tables::KNIGHT_MOVES[sq.as_index()])
+    }
+    pub fn pawn_moves_from(sq: Square, color: Color, blockers: Bitboard) -> Bitboard {
+        Bitboard(crate::generated_tables::pawn[sq.as_index()])
     }
 }

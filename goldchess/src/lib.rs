@@ -12,7 +12,7 @@ mod chessmove;
 mod color;
 mod error;
 mod file;
-mod generated_tables;
+pub(crate) mod generated_tables;
 mod piece;
 mod position;
 mod rank;
