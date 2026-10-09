@@ -54,6 +54,9 @@ pub struct Opts {
     /// Internal iterative deepening lower depth limit.
     #[uci(kind = "spin", min = "5", max = "10", default = "5")]
     pub iid_depth_lower_bound: Depth,
+    /// Late move reduction move number threshold.
+    #[uci(kind = "spin", min = "1", max = "256", default = "3")]
+    pub lmr_move_threshold: usize,
 
     // Move ordering options:
     //
